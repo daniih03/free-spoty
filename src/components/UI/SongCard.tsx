@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Song } from '../../types/music';
 import { usePlayer } from '../../context/PlayerContext';
 import { isSongLiked, toggleLikeSong, getCustomPlaylists, addSongToPlaylist } from '../../services/storageService';
-import { Play, Pause, Heart, MoreVertical, Plus, Radio, FileText, Film } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Plus, Radio, FileText, Film, Sparkles } from 'lucide-react';
 
 interface SongCardProps {
   song: Song;
@@ -13,7 +13,6 @@ interface SongCardProps {
 export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
   const { currentSong, isPlaying, playSong, togglePlay, playNextInQueue, addToQueue } = usePlayer();
   const [showMenu, setShowMenu] = useState(false);
-  const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
 
   const isCurrent = currentSong?.id === song.id;
   const isLiked = isSongLiked(song.id);
@@ -36,7 +35,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
     if (song.currentVersion === 'radio') {
       return (
         <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-medium">
-          <Radio className="w-2.5 h-2.5" /> Radio Edit
+          <Sparkles className="w-2.5 h-2.5" /> YT Music
         </span>
       );
     }
@@ -57,22 +56,23 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-300 cursor-pointer border border-white/[0.06] hover:border-white/20 hover:shadow-xl hover:-translate-y-1 ${
+      className={`group relative p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-200 cursor-pointer border border-white/[0.06] hover:border-white/20 hover:shadow-xl hover:-translate-y-1 transform-gpu ${
         isCurrent ? 'bg-white/[0.08] border-brand-green/40 shadow-lg shadow-brand-green/5' : ''
       }`}
     >
-      {/* Cover with Floating Play Button */}
-      <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 shadow-md">
+      {/* Cover with Play Overlay */}
+      <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 shadow-md bg-white/5">
         <img
           src={song.coverUrl}
           alt={song.title}
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          decoding="async"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 transform-gpu"
         />
 
         {/* Play Button Overlay */}
         <div
-          className={`absolute bottom-2 right-2 transition-all duration-300 ${
+          className={`absolute bottom-2 right-2 transition-all duration-200 ${
             isCurrent
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
@@ -83,7 +83,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
               e.stopPropagation();
               handleCardClick();
             }}
-            className="w-10 h-10 rounded-full bg-brand-green text-black flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-full bg-brand-green text-black flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
             title={isCurrent && isPlaying ? 'Pausar' : 'Reproducir'}
           >
             {isCurrent && isPlaying ? (
@@ -94,10 +94,10 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
           </button>
         </div>
 
-        {/* Heart Favorite on Top Left */}
+        {/* Heart Favorite */}
         <button
           onClick={handleLike}
-          className={`absolute top-2 left-2 p-1.5 rounded-full bg-black/40 backdrop-blur-md transition-all ${
+          className={`absolute top-2 left-2 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-opacity ${
             isLiked
               ? 'text-brand-green opacity-100'
               : 'text-white/70 hover:text-white opacity-0 group-hover:opacity-100'
@@ -119,11 +119,10 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
         <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
       </div>
 
-      {/* Version & Actions */}
+      {/* Version Badge & Actions */}
       <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
         {getVersionBadge()}
 
-        {/* More options 3-dots */}
         <div className="relative">
           <button
             onClick={(e) => {
@@ -135,7 +134,6 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
             <MoreVertical className="w-3.5 h-3.5" />
           </button>
 
-          {/* Context Menu Dropdown */}
           {showMenu && (
             <div
               onClick={(e) => e.stopPropagation()}

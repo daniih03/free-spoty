@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { searchSongsMetadata } from '../../services/searchService';
 import { Song } from '../../types/music';
 import { SongCard } from '../UI/SongCard';
@@ -25,30 +25,44 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
   const { playSong } = usePlayer();
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setIsSearching(false);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const songs = await searchSongsMetadata(query);
-        setResults(songs);
-      } catch (err) {
-        console.error('Search error:', err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
+    // Cancel previous in-flight search request immediately
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    return () => clearTimeout(timer);
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const songs = await searchSongsMetadata(query, controller.signal);
+        if (!controller.signal.aborted) {
+          setResults(songs);
+          setIsSearching(false);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query]);
 
   const topResult = results[0];
-  const otherResults = results.slice(1);
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto select-none">
@@ -58,11 +72,11 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
           {query.trim() ? `Resultados para "${query}"` : 'Explorar y Buscar'}
         </h2>
         <p className="text-xs text-zinc-400">
-          Obtén canciones limpias directamente desde YouTube con letras sincronizadas
+          Audio master oficial de YouTube Music sin anuncios ni interrupciones
         </p>
       </div>
 
-      {/* When NO query is entered: Show Genre Category Cards */}
+      {/* Genre Categories when query is empty */}
       {!query.trim() && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -74,7 +88,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
               <div
                 key={card.name}
                 onClick={() => onSearchChange(card.query)}
-                className={`group relative h-28 rounded-2xl bg-gradient-to-br ${card.color} p-4 cursor-pointer overflow-hidden border border-white/10 hover:border-white/25 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-end`}
+                className={`group relative h-28 rounded-2xl bg-gradient-to-br ${card.color} p-4 cursor-pointer overflow-hidden border border-white/10 hover:border-white/25 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex items-end transform-gpu`}
               >
                 <div className="absolute top-3 right-3 opacity-20 group-hover:opacity-40 transition-opacity">
                   <Music className="w-12 h-12" />
@@ -88,11 +102,11 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading indicator */}
       {isSearching && (
         <div className="flex flex-col items-center justify-center py-16 space-y-3 text-zinc-400">
           <div className="w-8 h-8 border-2 border-brand-green border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm">Buscando las mejores versiones de audio...</p>
+          <p className="text-sm">Buscando pistas oficiales en alta fidelidad...</p>
         </div>
       )}
 
@@ -106,34 +120,34 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                 No encontramos resultados para "{query}"
               </p>
               <p className="text-xs text-zinc-500">
-                Intenta buscar por el nombre del artista, canción o prueba con otro término.
+                Intenta buscar por el nombre del artista o título de la canción.
               </p>
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Top Result + Top Songs split */}
+              {/* Top Result Spotlight */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left: Top Result Spotlight Card */}
                 {topResult && (
                   <div className="lg:col-span-5 space-y-3">
                     <h3 className="text-lg font-bold text-white">Resultado principal</h3>
                     <div
                       onClick={() => playSong(topResult, results)}
-                      className="group p-6 rounded-3xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer relative shadow-xl"
+                      className="group p-6 rounded-3xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer relative shadow-xl transform-gpu"
                     >
                       <img
                         src={topResult.coverUrl}
                         alt={topResult.title}
+                        loading="lazy"
                         className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-4 group-hover:scale-105 transition-transform"
                       />
                       <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-green transition-colors">
                         {topResult.title}
                       </h4>
                       <p className="text-sm text-zinc-400 font-medium mb-3">{topResult.artist}</p>
-                      
+
                       <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-medium">
-                          <Radio className="w-3 h-3" /> Radio Edit Priorizada
+                          <Radio className="w-3 h-3" /> YouTube Music Master
                         </span>
                       </div>
 
@@ -147,7 +161,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                   </div>
                 )}
 
-                {/* Right: Top 4 songs list */}
+                {/* Top 5 Songs List */}
                 <div className="lg:col-span-7 space-y-3">
                   <h3 className="text-lg font-bold text-white">Canciones</h3>
                   <div className="space-y-1">
@@ -161,6 +175,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                           <img
                             src={song.coverUrl}
                             alt={song.title}
+                            loading="lazy"
                             className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
                           />
                           <div className="min-w-0">

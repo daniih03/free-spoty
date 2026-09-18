@@ -1,23 +1,36 @@
 import { useState, useEffect } from 'react';
 
-interface RGBColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
-const DEFAULT_COLOR: RGBColor = { r: 30, g: 215, b: 96 }; // Spotify green default
-
-export function useDominantColor(imageUrl?: string): {
+interface ColorResult {
   primary: string;
   secondary: string;
   ambientGradient: string;
-} {
-  const [color, setColor] = useState<RGBColor>(DEFAULT_COLOR);
+}
+
+const DEFAULT_RESULT: ColorResult = {
+  primary: 'rgb(30, 215, 96)',
+  secondary: 'rgb(70, 185, 156)',
+  ambientGradient: 'radial-gradient(circle at 50% 20%, rgba(30, 215, 96, 0.28) 0%, rgba(0, 0, 0, 0) 80%)',
+};
+
+// Global cache to avoid recomputing colors for same album art
+const colorCache = new Map<string, ColorResult>();
+
+export function useDominantColor(imageUrl?: string): ColorResult {
+  const [result, setResult] = useState<ColorResult>(() => {
+    if (imageUrl && colorCache.has(imageUrl)) {
+      return colorCache.get(imageUrl)!;
+    }
+    return DEFAULT_RESULT;
+  });
 
   useEffect(() => {
     if (!imageUrl) {
-      setColor(DEFAULT_COLOR);
+      setResult(DEFAULT_RESULT);
+      return;
+    }
+
+    if (colorCache.has(imageUrl)) {
+      setResult(colorCache.get(imageUrl)!);
       return;
     }
 
@@ -29,24 +42,25 @@ export function useDominantColor(imageUrl?: string): {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) return;
 
-        canvas.width = 40;
-        canvas.height = 40;
-        ctx.drawImage(img, 0, 0, 40, 40);
+        // Sample with a tiny 16x16 canvas for blazing speed and zero CPU lag
+        canvas.width = 16;
+        canvas.height = 16;
+        ctx.drawImage(img, 0, 0, 16, 16);
 
-        const data = ctx.getImageData(0, 0, 40, 40).data;
+        const data = ctx.getImageData(0, 0, 16, 16).data;
         let r = 0, g = 0, b = 0, count = 0;
 
-        for (let i = 0; i < data.length; i += 16) {
+        for (let i = 0; i < data.length; i += 4) {
           const red = data[i];
           const green = data[i + 1];
           const blue = data[i + 2];
           const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
 
-          // Exclude extreme darks and extreme whites for richer mood colors
-          if (brightness > 25 && brightness < 235) {
+          // Filter out near-blacks and near-whites for vivid mood colors
+          if (brightness > 30 && brightness < 225) {
             r += red;
             g += green;
             b += blue;
@@ -55,14 +69,20 @@ export function useDominantColor(imageUrl?: string): {
         }
 
         if (count > 0 && isMounted) {
-          setColor({
-            r: Math.round(r / count),
-            g: Math.round(g / count),
-            b: Math.round(b / count),
-          });
+          const avgR = Math.round(r / count);
+          const avgG = Math.round(g / count);
+          const avgB = Math.round(b / count);
+
+          const primary = `rgb(${avgR}, ${avgG}, ${avgB})`;
+          const secondary = `rgb(${Math.min(255, avgR + 35)}, ${Math.max(0, avgG - 20)}, ${Math.min(255, avgB + 50)})`;
+          const ambientGradient = `radial-gradient(circle at 50% 20%, rgba(${avgR}, ${avgG}, ${avgB}, 0.28) 0%, rgba(0, 0, 0, 0) 80%)`;
+
+          const calculated = { primary, secondary, ambientGradient };
+          colorCache.set(imageUrl, calculated);
+          setResult(calculated);
         }
       } catch {
-        // In case of CORS canvas taint, gracefully keep current color
+        // Graceful fallback
       }
     };
 
@@ -71,10 +91,5 @@ export function useDominantColor(imageUrl?: string): {
     };
   }, [imageUrl]);
 
-  const primary = `rgb(${color.r}, ${color.g}, ${color.b})`;
-  // Create complementary secondary color with slight rotation
-  const secondary = `rgb(${Math.min(255, color.r + 40)}, ${Math.max(0, color.g - 30)}, ${Math.min(255, color.b + 60)})`;
-  const ambientGradient = `radial-gradient(circle at 50% 20%, rgba(${color.r}, ${color.g}, ${color.b}, 0.28) 0%, rgba(${color.r}, ${color.g}, ${color.b}, 0.08) 45%, rgba(0, 0, 0, 0) 80%)`;
-
-  return { primary, secondary, ambientGradient };
+  return result;
 }

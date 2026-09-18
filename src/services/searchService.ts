@@ -16,7 +16,7 @@ export function setCustomApiKey(key: string) {
   }
 }
 
-// In-memory cache for resolved songs to ensure instant switching
+// In-memory cache for resolved songs to ensure instant playback
 const songCache = new Map<string, Song>();
 
 // Pre-fill cache with featured songs
@@ -35,7 +35,7 @@ let activeInvidiousInstances: string[] = [
 // Dynamically refresh healthy CORS instances in background
 export async function refreshInvidiousInstances() {
   try {
-    const res = await fetch('https://api.invidious.io/instances.json', { signal: AbortSignal.timeout(4000) });
+    const res = await fetch('https://api.invidious.io/instances.json', { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       const list = await res.json();
       const healthy = list
@@ -50,7 +50,7 @@ export async function refreshInvidiousInstances() {
   }
 }
 
-// Trigger initial refresh
+// Trigger initial instance refresh
 if (typeof window !== 'undefined') {
   refreshInvidiousInstances();
 }
@@ -58,7 +58,7 @@ if (typeof window !== 'undefined') {
 /**
  * Searches songs using the iTunes Search API (fast, rich metadata, 600x600 artwork, CORS-free).
  */
-export async function searchSongsMetadata(query: string): Promise<Song[]> {
+export async function searchSongsMetadata(query: string, signal?: AbortSignal): Promise<Song[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
@@ -70,12 +70,12 @@ export async function searchSongsMetadata(query: string): Promise<Song[]> {
 
   try {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(trimmed)}&entity=song&limit=25`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal });
     if (!res.ok) throw new Error('iTunes search failed');
 
     const data = await res.json();
     const itunesSongs: Song[] = (data.results || []).map((item: any) => {
-      // Upscale artwork from 100x100 to 600x600 for sharp modern display
+      // Upscale artwork from 100x100 to 600x600 for sharp display
       const artwork = item.artworkUrl100
         ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
         : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
@@ -98,7 +98,7 @@ export async function searchSongsMetadata(query: string): Promise<Song[]> {
         album: item.collectionName,
         duration: Math.round(item.trackTimeMillis / 1000),
         coverUrl: artwork,
-        youtubeId: '', // Resolved dynamically when played
+        youtubeId: '', // Resolved instantly on first play
         currentVersion: 'radio',
         availableVersions: {},
         hasSyncedLyrics: true,
@@ -120,15 +120,15 @@ export async function searchSongsMetadata(query: string): Promise<Song[]> {
     }
 
     return combined;
-  } catch (err) {
+  } catch (err: any) {
+    if (err.name === 'AbortError') return [];
     console.warn('Metadata search fallback to local:', err);
     return localMatches;
   }
 }
 
 /**
- * Searches for a YouTube video ID for a specific query string.
- * Uses official API if key provided, then active Invidious instances.
+ * Single fast query to find a YouTube video ID.
  */
 async function searchYoutubeVideoId(query: string): Promise<string | null> {
   const apiKey = getCustomApiKey();
@@ -153,7 +153,7 @@ async function searchYoutubeVideoId(query: string): Promise<string | null> {
     try {
       const url = `https://${domain}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 2800);
 
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -165,7 +165,7 @@ async function searchYoutubeVideoId(query: string): Promise<string | null> {
         }
       }
     } catch {
-      // Try next instance in pool
+      // Continue to next instance
     }
   }
 
@@ -173,82 +173,52 @@ async function searchYoutubeVideoId(query: string): Promise<string | null> {
 }
 
 /**
- * Resolves all versions for a song adhering strictly to the user requirement:
- * 1. Radio Version / Radio Edit (clean, without film intros or silences)
- * 2. Lyrics Version / Lyric Video
- * 3. Original / Official Audio
+ * Resolves the primary audio track from YouTube Music (Topic / Master Audio)
+ * and starts playback in milliseconds with zero delay.
  */
 export async function resolveSongWithVersions(song: Song): Promise<Song> {
   const cacheKey = `${song.title.toLowerCase()}-${song.artist.toLowerCase()}`;
   const existing = songCache.get(cacheKey) || songCache.get(song.id);
 
-  // If already fully resolved with a valid video ID, return it
-  if (existing && existing.youtubeId && existing.availableVersions && Object.keys(existing.availableVersions).length > 0) {
+  if (existing && existing.youtubeId) {
     return existing;
   }
 
-  const versions: SongVersions = { ...song.availableVersions };
-
-  // Clean strings (remove extraneous brackets or remastered text)
+  // Clean title
   const cleanTitle = song.title
     .replace(/\(.*?(remaster|version|edition).*?\)/gi, '')
     .replace(/\[.*?(remaster|version|edition).*?\]/gi, '')
     .trim();
   const cleanArtist = song.artist.trim();
 
-  // Specific query variants for each priority
-  const radioQuery = `${cleanArtist} ${cleanTitle} radio edit`;
-  const lyricsQuery = `${cleanArtist} ${cleanTitle} lyrics`;
-  const originalQuery = `${cleanArtist} ${cleanTitle} audio`;
-  const directQuery = `${cleanArtist} ${cleanTitle}`;
+  // 1. Primary: YouTube Music Topic / Studio Master (clean, zero movie intro)
+  const ytMusicTopicQuery = `${cleanArtist} ${cleanTitle} Topic`;
+  let videoId = await searchYoutubeVideoId(ytMusicTopicQuery);
 
-  // Execute in parallel for optimal speed
-  const [radioId, lyricsId, originalId] = await Promise.all([
-    versions.radio ? Promise.resolve(versions.radio) : searchYoutubeVideoId(radioQuery),
-    versions.lyrics ? Promise.resolve(versions.lyrics) : searchYoutubeVideoId(lyricsQuery),
-    versions.original ? Promise.resolve(versions.original) : searchYoutubeVideoId(originalQuery),
-  ]);
-
-  if (radioId) versions.radio = radioId;
-  if (lyricsId) versions.lyrics = lyricsId;
-  if (originalId) versions.original = originalId;
-
-  // If none of the 3 returned an ID, run a direct query as fallback
-  if (!versions.radio && !versions.lyrics && !versions.original) {
-    const directId = await searchYoutubeVideoId(directQuery);
-    if (directId) {
-      versions.original = directId;
-    }
+  // 2. Fallback: Audio / Radio Edit
+  if (!videoId) {
+    const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
+    videoId = await searchYoutubeVideoId(audioQuery);
   }
 
-  // Determine active version according to user's requested priority:
-  // 1: Radio Version -> 2: Lyrics Version -> 3: Original
-  let chosenVersion: VersionType = 'radio';
-  let chosenId = versions.radio;
-
-  if (!chosenId && versions.lyrics) {
-    chosenVersion = 'lyrics';
-    chosenId = versions.lyrics;
+  // 3. Fallback: Direct
+  if (!videoId) {
+    const directQuery = `${cleanArtist} ${cleanTitle}`;
+    videoId = await searchYoutubeVideoId(directQuery);
   }
 
-  if (!chosenId && versions.original) {
-    chosenVersion = 'original';
-    chosenId = versions.original;
-  }
-
-  // If still nothing, preserve previous youtubeId if it was valid
-  if (!chosenId && song.youtubeId) {
-    chosenId = song.youtubeId;
-  }
+  const versions: SongVersions = {
+    radio: videoId || undefined,
+  };
 
   const updatedSong: Song = {
     ...song,
-    youtubeId: chosenId || '',
-    currentVersion: chosenVersion,
+    youtubeId: videoId || '',
+    currentVersion: 'radio',
     availableVersions: versions,
   };
 
-  if (chosenId) {
+  if (videoId) {
     songCache.set(song.id, updatedSong);
     songCache.set(cacheKey, updatedSong);
   }
@@ -257,16 +227,19 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
 }
 
 /**
- * Switch a song to a specific version (e.g. 'radio', 'lyrics', 'original')
+ * Switch a song to a specific version on demand (e.g. 'radio', 'lyrics', 'original')
  */
 export async function switchSongVersion(song: Song, targetVersion: VersionType): Promise<Song> {
   let targetId = song.availableVersions?.[targetVersion];
 
   if (!targetId) {
+    const cleanTitle = song.title.replace(/\(.*?\)/g, '').trim();
+    const cleanArtist = song.artist.trim();
+
     let query = '';
-    if (targetVersion === 'radio') query = `${song.artist} ${song.title} radio edit`;
-    else if (targetVersion === 'lyrics') query = `${song.artist} ${song.title} lyrics`;
-    else query = `${song.artist} ${song.title} audio`;
+    if (targetVersion === 'radio') query = `${cleanArtist} ${cleanTitle} Topic`;
+    else if (targetVersion === 'lyrics') query = `${cleanArtist} ${cleanTitle} lyrics`;
+    else query = `${cleanArtist} ${cleanTitle} video oficial`;
 
     targetId = (await searchYoutubeVideoId(query)) || song.youtubeId;
   }

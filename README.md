@@ -10,13 +10,10 @@ Una alternativa web fluida, profesional y gratuita a **Spotify** y **Apple Music
 
 Free-Spoty fue creado para solucionar las mayores frustraciones que tienen los usuarios de las plataformas de streaming actuales:
 
-1. **🎧 Audio Limpio Inteligente de YouTube (Radio Edit / Lyrics First)**:
-   - El gran problema de escuchar música en YouTube son los videoclips oficiales con 2 minutos de introducción dramática, diálogos de actores, ruidos de sirenas o silencios.
-   - **Prioridad inteligente**: Free-Spoty busca y reproduce en este orden:
-     1. **Radio Edit / Radio Version** (canción limpia, duración exacta de radio, sin introducciones).
-     2. **Lyrics Version** (audio directo y limpio de canal de letras).
-     3. **Original** (audio oficial de reserva).
-   - Selector en la barra inferior para cambiar entre las 3 versiones con 1 solo clic.
+1. **🎧 Audio Master de YouTube Music (Topic / Studio Master)**:
+   - El gran problema de escuchar música en YouTube tradicional son los videoclips con 2 minutos de introducción dramática, diálogos de actores, ruidos de sirenas o silencios.
+   - **Prioridad inteligente**: Free-Spoty busca y reproduce directamente la **pista oficial de YouTube Music** (Topic Channel subido por discográficas), idéntica a la que se escucha en Spotify/Apple Music con audio master de estudio.
+   - Si lo deseas, dispones del selector en la barra inferior para cambiar entre: **YT Music Master**, **Lyrics (Letra)** o **Videoclip Oficial** con 1 solo clic.
 
 2. **🚫 Cero Anuncios y Saltos Ilimitados**:
    - Sin cuñas publicitarias entre canciones.
