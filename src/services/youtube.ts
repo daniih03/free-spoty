@@ -11,11 +11,11 @@ export type PlayerErrorHandler = (errorCode: number) => void;
 export const BACKEND_URL_STORAGE_KEY = 'free_spoty_backend_url';
 
 export function getCustomBackendUrl(): string {
-  if (typeof window === 'undefined') return 'https://free-spoty-api.onrender.com';
+  if (typeof window === 'undefined') return '';
   return (
     localStorage.getItem(BACKEND_URL_STORAGE_KEY) ||
     (import.meta as any).env?.VITE_STREAM_API_URL ||
-    'https://free-spoty-api.onrender.com'
+    ''
   );
 }
 

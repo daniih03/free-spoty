@@ -260,11 +260,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Synchronously unlock Safari audio on user touch
     youtubeService.unlockAudio();
 
-    // If song already has youtubeId, trigger loadVideo SYNCHRONOUSLY to satisfy Safari autoplay gesture
-    if (song.youtubeId) {
-      youtubeService.loadVideo(song.youtubeId, 0, true);
-    }
-
     let newQueue = contextQueue ? [...contextQueue] : (queue.length > 0 ? [...queue] : [song]);
     let targetIndex = newQueue.findIndex(s => s.id === song.id);
 
