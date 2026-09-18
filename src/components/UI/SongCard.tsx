@@ -75,7 +75,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
           className={`absolute bottom-2 right-2 transition-all duration-200 ${
             isCurrent
               ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+              : 'opacity-90 md:opacity-0 translate-y-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0'
           }`}
         >
           <button

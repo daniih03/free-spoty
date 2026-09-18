@@ -3,7 +3,7 @@ import { searchSongsMetadata } from '../../services/searchService';
 import { Song } from '../../types/music';
 import { SongCard } from '../UI/SongCard';
 import { usePlayer } from '../../context/PlayerContext';
-import { Search, Music, Play, Sparkles, Radio } from 'lucide-react';
+import { Search, Music, Play, Pause, Sparkles, Radio } from 'lucide-react';
 
 interface SearchViewProps {
   query: string;
@@ -22,7 +22,7 @@ const GENRE_CARDS = [
 ];
 
 export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange }) => {
-  const { playSong } = usePlayer();
+  const { playSong, currentSong, isPlaying, togglePlay } = usePlayer();
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -151,11 +151,24 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                         </span>
                       </div>
 
+                      {/* Always Visible Spotify Play Button */}
                       <button
-                        className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-brand-green text-black flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all"
-                        title="Reproducir ahora"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (currentSong?.id === topResult.id) {
+                            togglePlay();
+                          } else {
+                            playSong(topResult, results);
+                          }
+                        }}
+                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#1ed760] text-black flex items-center justify-center shadow-2xl shadow-black/70 hover:scale-105 active:scale-95 transition-transform duration-200 z-10"
+                        title={currentSong?.id === topResult.id && isPlaying ? 'Pausar' : 'Reproducir'}
                       >
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                        {currentSong?.id === topResult.id && isPlaying ? (
+                          <Pause className="w-6 h-6 fill-black text-black" />
+                        ) : (
+                          <Play className="w-6 h-6 fill-black text-black ml-0.5" />
+                        )}
                       </button>
                     </div>
                   </div>
