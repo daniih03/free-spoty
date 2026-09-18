@@ -99,6 +99,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (dur > 0) setDuration(dur);
       } else if (state === 2) {
         setIsPlaying(false);
+        setIsLoadingSong(false);
       } else if (state === 0) {
         // Track ended
         handleTrackEnded();
@@ -211,6 +212,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       youtubeService.loadVideo(resolvedSong.youtubeId, 0, true);
       youtubeService.setVolume(stateRef.current.isMuted ? 0 : stateRef.current.volume);
       setIsPlaying(true);
+      // Auto-clear loading after 3.5s if mobile browser delays playback event
+      setTimeout(() => setIsLoadingSong(false), 3500);
     } else {
       setIsLoadingSong(false);
       console.warn(`No se encontró audio para "${song.title}" de ${song.artist}`);
@@ -255,6 +258,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const playSong = async (song: Song, contextQueue?: Song[]) => {
+    // Synchronously unlock Safari audio on user touch
+    youtubeService.unlockAudio();
+
     let newQueue = contextQueue ? [...contextQueue] : (queue.length > 0 ? [...queue] : [song]);
     let targetIndex = newQueue.findIndex(s => s.id === song.id);
 
@@ -278,6 +284,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const togglePlay = () => {
     if (!currentSong) return;
+    youtubeService.unlockAudio();
     if (isPlaying) {
       youtubeService.pause();
       setIsPlaying(false);
