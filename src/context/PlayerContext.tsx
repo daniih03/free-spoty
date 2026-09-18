@@ -219,6 +219,28 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // 3. Add to history
     addToPlayHistory(resolvedSong);
 
+    // 4. Update native lock screen media controls (iOS / Android)
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: resolvedSong.title,
+          artist: resolvedSong.artist,
+          album: resolvedSong.album || 'Free-Spoty',
+          artwork: [
+            { src: resolvedSong.coverUrl, sizes: '512x512', type: 'image/jpeg' },
+            { src: resolvedSong.coverUrl, sizes: '192x192', type: 'image/jpeg' },
+          ],
+        });
+        navigator.mediaSession.setActionHandler('play', () => togglePlay());
+        navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+        navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+        navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined) seek(details.seekTime);
+        });
+      } catch {}
+    }
+
     // 4. Fetch synced lyrics
     setIsLoadingLyrics(true);
     fetchLyrics(resolvedSong.title, resolvedSong.artist, resolvedSong.duration)
