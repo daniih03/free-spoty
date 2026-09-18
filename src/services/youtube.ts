@@ -1,199 +1,252 @@
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export type PlayerStateChangeHandler = (state: number) => void;
 export type PlayerErrorHandler = (errorCode: number) => void;
 
 class YouTubeService {
-  private htmlAudio: HTMLAudioElement | null = null;
-  private isAudioUnlocked = false;
-  private currentVideoId: string | null = null;
+  private player: any = null;
+  private isPlayerReady = false;
+  private isApiLoaded = false;
+  private pendingVideoId: string | null = null;
+  private pendingAutoplay = true;
+  private containerId = 'free-spoty-yt-player';
+  private watchdogTimer: any = null;
 
   private stateChangeListeners: Set<PlayerStateChangeHandler> = new Set();
   private errorListeners: Set<PlayerErrorHandler> = new Set();
 
-  // Cache direct audio URLs by videoId to save network calls
-  private directAudioCache = new Map<string, string>();
-
-  // Instance pool for stream extraction
-  private streamInstances: string[] = [
-    'invidious.f5.si',
-  ];
-
   constructor() {
-    this.initHtmlAudio();
+    this.initApi();
   }
 
-  private initHtmlAudio() {
+  private initApi() {
     if (typeof window === 'undefined') return;
 
-    this.htmlAudio = new Audio();
-    this.htmlAudio.preload = 'auto';
-    this.htmlAudio.setAttribute('playsinline', 'true');
-    this.htmlAudio.setAttribute('webkit-playsinline', 'true');
+    if (window.YT && window.YT.Player) {
+      this.isApiLoaded = true;
+      this.createPlayer();
+      return;
+    }
 
-    // Forward native HTML5 audio events to state listeners
-    this.htmlAudio.addEventListener('playing', () => {
-      this.stateChangeListeners.forEach((fn) => fn(1)); // 1 = PLAYING
-    });
+    const previousCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (previousCallback) previousCallback();
+      this.isApiLoaded = true;
+      this.createPlayer();
+    };
 
-    this.htmlAudio.addEventListener('pause', () => {
-      this.stateChangeListeners.forEach((fn) => fn(2)); // 2 = PAUSED
-    });
+    if (!document.getElementById('yt-iframe-script')) {
+      const tag = document.createElement('script');
+      tag.id = 'yt-iframe-script';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+  }
 
-    this.htmlAudio.addEventListener('ended', () => {
-      this.stateChangeListeners.forEach((fn) => fn(0)); // 0 = ENDED
-    });
+  private createPlayer() {
+    if (typeof window === 'undefined') return;
 
-    this.htmlAudio.addEventListener('waiting', () => {
-      this.stateChangeListeners.forEach((fn) => fn(3)); // 3 = BUFFERING
-    });
+    let container = document.getElementById(this.containerId);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = this.containerId;
+      // Position inside viewport (bottom: 0, right: 0) with non-zero opacity
+      // so iOS Safari's WebKit media engine does not cull or suspend media decoding!
+      container.style.position = 'fixed';
+      container.style.bottom = '0px';
+      container.style.right = '0px';
+      container.style.width = '200px';
+      container.style.height = '120px';
+      container.style.opacity = '0.001';
+      container.style.pointerEvents = 'none';
+      container.style.zIndex = '-1';
+      document.body.appendChild(container);
+    }
 
-    this.htmlAudio.addEventListener('error', (e) => {
-      console.warn('Audio stream playback error:', e);
-      this.errorListeners.forEach((fn) => fn(100));
-    });
+    try {
+      this.player = new window.YT.Player(this.containerId, {
+        height: '120',
+        width: '200',
+        host: 'https://www.youtube-nocookie.com',
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          iv_load_policy: 3,
+          enablejsapi: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: () => {
+            this.isPlayerReady = true;
+            if (this.pendingVideoId) {
+              this.loadVideo(this.pendingVideoId, 0, this.pendingAutoplay);
+              this.pendingVideoId = null;
+            }
+          },
+          onStateChange: (event: any) => {
+            // Clear watchdog if playing or paused
+            if (event.data === 1 || event.data === 2) {
+              if (this.watchdogTimer) {
+                clearTimeout(this.watchdogTimer);
+                this.watchdogTimer = null;
+              }
+            }
+            this.stateChangeListeners.forEach((fn) => fn(event.data));
+          },
+          onError: (event: any) => {
+            console.warn('[YouTube Player Error]', event.data);
+            if (this.watchdogTimer) {
+              clearTimeout(this.watchdogTimer);
+              this.watchdogTimer = null;
+            }
+            this.errorListeners.forEach((fn) => fn(event.data));
+          },
+        },
+      });
+    } catch (e) {
+      console.error('Failed to create YouTube player:', e);
+    }
   }
 
   /**
-   * Synchronously unlocks audio playback in Safari WebKit upon user touch.
-   * This is critical for iOS Safari to allow subsequent async playback.
+   * Synchronously called on user click/touch to warm up audio session in Safari.
    */
   public unlockAudio() {
-    if (!this.htmlAudio || this.isAudioUnlocked) return;
-    try {
-      this.htmlAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-      const p = this.htmlAudio.play();
-      if (p !== undefined) {
-        p.then(() => {
-          this.isAudioUnlocked = true;
-        }).catch(() => {});
-      }
-    } catch {}
+    if (!this.player) {
+      this.initApi();
+    }
   }
 
-  /**
-   * Fetches the direct ad-free audio stream URL.
-   */
-  private async fetchDirectAudioStream(videoId: string): Promise<string | null> {
-    if (this.directAudioCache.has(videoId)) {
-      return this.directAudioCache.get(videoId)!;
-    }
-
-    for (const domain of this.streamInstances) {
-      try {
-        const res = await fetch(`https://${domain}/api/v1/videos/${videoId}`, {
-          signal: AbortSignal.timeout(4500),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.adaptiveFormats && Array.isArray(data.adaptiveFormats)) {
-            // Find direct audio/mp4 (AAC stereo stream)
-            const audio = data.adaptiveFormats.find(
-              (f: any) => f.type && (f.type.startsWith('audio/mp4') || f.type.startsWith('audio/webm'))
-            );
-            if (audio?.url) {
-              this.directAudioCache.set(videoId, audio.url);
-              return audio.url;
-            }
-          }
-        }
-      } catch {
-        // Try next instance
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Loads and plays a song using pure ad-free HTML5 audio.
-   * Zero ads guaranteed: never runs an invisible YouTube iframe.
-   */
-  public async loadVideo(videoId: string, startSeconds = 0, autoplay = true) {
-    this.currentVideoId = videoId;
-
-    if (!this.htmlAudio) return;
-
-    // Reset audio before loading new track
-    this.htmlAudio.pause();
+  public loadVideo(videoId: string, startSeconds = 0, autoplay = true) {
+    this.pendingVideoId = videoId;
+    this.pendingAutoplay = autoplay;
 
     // Signal buffering to UI
     this.stateChangeListeners.forEach((fn) => fn(3));
 
-    const directStreamUrl = await this.fetchDirectAudioStream(videoId);
-
-    if (directStreamUrl && this.htmlAudio) {
+    if (this.player && this.isPlayerReady && this.player.loadVideoById) {
       try {
-        this.htmlAudio.src = directStreamUrl;
-        this.htmlAudio.currentTime = startSeconds;
+        this.player.loadVideoById({
+          videoId,
+          startSeconds: startSeconds || 0,
+        });
 
-        if (autoplay) {
-          const playPromise = this.htmlAudio.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                this.stateChangeListeners.forEach((fn) => fn(1)); // PLAYING
-              })
-              .catch((err) => {
-                console.warn('Autoplay restricted by browser, ready for user tap:', err);
-                this.stateChangeListeners.forEach((fn) => fn(2)); // PAUSED (user can tap play)
-              });
-          }
+        if (autoplay && this.player.playVideo) {
+          this.player.playVideo();
         }
-        return;
+
+        // Watchdog: If stuck in buffering/loading for > 5s, attempt gentle play recovery
+        if (this.watchdogTimer) clearTimeout(this.watchdogTimer);
+        this.watchdogTimer = setTimeout(() => {
+          if (this.player && typeof this.player.getPlayerState === 'function') {
+            const state = this.player.getPlayerState();
+            if (state === 3 || state === -1) {
+              console.warn('[YouTube Watchdog] Audio stalled, attempting play kick...');
+              try {
+                this.player.playVideo();
+              } catch {}
+            }
+          }
+        }, 5000);
       } catch (err) {
-        console.warn('Error playing audio stream:', err);
-        this.errorListeners.forEach((fn) => fn(100));
+        console.warn('Error calling loadVideoById:', err);
       }
-    } else {
-      console.warn('Could not extract direct audio stream for videoId:', videoId);
-      this.errorListeners.forEach((fn) => fn(100));
     }
   }
 
   public play() {
-    if (this.htmlAudio) {
-      this.htmlAudio.play().catch((err) => {
-        console.warn('Play error:', err);
-      });
+    if (this.player && this.player.playVideo) {
+      try {
+        this.player.playVideo();
+      } catch (e) {
+        console.warn('playVideo error:', e);
+      }
     }
   }
 
   public pause() {
-    if (this.htmlAudio) {
-      this.htmlAudio.pause();
+    if (this.player && this.player.pauseVideo) {
+      try {
+        this.player.pauseVideo();
+      } catch (e) {
+        console.warn('pauseVideo error:', e);
+      }
     }
   }
 
   public seekTo(seconds: number) {
-    if (this.htmlAudio) {
-      this.htmlAudio.currentTime = seconds;
+    if (this.player && this.player.seekTo) {
+      try {
+        this.player.seekTo(seconds, true);
+      } catch (e) {
+        console.warn('seekTo error:', e);
+      }
     }
   }
 
   public setVolume(volume: number) {
     const clamped = Math.min(100, Math.max(0, volume));
-    if (this.htmlAudio) {
-      this.htmlAudio.volume = clamped / 100;
+    if (this.player && this.player.setVolume) {
+      try {
+        this.player.setVolume(clamped);
+      } catch (e) {
+        console.warn('setVolume error:', e);
+      }
     }
   }
 
   public setPlaybackRate(rate: number) {
-    if (this.htmlAudio) {
-      this.htmlAudio.playbackRate = rate;
+    if (this.player && this.player.setPlaybackRate) {
+      try {
+        this.player.setPlaybackRate(rate);
+      } catch (e) {
+        console.warn('setPlaybackRate error:', e);
+      }
     }
   }
 
   public getCurrentTime(): number {
-    return this.htmlAudio?.currentTime || 0;
+    if (this.player && this.player.getCurrentTime) {
+      try {
+        return this.player.getCurrentTime() || 0;
+      } catch {
+        return 0;
+      }
+    }
+    return 0;
   }
 
   public getDuration(): number {
-    return this.htmlAudio?.duration || 0;
+    if (this.player && this.player.getDuration) {
+      try {
+        return this.player.getDuration() || 0;
+      } catch {
+        return 0;
+      }
+    }
+    return 0;
   }
 
   public getPlayerState(): number {
-    if (!this.htmlAudio) return -1;
-    if (this.htmlAudio.paused) return 2;
-    return 1;
+    if (this.player && this.player.getPlayerState) {
+      try {
+        return this.player.getPlayerState();
+      } catch {
+        return -1;
+      }
+    }
+    return -1;
   }
 
   public onStateChange(listener: PlayerStateChangeHandler) {

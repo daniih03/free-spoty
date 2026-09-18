@@ -14,12 +14,12 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Radical Optimism',
         duration: 185,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/05/85/ca/0585ca45-9a84-0a65-1d63-5491796d11f8/190296181467.jpg/600x600bb.jpg',
-        youtubeId: 'suAR1PYFNYA', // Dua Lipa - Houdini (Official Lyrics)
+        youtubeId: 'BHIpvqhydLo', // Dua Lipa - Houdini (Lyrics) - Ad-free community upload
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'suAR1PYFNYA',
-          lyrics: 'suAR1PYFNYA',
-          original: 'suAR1PYFNYA'
+          radio: 'BHIpvqhydLo',
+          lyrics: 'BHIpvqhydLo',
+          original: 'BHIpvqhydLo'
         },
         hasSyncedLyrics: true
       },
@@ -35,7 +35,7 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         availableVersions: {
           radio: '4NRXx6U8ABQ',
           lyrics: 'XbGs_qK2PQA',
-          original: 'fHI8X4OXluQ'
+          original: '4NRXx6U8ABQ'
         },
         hasSyncedLyrics: true
       },
@@ -46,12 +46,12 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Short n\' Sweet',
         duration: 175,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/64/63/1f/64631f13-ee0b-db7f-561b-90f92b772c68/24UMGIM47820.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'eVli-tstM5E',
+        youtubeId: '2I9eC2MRhto', // Sabrina Carpenter - Espresso (Lyrics) - Ad-free
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'eVli-tstM5E',
-          lyrics: 'eVli-tstM5E',
-          original: 'eVli-tstM5E'
+          radio: '2I9eC2MRhto',
+          lyrics: '2I9eC2MRhto',
+          original: '2I9eC2MRhto'
         },
         hasSyncedLyrics: true
       },
@@ -284,6 +284,78 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
           radio: 'gset79KMmt0',
           lyrics: 'gset79KMmt0',
           original: 'gset79KMmt0'
+        },
+        hasSyncedLyrics: true
+      }
+    ]
+  },
+  {
+    id: 'pop-rock-espanol',
+    name: 'Clásicos Pop/Rock Español',
+    description: 'Los grandes temas del pop y rock nacional: M-Clan, Fito, El Canto del Loco y más.',
+    coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
+    songs: [
+      {
+        id: 'yt_mclan_miedo',
+        title: 'Miedo',
+        artist: 'M-Clan',
+        album: 'Definitivamente Vivo',
+        duration: 278,
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/74/d3/63/74d36371-a077-d6b0-7561-24ff0daae7a1/0825646194217.jpg/600x600bb.jpg',
+        youtubeId: 'o_7gNZvJx1I', // M Clan Miedo - Studio audio with lyrics, zero ads
+        currentVersion: 'radio',
+        availableVersions: {
+          radio: 'o_7gNZvJx1I',
+          lyrics: 'o_7gNZvJx1I',
+          original: '05lSSYQAENo'
+        },
+        hasSyncedLyrics: true
+      },
+      {
+        id: 'yt_fito_soldadito',
+        title: 'Soldadito Marinero',
+        artist: 'Fito y Fitipaldis',
+        album: 'Lo más lejos a tu lado',
+        duration: 250,
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/80/f7/a3/80f7a378-fc7b-fdb2-c15c-0bb2312675d0/825646961448.jpg/600x600bb.jpg',
+        youtubeId: 'ba7_3yytb7E', // Fito y Fitipaldis - Soldadito Marinero LETRA
+        currentVersion: 'radio',
+        availableVersions: {
+          radio: 'ba7_3yytb7E',
+          lyrics: 'ba7_3yytb7E',
+          original: 'ba7_3yytb7E'
+        },
+        hasSyncedLyrics: true
+      },
+      {
+        id: 'yt_ecdl_zapatillas',
+        title: 'Zapatillas',
+        artist: 'El Canto del Loco',
+        album: 'Zapatillas',
+        duration: 172,
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b4/d9/95/b4d9959f-7e0b-d278-f3d2-3bfd3f28cf69/886444474774.jpg/600x600bb.jpg',
+        youtubeId: 'Oukwim3UyRs',
+        currentVersion: 'radio',
+        availableVersions: {
+          radio: 'Oukwim3UyRs',
+          lyrics: 'Oukwim3UyRs',
+          original: 'Oukwim3UyRs'
+        },
+        hasSyncedLyrics: true
+      },
+      {
+        id: 'yt_pereza_princesas',
+        title: 'Princesas',
+        artist: 'Pereza',
+        album: 'Animales',
+        duration: 218,
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/05/cf/43/05cf43c6-9467-f377-61c1-4ba29e7116cb/886443657383.jpg/600x600bb.jpg',
+        youtubeId: 'vtq1iD967Xw',
+        currentVersion: 'radio',
+        availableVersions: {
+          radio: 'vtq1iD967Xw',
+          lyrics: 'vtq1iD967Xw',
+          original: 'vtq1iD967Xw'
         },
         hasSyncedLyrics: true
       }

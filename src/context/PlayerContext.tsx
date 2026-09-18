@@ -111,16 +111,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unbindError = youtubeService.onError((code) => {
       console.warn('Player error code:', code);
       setIsLoadingSong(false);
-      // If error playing this version, try switching version or go next
+      setIsPlaying(false);
+      // If error playing this version, try alternative version once, but NEVER auto-skip to nextTrack
       const song = stateRef.current.currentSong;
       if (song) {
         const currVer = song.currentVersion;
         if (currVer === 'radio' && song.availableVersions?.lyrics) {
           switchActiveVersion('lyrics');
-        } else if (currVer !== 'original' && song.availableVersions?.original) {
+        } else if (currVer === 'lyrics' && song.availableVersions?.original) {
           switchActiveVersion('original');
-        } else {
-          nextTrack();
         }
       }
     });
@@ -202,10 +201,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentTime(0);
     setDuration(song.duration || 0);
 
-    // 1. Resolve versions according to priority (Radio Edit -> Lyrics -> Original)
-    const resolvedSong = await resolveSongWithVersions(song);
+    // 1. If youtubeId is already cached/known, use immediately; otherwise resolve
+    const resolvedSong = song.youtubeId ? song : await resolveSongWithVersions(song);
     setCurrentSong(resolvedSong);
-    setActiveVersion(resolvedSong.currentVersion);
+    setActiveVersion(resolvedSong.currentVersion || 'radio');
 
     // 2. Play audio in YouTube engine
     if (resolvedSong.youtubeId) {
@@ -244,7 +243,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       } catch {}
     }
 
-    // 4. Fetch synced lyrics
+    // 5. Fetch synced lyrics
     setIsLoadingLyrics(true);
     fetchLyrics(resolvedSong.title, resolvedSong.artist, resolvedSong.duration)
       .then(lyrics => {
@@ -260,6 +259,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const playSong = async (song: Song, contextQueue?: Song[]) => {
     // Synchronously unlock Safari audio on user touch
     youtubeService.unlockAudio();
+
+    // If song already has youtubeId, trigger loadVideo SYNCHRONOUSLY to satisfy Safari autoplay gesture
+    if (song.youtubeId) {
+      youtubeService.loadVideo(song.youtubeId, 0, true);
+    }
 
     let newQueue = contextQueue ? [...contextQueue] : (queue.length > 0 ? [...queue] : [song]);
     let targetIndex = newQueue.findIndex(s => s.id === song.id);

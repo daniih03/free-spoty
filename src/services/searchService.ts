@@ -27,9 +27,13 @@ FEATURED_PLAYLISTS.forEach(playlist => {
   });
 });
 
-// Verified CORS-enabled Invidious instances
+// Verified Invidious instances with search API support
 let activeInvidiousInstances: string[] = [
   'invidious.f5.si',
+  'inv.nadeko.net',
+  'invidious.nerdvpn.de',
+  'invidious.projectsegfau.lt',
+  'iv.melmac.space',
 ];
 
 // Dynamically refresh healthy CORS instances in background
@@ -184,24 +188,31 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
     return existing;
   }
 
-  // Clean title
+  // Clean title: remove any parentheses and brackets like (Directo Price), [feat. ...], (Remastered)
   const cleanTitle = song.title
-    .replace(/\(.*?(remaster|version|edition).*?\)/gi, '')
-    .replace(/\[.*?(remaster|version|edition).*?\]/gi, '')
+    .replace(/\(.*?\)/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/feat\..*$/i, '')
     .trim();
   const cleanArtist = song.artist.trim();
 
-  // 1. Primary: YouTube Music Topic / Studio Master (clean, zero movie intro)
-  const ytMusicTopicQuery = `${cleanArtist} ${cleanTitle} Topic`;
-  let videoId = await searchYoutubeVideoId(ytMusicTopicQuery);
+  // 1. Primary: Lyric Video (clean studio audio, user uploads have fewer/zero video ads)
+  const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
+  let videoId = await searchYoutubeVideoId(lyricQuery);
 
-  // 2. Fallback: Audio / Radio Edit
+  // 2. Fallback: Audio / Radio Studio Track
   if (!videoId) {
     const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
     videoId = await searchYoutubeVideoId(audioQuery);
   }
 
-  // 3. Fallback: Direct
+  // 3. Fallback: YouTube Music Topic
+  if (!videoId) {
+    const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
+    videoId = await searchYoutubeVideoId(topicQuery);
+  }
+
+  // 4. Fallback: Direct
   if (!videoId) {
     const directQuery = `${cleanArtist} ${cleanTitle}`;
     videoId = await searchYoutubeVideoId(directQuery);
@@ -209,6 +220,7 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
 
   const versions: SongVersions = {
     radio: videoId || undefined,
+    lyrics: videoId || undefined,
   };
 
   const updatedSong: Song = {
@@ -233,11 +245,11 @@ export async function switchSongVersion(song: Song, targetVersion: VersionType):
   let targetId = song.availableVersions?.[targetVersion];
 
   if (!targetId) {
-    const cleanTitle = song.title.replace(/\(.*?\)/g, '').trim();
+    const cleanTitle = song.title.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
     const cleanArtist = song.artist.trim();
 
     let query = '';
-    if (targetVersion === 'radio') query = `${cleanArtist} ${cleanTitle} Topic`;
+    if (targetVersion === 'radio') query = `${cleanArtist} ${cleanTitle} audio`;
     else if (targetVersion === 'lyrics') query = `${cleanArtist} ${cleanTitle} lyrics`;
     else query = `${cleanArtist} ${cleanTitle} video oficial`;
 
