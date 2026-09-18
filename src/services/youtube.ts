@@ -84,8 +84,9 @@ class YouTubeService {
 
     this.htmlAudio.addEventListener('error', (e) => {
       if (this.isUsingHtmlAudio) {
-        console.warn('Backend audio stream error, falling back to Iframe:', e);
-        this.fallbackToIframe();
+        console.warn('Backend audio stream error:', e);
+        this.stateChangeListeners.forEach((fn) => fn(2)); // PAUSED
+        this.errorListeners.forEach((fn) => fn(100));
       }
     });
   }
@@ -246,15 +247,15 @@ class YouTubeService {
             p.then(() => {
               this.stateChangeListeners.forEach((fn) => fn(1)); // PLAYING
             }).catch((err) => {
-              console.warn('HTML Audio play rejected, falling back:', err);
-              this.fallbackToIframe();
+              console.warn('HTML Audio play waiting for user interaction:', err);
+              this.stateChangeListeners.forEach((fn) => fn(2)); // PAUSED
             });
           }
         }
         return;
       } catch (err) {
         console.warn('Error configuring ad-free audio stream:', err);
-        this.fallbackToIframe();
+        this.errorListeners.forEach((fn) => fn(100));
         return;
       }
     }

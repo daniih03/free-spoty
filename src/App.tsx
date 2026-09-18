@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlayerProvider } from './context/PlayerContext';
 import { Sidebar } from './components/Sidebar';
 import { TopNavbar } from './components/TopNavbar';
@@ -23,6 +23,39 @@ const AppContent: React.FC = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewHistory, setViewHistory] = useState<{ view: string; id?: string }[]>([]);
+
+  // Auto-reload on any new deployment detected across all devices
+  useEffect(() => {
+    let clientVer: number | null = null;
+    const checkDeploy = async () => {
+      try {
+        const res = await fetch(`./version.json?_t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.version) {
+            if (clientVer === null) {
+              clientVer = data.version;
+            } else if (clientVer !== data.version) {
+              console.log('[Free-Spoty] Nueva versión desplegada detectada. Recargando automáticamente...');
+              window.location.reload();
+            }
+          }
+        }
+      } catch {}
+    };
+
+    checkDeploy();
+    const timer = setInterval(checkDeploy, 15000); // Check every 15s
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkDeploy();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
 
   // Modals state
   const [isLyricsOpen, setIsLyricsOpen] = useState(false);

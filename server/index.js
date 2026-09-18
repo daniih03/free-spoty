@@ -41,6 +41,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+// Debug endpoint to inspect yt-dlp on Render
+app.get('/api/debug', (req, res) => {
+  const { id = 'dQw4w9WgXcQ' } = req.query;
+  exec('yt-dlp --version', (vErr, vOut) => {
+    exec(`yt-dlp -g -f "bestaudio/best" --no-warnings "https://www.youtube.com/watch?v=${id}"`, { timeout: 15000 }, (err, stdout, stderr) => {
+      res.json({
+        ytDlpVersion: vOut ? vOut.trim() : vErr?.message,
+        error: err ? err.message : null,
+        stderr: stderr ? stderr.slice(0, 500) : null,
+        url: stdout ? stdout.trim().split('\n')[0].slice(0, 100) + '...' : null,
+      });
+    });
+  });
+});
+
 // Welcome / Info
 app.get('/', (req, res) => {
   res.send(`
