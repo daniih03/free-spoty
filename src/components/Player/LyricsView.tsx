@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
-import { VersionSelector } from './VersionSelector';
 import { X, Mic2, Music, Sparkles } from 'lucide-react';
 
 interface LyricsViewProps {
@@ -55,7 +54,6 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          <VersionSelector compact />
           <button
             onClick={onClose}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors"

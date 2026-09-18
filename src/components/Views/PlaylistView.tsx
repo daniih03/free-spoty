@@ -95,7 +95,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
             <span>•</span>
             <span>Aprox. {totalMinutes} min</span>
             <span>•</span>
-            <span className="text-emerald-400">Audio Limpio de YouTube</span>
+            <span className="text-emerald-400">Audio Alta Fidelidad</span>
           </div>
         </div>
       </div>

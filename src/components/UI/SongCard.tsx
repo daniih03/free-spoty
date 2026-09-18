@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Song } from '../../types/music';
 import { usePlayer } from '../../context/PlayerContext';
 import { isSongLiked, toggleLikeSong, getCustomPlaylists, addSongToPlaylist } from '../../services/storageService';
-import { Play, Pause, Heart, MoreVertical, Plus, Radio, FileText, Film, Sparkles } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Plus } from 'lucide-react';
 
 interface SongCardProps {
   song: Song;
@@ -31,27 +31,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
     toggleLikeSong(song);
   };
 
-  const getVersionBadge = () => {
-    if (song.currentVersion === 'radio') {
-      return (
-        <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-medium">
-          <Sparkles className="w-2.5 h-2.5" /> YT Music
-        </span>
-      );
-    }
-    if (song.currentVersion === 'lyrics') {
-      return (
-        <span className="flex items-center gap-1 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-full font-medium">
-          <FileText className="w-2.5 h-2.5" /> Lyrics
-        </span>
-      );
-    }
-    return (
-      <span className="flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded-full font-medium">
-        <Film className="w-2.5 h-2.5" /> Original
-      </span>
-    );
-  };
+
 
   return (
     <div
@@ -119,10 +99,8 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
         <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
       </div>
 
-      {/* Version Badge & Actions */}
-      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
-        {getVersionBadge()}
-
+      {/* Actions */}
+      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-end">
         <div className="relative">
           <button
             onClick={(e) => {

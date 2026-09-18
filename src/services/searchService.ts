@@ -196,23 +196,23 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
     .trim();
   const cleanArtist = song.artist.trim();
 
-  // 1. Primary: Lyric Video (clean studio audio, user uploads have fewer/zero video ads)
-  const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
-  let videoId = await searchYoutubeVideoId(lyricQuery);
+  // 1. Primary: Studio Audio Track / Official Master
+  const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
+  let videoId = await searchYoutubeVideoId(audioQuery);
 
-  // 2. Fallback: Audio / Radio Studio Track
-  if (!videoId) {
-    const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
-    videoId = await searchYoutubeVideoId(audioQuery);
-  }
-
-  // 3. Fallback: YouTube Music Topic
+  // 2. Fallback: Official Topic Release
   if (!videoId) {
     const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
     videoId = await searchYoutubeVideoId(topicQuery);
   }
 
-  // 4. Fallback: Direct
+  // 3. Fallback: Lyric Video
+  if (!videoId) {
+    const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
+    videoId = await searchYoutubeVideoId(lyricQuery);
+  }
+
+  // 4. Fallback: Direct search
   if (!videoId) {
     const directQuery = `${cleanArtist} ${cleanTitle}`;
     videoId = await searchYoutubeVideoId(directQuery);

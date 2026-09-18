@@ -3,7 +3,7 @@ import { searchSongsMetadata } from '../../services/searchService';
 import { Song } from '../../types/music';
 import { SongCard } from '../UI/SongCard';
 import { usePlayer } from '../../context/PlayerContext';
-import { Search, Music, Play, Pause, Sparkles, Radio } from 'lucide-react';
+import { Search, Music, Play, Pause, Sparkles } from 'lucide-react';
 
 interface SearchViewProps {
   query: string;
@@ -72,7 +72,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
           {query.trim() ? `Resultados para "${query}"` : 'Explorar y Buscar'}
         </h2>
         <p className="text-xs text-zinc-400">
-          Audio master oficial de YouTube Music sin anuncios ni interrupciones
+          Audio oficial en alta fidelidad sin anuncios ni interrupciones
         </p>
       </div>
 
@@ -146,8 +146,8 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                       <p className="text-sm text-zinc-400 font-medium mb-3">{topResult.artist}</p>
 
                       <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-medium">
-                          <Radio className="w-3 h-3" /> YouTube Music Master
+                        <span className="text-xs bg-white/10 text-white/90 border border-white/15 px-3 py-1 rounded-full font-semibold">
+                          Canción
                         </span>
                       </div>
 

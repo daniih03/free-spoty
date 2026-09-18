@@ -3,8 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Sparkles,
-  Radio,
   Sliders,
   Shuffle,
 } from 'lucide-react';
@@ -67,14 +65,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {/* System Badges & Settings */}
       <div className="flex items-center gap-3">
-        {/* YouTube Music Mode Indicator */}
-        <div
-          className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium"
-          title="Prioridad Inteligente: Reproduce pistas oficiales de estudio de YouTube Music"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span>YouTube Music Master</span>
-        </div>
 
         {/* True Shuffle Badge */}
         {isShuffle && (

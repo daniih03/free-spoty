@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
 import { isSongLiked, toggleLikeSong } from '../../services/storageService';
-import { VersionSelector } from './VersionSelector';
 import {
   Play,
   Pause,
@@ -238,8 +237,6 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
 
         {/* Extra Tools & Volume (Right) */}
         <div className="flex items-center justify-end gap-3 w-1/4 min-w-[200px]">
-          <VersionSelector compact />
-
           <button
             onClick={onOpenLyrics}
             className={`p-2 rounded-full transition-colors ${
@@ -500,10 +497,8 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 </button>
               </div>
 
-              {/* Version Selector & Extra Tools */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                <VersionSelector compact />
-
+              {/* Extra Tools */}
+              <div className="flex items-center justify-end pt-2 border-t border-white/10">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
