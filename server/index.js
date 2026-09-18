@@ -1,8 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { spawn, exec } = require('child_process');
-const https = require('https');
-const http = require('http');
+const { Readable } = require('stream');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,14 +21,14 @@ function getAudioStreamUrl(videoId) {
       return resolve(cached.url);
     }
 
-    const command = `yt-dlp -g -f "bestaudio[ext=m4a]/bestaudio/best" "https://www.youtube.com/watch?v=${videoId}"`;
-    exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
+    const command = `yt-dlp -g -f "bestaudio[ext=m4a]/bestaudio/best" --no-warnings --no-playlist "https://www.youtube.com/watch?v=${videoId}"`;
+    exec(command, { timeout: 20000 }, (error, stdout, stderr) => {
       if (error) {
         return reject(new Error(stderr || error.message));
       }
       const url = stdout.trim().split('\n')[0];
-      if (!url) {
-        return reject(new Error('No stream URL found'));
+      if (!url || !url.startsWith('http')) {
+        return reject(new Error('No valid stream URL found'));
       }
       urlCache.set(videoId, { url, expire: Date.now() + 3 * 3600 * 1000 });
       resolve(url);
@@ -75,57 +74,59 @@ app.get('/api/stream', async (req, res) => {
     return res.status(400).json({ error: 'Missing id parameter' });
   }
 
+  // Set global CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+
   try {
     const audioUrl = await getAudioStreamUrl(id);
-    const parsedUrl = new URL(audioUrl);
-    const client = parsedUrl.protocol === 'https:' ? https : http;
 
-    const headers = {};
+    const fetchHeaders = {};
     if (req.headers.range) {
-      headers['Range'] = req.headers.range;
+      fetchHeaders['Range'] = req.headers.range;
     }
-    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+    fetchHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
-    const proxyReq = client.get(audioUrl, { headers }, (proxyRes) => {
-      res.status(proxyRes.statusCode);
+    const response = await fetch(audioUrl, {
+      headers: fetchHeaders,
+      redirect: 'follow',
+    });
 
-      const forwardHeaders = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
-      for (const h of forwardHeaders) {
-        if (proxyRes.headers[h]) {
-          res.setHeader(h, proxyRes.headers[h]);
-        }
+    res.status(response.status);
+
+    const forwardHeaders = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
+    for (const h of forwardHeaders) {
+      const val = response.headers.get(h);
+      if (val) {
+        res.setHeader(h, val);
       }
+    }
 
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Headers', 'Range');
-      res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+    if (response.body) {
+      const nodeStream = Readable.fromWeb(response.body);
+      nodeStream.pipe(res);
 
-      proxyRes.pipe(res);
-    });
-
-    proxyReq.on('error', (err) => {
-      console.error('Proxy request error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Failed to stream audio' });
-      }
-    });
-
-    req.on('close', () => {
-      proxyReq.destroy();
-    });
+      req.on('close', () => {
+        nodeStream.destroy();
+      });
+    } else {
+      res.end();
+    }
 
   } catch (err) {
     console.warn('Stream extraction fallback to direct yt-dlp spawn:', err.message);
+
     const proc = spawn('yt-dlp', [
       '-f', 'bestaudio[ext=m4a]/bestaudio/best',
       '-o', '-',
       '--no-playlist',
+      '--no-warnings',
       `https://www.youtube.com/watch?v=${id}`
     ]);
 
     res.setHeader('Content-Type', 'audio/mp4');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     proc.stdout.pipe(res);
 
     proc.on('error', (pErr) => {
