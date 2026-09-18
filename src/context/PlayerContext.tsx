@@ -211,6 +211,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       youtubeService.loadVideo(resolvedSong.youtubeId, 0, true);
       youtubeService.setVolume(stateRef.current.isMuted ? 0 : stateRef.current.volume);
       setIsPlaying(true);
+    } else {
+      setIsLoadingSong(false);
+      console.warn(`No se encontró audio para "${song.title}" de ${song.artist}`);
     }
 
     // 3. Add to history
