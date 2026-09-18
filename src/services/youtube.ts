@@ -34,6 +34,7 @@ class YouTubeService {
   private isPlayerReady = false;
   private isApiLoaded = false;
   private pendingVideoId: string | null = null;
+  private currentVideoId: string | null = null;
   private pendingAutoplay = true;
   private containerId = 'free-spoty-yt-player';
   private watchdogTimer: any = null;
@@ -191,13 +192,6 @@ class YouTubeService {
    * Synchronously called on user click/touch to warm up audio session in Safari.
    */
   public unlockAudio() {
-    if (this.htmlAudio) {
-      try {
-        this.htmlAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-        const p = this.htmlAudio.play();
-        if (p !== undefined) p.catch(() => {});
-      } catch {}
-    }
     if (!this.player) {
       this.initApi();
     }
@@ -223,9 +217,6 @@ class YouTubeService {
     this.pendingVideoId = videoId;
     this.pendingAutoplay = autoplay;
 
-    // Signal buffering to UI
-    this.stateChangeListeners.forEach((fn) => fn(3));
-
     const backendUrl = getCustomBackendUrl();
 
     // 1. If backend URL is set: Play 100% ad-free native audio stream
@@ -237,8 +228,24 @@ class YouTubeService {
         try { this.player.pauseVideo(); } catch {}
       }
 
+      const targetSrc = `${backendUrl}/api/stream?id=${encodeURIComponent(videoId)}`;
+
+      // If already set to this track, simply ensure it is playing without aborting network stream
+      if (this.currentVideoId === videoId && this.htmlAudio.src === targetSrc) {
+        if (startSeconds > 0) this.htmlAudio.currentTime = startSeconds;
+        if (autoplay && this.htmlAudio.paused) {
+          this.htmlAudio.play().catch(() => {});
+        }
+        return;
+      }
+
+      this.currentVideoId = videoId;
+
+      // Signal buffering to UI
+      this.stateChangeListeners.forEach((fn) => fn(3));
+
       try {
-        this.htmlAudio.src = `${backendUrl}/api/stream?id=${encodeURIComponent(videoId)}`;
+        this.htmlAudio.src = targetSrc;
         this.htmlAudio.currentTime = startSeconds || 0;
 
         if (autoplay) {
@@ -247,8 +254,14 @@ class YouTubeService {
             p.then(() => {
               this.stateChangeListeners.forEach((fn) => fn(1)); // PLAYING
             }).catch((err) => {
-              console.warn('HTML Audio play waiting for user interaction:', err);
-              this.stateChangeListeners.forEach((fn) => fn(2)); // PAUSED
+              console.warn('HTML Audio play deferred until stream data arrives:', err);
+              // As soon as first audio chunk is buffered, play automatically
+              const onCanPlay = () => {
+                if (this.htmlAudio && autoplay) {
+                  this.htmlAudio.play().catch(() => {});
+                }
+              };
+              this.htmlAudio?.addEventListener('canplay', onCanPlay, { once: true });
             });
           }
         }
