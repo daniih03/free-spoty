@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PlayerProvider, usePlayer } from './context/PlayerContext';
+import React, { useState } from 'react';
+import { PlayerProvider } from './context/PlayerContext';
 import { Sidebar } from './components/Sidebar';
 import { TopNavbar } from './components/TopNavbar';
 import { BottomPlayer } from './components/Player/BottomPlayer';
@@ -11,13 +11,15 @@ import { AmbientBackground } from './components/UI/AmbientBackground';
 import { HomeView } from './components/Views/HomeView';
 import { SearchView } from './components/Views/SearchView';
 import { PlaylistView } from './components/Views/PlaylistView';
+import { LibraryView } from './components/Views/LibraryView';
+import { MobileNav } from './components/Navigation/MobileNav';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { FEATURED_PLAYLISTS } from './services/exploreData';
 import { getCustomPlaylists, getLikedSongs, getPlayHistory } from './services/storageService';
 import { Playlist } from './types/music';
 
 const AppContent: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'search' | 'liked' | 'history' | 'playlist'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'search' | 'library' | 'liked' | 'history' | 'playlist'>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewHistory, setViewHistory] = useState<{ view: string; id?: string }[]>([]);
@@ -109,7 +111,7 @@ const AppContent: React.FC = () => {
 
       {/* Main App Workspace */}
       <div className="flex-1 flex overflow-hidden z-10">
-        {/* Sidebar */}
+        {/* Sidebar (Hidden on mobile, 100% visible on desktop) */}
         <Sidebar
           currentView={currentView === 'playlist' ? `playlist_${selectedPlaylistId}` : currentView}
           onNavigate={(view, playlistId) => navigateTo(view, playlistId)}
@@ -130,8 +132,8 @@ const AppContent: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          {/* View Container with custom scroll */}
-          <div className="flex-1 overflow-y-auto pb-28 scrollbar-thin">
+          {/* View Container with custom scroll & bottom padding for player/nav */}
+          <div className="flex-1 overflow-y-auto pb-36 md:pb-28 scrollbar-thin">
             {currentView === 'home' && (
               <HomeView onSelectPlaylist={(id) => navigateTo('playlist', id)} />
             )}
@@ -140,6 +142,15 @@ const AppContent: React.FC = () => {
               <SearchView
                 query={searchQuery}
                 onSearchChange={(q) => setSearchQuery(q)}
+              />
+            )}
+
+            {currentView === 'library' && (
+              <LibraryView
+                onSelectPlaylist={(id) => navigateTo('playlist', id)}
+                onNavigateLiked={() => navigateTo('liked')}
+                onNavigateHistory={() => navigateTo('history')}
+                onOpenImportExport={() => setIsImportExportOpen(true)}
               />
             )}
 
@@ -153,13 +164,19 @@ const AppContent: React.FC = () => {
         </main>
       </div>
 
-      {/* Fixed Bottom Player Bar */}
+      {/* Bottom Player: Desktop bar on desktop, Mini-player + Sheet on mobile */}
       <BottomPlayer
         onOpenLyrics={() => setIsLyricsOpen(true)}
         onOpenQueue={() => setIsQueueOpen(true)}
         onOpenEqualizer={() => setIsEqualizerOpen(true)}
         isLyricsOpen={isLyricsOpen}
         isQueueOpen={isQueueOpen}
+      />
+
+      {/* Mobile Bottom Navigation (Hidden on desktop) */}
+      <MobileNav
+        currentView={currentView}
+        onNavigate={(v) => navigateTo(v)}
       />
 
       {/* Modals & Overlays */}

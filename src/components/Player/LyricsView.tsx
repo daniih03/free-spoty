@@ -68,25 +68,24 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
 
       {/* Main split content: Album art on left, Lyrics on right */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden max-w-7xl mx-auto w-full p-6 gap-8 items-center">
-        {/* Left: Big vinyl/cover presentation */}
-        <div className="md:col-span-5 flex flex-col items-center justify-center p-4 text-center">
-          <div className="relative group w-64 h-64 md:w-80 md:h-80 rounded-3xl overflow-hidden shadow-2xl shadow-emerald-500/10 border border-white/15">
+        {/* Left: Vinyl/cover presentation (compact on mobile, big on desktop) */}
+        <div className="md:col-span-5 flex flex-col items-center justify-center p-2 md:p-4 text-center">
+          <div className="relative group w-32 h-32 md:w-80 md:h-80 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-white/15">
             <img
               src={currentSong.coverUrl}
               alt={currentSong.title}
-              className="w-full h-full object-cover rounded-3xl transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover rounded-2xl md:rounded-3xl transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
           </div>
 
-          <div className="mt-6">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
+          <div className="mt-3 md:mt-6">
+            <h1 className="text-xl md:text-3xl font-bold tracking-tight text-white mb-1 md:mb-2 truncate max-w-xs md:max-w-none">
               {currentSong.title}
             </h1>
-            <p className="text-lg text-zinc-400 font-medium">{currentSong.artist}</p>
-            {currentSong.album && (
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{currentSong.album}</p>
-            )}
+            <p className="text-sm md:text-lg text-zinc-400 font-medium truncate max-w-xs md:max-w-none">
+              {currentSong.artist}
+            </p>
           </div>
         </div>
 
