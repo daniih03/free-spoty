@@ -1,0 +1,13 @@
+{
+  "name": "free-spoty-server",
+  "version": "1.0.0",
+  "description": "High-performance ad-free audio streaming proxy for Free-Spoty",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

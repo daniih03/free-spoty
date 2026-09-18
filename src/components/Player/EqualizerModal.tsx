@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
 import { getCustomApiKey, setCustomApiKey } from '../../services/searchService';
-import { X, Sliders, Moon, Gauge, Key, Check, Sparkles } from 'lucide-react';
+import { getCustomBackendUrl, setCustomBackendUrl } from '../../services/youtube';
+import { X, Sliders, Moon, Gauge, Key, Check, Sparkles, Server, ShieldCheck } from 'lucide-react';
 
 interface EqualizerModalProps {
   isOpen: boolean;
@@ -38,12 +39,21 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
   const [apiKeyInput, setApiKeyInput] = useState(getCustomApiKey());
   const [isKeySaved, setIsKeySaved] = useState(false);
 
+  const [backendInput, setBackendInput] = useState(getCustomBackendUrl());
+  const [isBackendSaved, setIsBackendSaved] = useState(false);
+
   if (!isOpen) return null;
 
   const handleSaveApiKey = () => {
     setCustomApiKey(apiKeyInput);
     setIsKeySaved(true);
     setTimeout(() => setIsKeySaved(false), 2000);
+  };
+
+  const handleSaveBackend = () => {
+    setCustomBackendUrl(backendInput);
+    setIsBackendSaved(true);
+    setTimeout(() => setIsBackendSaved(false), 2000);
   };
 
   const formatTimer = (secs: number) => {
@@ -164,7 +174,40 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
           </p>
         </div>
 
-        {/* 4. YouTube API Key (Optional) */}
+        {/* 4. Ad-Free Streaming Server (0 Anuncios) */}
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Server className="w-3.5 h-3.5 text-brand-green" />
+              Servidor de Audio (0 Anuncios)
+            </label>
+            {backendInput && (
+              <span className="flex items-center gap-1 text-[11px] text-brand-green font-medium">
+                <ShieldCheck className="w-3.5 h-3.5" /> Activo
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={backendInput}
+              onChange={(e) => setBackendInput(e.target.value)}
+              placeholder="https://tu-servidor.onrender.com"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green"
+            />
+            <button
+              onClick={handleSaveBackend}
+              className="px-3 py-1.5 rounded-lg bg-brand-green/20 hover:bg-brand-green/30 text-brand-green text-xs font-semibold flex items-center gap-1 transition-colors border border-brand-green/30"
+            >
+              {isBackendSaved ? <Check className="w-3.5 h-3.5 text-brand-green" /> : 'Guardar'}
+            </button>
+          </div>
+          <p className="text-[11px] text-zinc-500">
+            Conecta tu micro-backend de Render para transmitir audio puro en cualquier dispositivo sin un solo anuncio.
+          </p>
+        </div>
+
+        {/* 5. YouTube API Key (Optional) */}
         <div className="space-y-2 pt-2 border-t border-white/10">
           <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Key className="w-3.5 h-3.5 text-amber-400" />

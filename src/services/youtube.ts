@@ -8,6 +8,23 @@ declare global {
 export type PlayerStateChangeHandler = (state: number) => void;
 export type PlayerErrorHandler = (errorCode: number) => void;
 
+export const BACKEND_URL_STORAGE_KEY = 'free_spoty_backend_url';
+
+export function getCustomBackendUrl(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(BACKEND_URL_STORAGE_KEY) || (import.meta as any).env?.VITE_STREAM_API_URL || '';
+}
+
+export function setCustomBackendUrl(url: string) {
+  if (typeof window === 'undefined') return;
+  const clean = url.trim().replace(/\/+$/, '');
+  if (clean) {
+    localStorage.setItem(BACKEND_URL_STORAGE_KEY, clean);
+  } else {
+    localStorage.removeItem(BACKEND_URL_STORAGE_KEY);
+  }
+}
+
 class YouTubeService {
   private player: any = null;
   private isPlayerReady = false;
@@ -17,11 +34,56 @@ class YouTubeService {
   private containerId = 'free-spoty-yt-player';
   private watchdogTimer: any = null;
 
+  // Native HTML5 audio engine for 100% Ad-Free backend streaming
+  private htmlAudio: HTMLAudioElement | null = null;
+  private isUsingHtmlAudio = false;
+
   private stateChangeListeners: Set<PlayerStateChangeHandler> = new Set();
   private errorListeners: Set<PlayerErrorHandler> = new Set();
 
   constructor() {
+    this.initHtmlAudio();
     this.initApi();
+  }
+
+  private initHtmlAudio() {
+    if (typeof window === 'undefined') return;
+
+    this.htmlAudio = new Audio();
+    this.htmlAudio.preload = 'auto';
+    this.htmlAudio.setAttribute('playsinline', 'true');
+    this.htmlAudio.setAttribute('webkit-playsinline', 'true');
+
+    this.htmlAudio.addEventListener('playing', () => {
+      if (this.isUsingHtmlAudio) {
+        this.stateChangeListeners.forEach((fn) => fn(1)); // 1 = PLAYING
+      }
+    });
+
+    this.htmlAudio.addEventListener('pause', () => {
+      if (this.isUsingHtmlAudio) {
+        this.stateChangeListeners.forEach((fn) => fn(2)); // 2 = PAUSED
+      }
+    });
+
+    this.htmlAudio.addEventListener('ended', () => {
+      if (this.isUsingHtmlAudio) {
+        this.stateChangeListeners.forEach((fn) => fn(0)); // 0 = ENDED
+      }
+    });
+
+    this.htmlAudio.addEventListener('waiting', () => {
+      if (this.isUsingHtmlAudio) {
+        this.stateChangeListeners.forEach((fn) => fn(3)); // 3 = BUFFERING
+      }
+    });
+
+    this.htmlAudio.addEventListener('error', (e) => {
+      if (this.isUsingHtmlAudio) {
+        console.warn('Backend audio stream error, falling back to Iframe:', e);
+        this.fallbackToIframe();
+      }
+    });
   }
 
   private initApi() {
@@ -56,8 +118,6 @@ class YouTubeService {
     if (!container) {
       container = document.createElement('div');
       container.id = this.containerId;
-      // Position inside viewport (bottom: 0, right: 0) with non-zero opacity
-      // so iOS Safari's WebKit media engine does not cull or suspend media decoding!
       container.style.position = 'fixed';
       container.style.bottom = '0px';
       container.style.right = '0px';
@@ -89,28 +149,31 @@ class YouTubeService {
         events: {
           onReady: () => {
             this.isPlayerReady = true;
-            if (this.pendingVideoId) {
+            if (this.pendingVideoId && !this.isUsingHtmlAudio) {
               this.loadVideo(this.pendingVideoId, 0, this.pendingAutoplay);
               this.pendingVideoId = null;
             }
           },
           onStateChange: (event: any) => {
-            // Clear watchdog if playing or paused
-            if (event.data === 1 || event.data === 2) {
+            if (!this.isUsingHtmlAudio) {
+              if (event.data === 1 || event.data === 2) {
+                if (this.watchdogTimer) {
+                  clearTimeout(this.watchdogTimer);
+                  this.watchdogTimer = null;
+                }
+              }
+              this.stateChangeListeners.forEach((fn) => fn(event.data));
+            }
+          },
+          onError: (event: any) => {
+            if (!this.isUsingHtmlAudio) {
+              console.warn('[YouTube Player Error]', event.data);
               if (this.watchdogTimer) {
                 clearTimeout(this.watchdogTimer);
                 this.watchdogTimer = null;
               }
+              this.errorListeners.forEach((fn) => fn(event.data));
             }
-            this.stateChangeListeners.forEach((fn) => fn(event.data));
-          },
-          onError: (event: any) => {
-            console.warn('[YouTube Player Error]', event.data);
-            if (this.watchdogTimer) {
-              clearTimeout(this.watchdogTimer);
-              this.watchdogTimer = null;
-            }
-            this.errorListeners.forEach((fn) => fn(event.data));
           },
         },
       });
@@ -123,8 +186,31 @@ class YouTubeService {
    * Synchronously called on user click/touch to warm up audio session in Safari.
    */
   public unlockAudio() {
+    if (this.htmlAudio) {
+      try {
+        this.htmlAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        const p = this.htmlAudio.play();
+        if (p !== undefined) p.catch(() => {});
+      } catch {}
+    }
     if (!this.player) {
       this.initApi();
+    }
+  }
+
+  private fallbackToIframe() {
+    this.isUsingHtmlAudio = false;
+    if (this.htmlAudio) {
+      this.htmlAudio.pause();
+    }
+    if (this.pendingVideoId && this.player && this.player.loadVideoById) {
+      try {
+        this.player.loadVideoById({
+          videoId: this.pendingVideoId,
+          startSeconds: 0,
+        });
+        this.player.playVideo();
+      } catch {}
     }
   }
 
@@ -134,6 +220,46 @@ class YouTubeService {
 
     // Signal buffering to UI
     this.stateChangeListeners.forEach((fn) => fn(3));
+
+    const backendUrl = getCustomBackendUrl();
+
+    // 1. If backend URL is set: Play 100% ad-free native audio stream
+    if (backendUrl && this.htmlAudio) {
+      this.isUsingHtmlAudio = true;
+
+      // Pause Iframe if running
+      if (this.player && this.player.pauseVideo) {
+        try { this.player.pauseVideo(); } catch {}
+      }
+
+      try {
+        this.htmlAudio.src = `${backendUrl}/api/stream?id=${encodeURIComponent(videoId)}`;
+        this.htmlAudio.currentTime = startSeconds || 0;
+
+        if (autoplay) {
+          const p = this.htmlAudio.play();
+          if (p !== undefined) {
+            p.then(() => {
+              this.stateChangeListeners.forEach((fn) => fn(1)); // PLAYING
+            }).catch((err) => {
+              console.warn('HTML Audio play rejected, falling back:', err);
+              this.fallbackToIframe();
+            });
+          }
+        }
+        return;
+      } catch (err) {
+        console.warn('Error configuring ad-free audio stream:', err);
+        this.fallbackToIframe();
+        return;
+      }
+    }
+
+    // 2. Fallback: YouTube Iframe
+    this.isUsingHtmlAudio = false;
+    if (this.htmlAudio) {
+      this.htmlAudio.pause();
+    }
 
     if (this.player && this.isPlayerReady && this.player.loadVideoById) {
       try {
@@ -146,16 +272,13 @@ class YouTubeService {
           this.player.playVideo();
         }
 
-        // Watchdog: If stuck in buffering/loading for > 5s, attempt gentle play recovery
         if (this.watchdogTimer) clearTimeout(this.watchdogTimer);
         this.watchdogTimer = setTimeout(() => {
           if (this.player && typeof this.player.getPlayerState === 'function') {
             const state = this.player.getPlayerState();
             if (state === 3 || state === -1) {
               console.warn('[YouTube Watchdog] Audio stalled, attempting play kick...');
-              try {
-                this.player.playVideo();
-              } catch {}
+              try { this.player.playVideo(); } catch {}
             }
           }
         }, 5000);
@@ -166,6 +289,11 @@ class YouTubeService {
   }
 
   public play() {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      this.htmlAudio.play().catch(() => this.fallbackToIframe());
+      return;
+    }
+
     if (this.player && this.player.playVideo) {
       try {
         this.player.playVideo();
@@ -176,6 +304,11 @@ class YouTubeService {
   }
 
   public pause() {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      this.htmlAudio.pause();
+      return;
+    }
+
     if (this.player && this.player.pauseVideo) {
       try {
         this.player.pauseVideo();
@@ -186,6 +319,11 @@ class YouTubeService {
   }
 
   public seekTo(seconds: number) {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      this.htmlAudio.currentTime = seconds;
+      return;
+    }
+
     if (this.player && this.player.seekTo) {
       try {
         this.player.seekTo(seconds, true);
@@ -197,6 +335,11 @@ class YouTubeService {
 
   public setVolume(volume: number) {
     const clamped = Math.min(100, Math.max(0, volume));
+
+    if (this.htmlAudio) {
+      this.htmlAudio.volume = clamped / 100;
+    }
+
     if (this.player && this.player.setVolume) {
       try {
         this.player.setVolume(clamped);
@@ -207,6 +350,10 @@ class YouTubeService {
   }
 
   public setPlaybackRate(rate: number) {
+    if (this.htmlAudio) {
+      this.htmlAudio.playbackRate = rate;
+    }
+
     if (this.player && this.player.setPlaybackRate) {
       try {
         this.player.setPlaybackRate(rate);
@@ -217,6 +364,10 @@ class YouTubeService {
   }
 
   public getCurrentTime(): number {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      return this.htmlAudio.currentTime || 0;
+    }
+
     if (this.player && this.player.getCurrentTime) {
       try {
         return this.player.getCurrentTime() || 0;
@@ -228,6 +379,10 @@ class YouTubeService {
   }
 
   public getDuration(): number {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      return this.htmlAudio.duration || 0;
+    }
+
     if (this.player && this.player.getDuration) {
       try {
         return this.player.getDuration() || 0;
@@ -239,6 +394,10 @@ class YouTubeService {
   }
 
   public getPlayerState(): number {
+    if (this.isUsingHtmlAudio && this.htmlAudio) {
+      return this.htmlAudio.paused ? 2 : 1;
+    }
+
     if (this.player && this.player.getPlayerState) {
       try {
         return this.player.getPlayerState();
