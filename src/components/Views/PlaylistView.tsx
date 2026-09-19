@@ -23,9 +23,10 @@ import {
 interface PlaylistViewProps {
   playlist: Playlist;
   onNavigateHome: () => void;
+  onNavigateArtist?: (artistName: string) => void;
 }
 
-export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigateHome }) => {
+export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigateHome, onNavigateArtist }) => {
   const { currentSong, isPlaying, playSong, togglePlay, isShuffle, toggleShuffle } = usePlayer();
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -215,7 +216,19 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                     >
                       {song.title}
                     </p>
-                    <p className="truncate text-xs text-zinc-400">{song.artist}</p>
+                    <p
+                      onClick={(e) => {
+                        if (onNavigateArtist) {
+                          e.stopPropagation();
+                          onNavigateArtist(song.artist);
+                        }
+                      }}
+                      className={`truncate text-xs text-zinc-400 ${
+                        onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+                      }`}
+                    >
+                      {song.artist}
+                    </p>
                   </div>
                 </div>
 

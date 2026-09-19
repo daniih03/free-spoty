@@ -38,6 +38,7 @@ class YouTubeService {
   private pendingAutoplay = true;
   private containerId = 'free-spoty-yt-player';
   private watchdogTimer: any = null;
+  private streamTimeout: any = null;
 
   // Native HTML5 audio engine for 100% Ad-Free backend streaming
   private htmlAudio: HTMLAudioElement | null = null;
@@ -60,6 +61,10 @@ class YouTubeService {
     this.htmlAudio.setAttribute('webkit-playsinline', 'true');
 
     this.htmlAudio.addEventListener('playing', () => {
+      if (this.streamTimeout) {
+        clearTimeout(this.streamTimeout);
+        this.streamTimeout = null;
+      }
       if (this.isUsingHtmlAudio) {
         this.stateChangeListeners.forEach((fn) => fn(1)); // 1 = PLAYING
       }
@@ -83,11 +88,17 @@ class YouTubeService {
       }
     });
 
+    this.htmlAudio.addEventListener('canplay', () => {
+      if (this.streamTimeout) {
+        clearTimeout(this.streamTimeout);
+        this.streamTimeout = null;
+      }
+    });
+
     this.htmlAudio.addEventListener('error', (e) => {
       if (this.isUsingHtmlAudio) {
-        console.warn('Backend audio stream error:', e);
-        this.stateChangeListeners.forEach((fn) => fn(2)); // PAUSED
-        this.errorListeners.forEach((fn) => fn(100));
+        console.warn('Backend audio stream error, falling back to YouTube player immediately:', e);
+        this.fallbackToIframe();
       }
     });
   }
@@ -197,25 +208,46 @@ class YouTubeService {
     }
   }
 
-  private fallbackToIframe() {
+  public fallbackToIframe() {
+    if (this.streamTimeout) {
+      clearTimeout(this.streamTimeout);
+      this.streamTimeout = null;
+    }
     this.isUsingHtmlAudio = false;
     if (this.htmlAudio) {
       this.htmlAudio.pause();
-    }
-    if (this.pendingVideoId && this.player && this.player.loadVideoById) {
       try {
-        this.player.loadVideoById({
-          videoId: this.pendingVideoId,
-          startSeconds: 0,
-        });
-        this.player.playVideo();
+        this.htmlAudio.removeAttribute('src');
+        this.htmlAudio.load();
       } catch {}
+    }
+    if (this.pendingVideoId) {
+      if (this.player && this.isPlayerReady && typeof this.player.loadVideoById === 'function') {
+        try {
+          this.player.loadVideoById({
+            videoId: this.pendingVideoId,
+            startSeconds: 0,
+          });
+          if (this.pendingAutoplay && typeof this.player.playVideo === 'function') {
+            this.player.playVideo();
+          }
+        } catch (e) {
+          console.warn('fallbackToIframe load error:', e);
+        }
+      } else if (!this.isPlayerReady) {
+        this.initApi();
+      }
     }
   }
 
   public loadVideo(videoId: string, startSeconds = 0, autoplay = true) {
     this.pendingVideoId = videoId;
     this.pendingAutoplay = autoplay;
+
+    if (this.streamTimeout) {
+      clearTimeout(this.streamTimeout);
+      this.streamTimeout = null;
+    }
 
     const backendUrl = getCustomBackendUrl();
 
@@ -244,6 +276,14 @@ class YouTubeService {
       // Signal buffering to UI
       this.stateChangeListeners.forEach((fn) => fn(3));
 
+      // Safety fallback: if backend stream does not start playing within 3.5s, switch immediately to YouTube player
+      this.streamTimeout = setTimeout(() => {
+        if (this.isUsingHtmlAudio && this.htmlAudio && this.htmlAudio.paused && this.htmlAudio.currentTime === 0) {
+          console.warn('[Stream Timeout] Audio stream delayed, switching to YouTube player for instant playback...');
+          this.fallbackToIframe();
+        }
+      }, 3500);
+
       try {
         this.htmlAudio.src = targetSrc;
         this.htmlAudio.currentTime = startSeconds || 0;
@@ -252,11 +292,19 @@ class YouTubeService {
           const p = this.htmlAudio.play();
           if (p !== undefined) {
             p.then(() => {
+              if (this.streamTimeout) {
+                clearTimeout(this.streamTimeout);
+                this.streamTimeout = null;
+              }
               this.stateChangeListeners.forEach((fn) => fn(1)); // PLAYING
             }).catch((err) => {
               console.warn('HTML Audio play deferred until stream data arrives:', err);
               // As soon as first audio chunk is buffered, play automatically
               const onCanPlay = () => {
+                if (this.streamTimeout) {
+                  clearTimeout(this.streamTimeout);
+                  this.streamTimeout = null;
+                }
                 if (this.htmlAudio && autoplay) {
                   this.htmlAudio.play().catch(() => {});
                 }
@@ -268,7 +316,7 @@ class YouTubeService {
         return;
       } catch (err) {
         console.warn('Error configuring ad-free audio stream:', err);
-        this.errorListeners.forEach((fn) => fn(100));
+        this.fallbackToIframe();
         return;
       }
     }

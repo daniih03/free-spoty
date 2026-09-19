@@ -12,6 +12,7 @@ import { HomeView } from './components/Views/HomeView';
 import { SearchView } from './components/Views/SearchView';
 import { PlaylistView } from './components/Views/PlaylistView';
 import { LibraryView } from './components/Views/LibraryView';
+import { ArtistView } from './components/Views/ArtistView';
 import { MobileNav } from './components/Navigation/MobileNav';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { FEATURED_PLAYLISTS } from './services/exploreData';
@@ -19,8 +20,9 @@ import { getCustomPlaylists, getLikedSongs, getPlayHistory } from './services/st
 import { Playlist } from './types/music';
 
 const AppContent: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'search' | 'library' | 'liked' | 'history' | 'playlist'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'search' | 'library' | 'liked' | 'history' | 'playlist' | 'artist'>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewHistory, setViewHistory] = useState<{ view: string; id?: string }[]>([]);
 
@@ -73,13 +75,27 @@ const AppContent: React.FC = () => {
     },
   });
 
-  const navigateTo = (view: string, playlistId?: string) => {
-    setViewHistory((prev) => [...prev, { view: currentView, id: selectedPlaylistId || undefined }]);
+  const navigateTo = (view: string, id?: string) => {
+    const previousId =
+      currentView === 'playlist'
+        ? selectedPlaylistId || undefined
+        : currentView === 'artist'
+        ? selectedArtistName || undefined
+        : undefined;
+
+    setViewHistory((prev) => [...prev, { view: currentView, id: previousId }]);
+
     if (view === 'playlist') {
-      setSelectedPlaylistId(playlistId || null);
+      setSelectedPlaylistId(id || null);
+      setSelectedArtistName(null);
       setCurrentView('playlist');
+    } else if (view === 'artist') {
+      setSelectedArtistName(id || null);
+      setSelectedPlaylistId(null);
+      setCurrentView('artist');
     } else {
       setSelectedPlaylistId(null);
+      setSelectedArtistName(null);
       setCurrentView(view as any);
     }
   };
@@ -88,13 +104,24 @@ const AppContent: React.FC = () => {
     if (viewHistory.length === 0) return;
     const last = viewHistory[viewHistory.length - 1];
     setViewHistory((prev) => prev.slice(0, -1));
+
     if (last.view === 'playlist') {
       setSelectedPlaylistId(last.id || null);
+      setSelectedArtistName(null);
       setCurrentView('playlist');
+    } else if (last.view === 'artist') {
+      setSelectedArtistName(last.id || null);
+      setSelectedPlaylistId(null);
+      setCurrentView('artist');
     } else {
       setSelectedPlaylistId(null);
+      setSelectedArtistName(null);
       setCurrentView(last.view as any);
     }
+  };
+
+  const handleNavigateArtist = (artistName: string) => {
+    navigateTo('artist', artistName);
   };
 
   // Helper to construct virtual playlists for Liked and History views
@@ -175,6 +202,7 @@ const AppContent: React.FC = () => {
               <SearchView
                 query={searchQuery}
                 onSearchChange={(q) => setSearchQuery(q)}
+                onNavigateArtist={handleNavigateArtist}
               />
             )}
 
@@ -191,6 +219,15 @@ const AppContent: React.FC = () => {
               <PlaylistView
                 playlist={getPlaylistForCurrentView()}
                 onNavigateHome={() => navigateTo('home')}
+                onNavigateArtist={handleNavigateArtist}
+              />
+            )}
+
+            {currentView === 'artist' && selectedArtistName && (
+              <ArtistView
+                artistName={selectedArtistName}
+                onNavigateBack={handleGoBack}
+                onNavigateArtist={handleNavigateArtist}
               />
             )}
           </div>
@@ -204,6 +241,7 @@ const AppContent: React.FC = () => {
         onOpenEqualizer={() => setIsEqualizerOpen(true)}
         isLyricsOpen={isLyricsOpen}
         isQueueOpen={isQueueOpen}
+        onNavigateArtist={handleNavigateArtist}
       />
 
       {/* Mobile Bottom Navigation (Hidden on desktop) */}
@@ -216,6 +254,7 @@ const AppContent: React.FC = () => {
       <LyricsView
         isOpen={isLyricsOpen}
         onClose={() => setIsLyricsOpen(false)}
+        onNavigateArtist={handleNavigateArtist}
       />
 
       <QueueDrawer

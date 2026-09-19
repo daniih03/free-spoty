@@ -8,6 +8,7 @@ import { Search, Music, Play, Pause, Sparkles } from 'lucide-react';
 interface SearchViewProps {
   query: string;
   onSearchChange: (q: string) => void;
+  onNavigateArtist?: (artistName: string) => void;
 }
 
 const GENRE_CARDS = [
@@ -21,7 +22,7 @@ const GENRE_CARDS = [
   { name: 'Éxitos España', color: 'from-yellow-600 to-amber-900', query: 'exitos espana' },
 ];
 
-export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange }) => {
+export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, onNavigateArtist }) => {
   const { playSong, currentSong, isPlaying, togglePlay } = usePlayer();
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -143,7 +144,19 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                       <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-green transition-colors">
                         {topResult.title}
                       </h4>
-                      <p className="text-sm text-zinc-400 font-medium mb-3">{topResult.artist}</p>
+                      <p
+                        onClick={(e) => {
+                          if (onNavigateArtist) {
+                            e.stopPropagation();
+                            onNavigateArtist(topResult.artist);
+                          }
+                        }}
+                        className={`text-sm text-zinc-400 font-medium mb-3 ${
+                          onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+                        }`}
+                      >
+                        {topResult.artist}
+                      </p>
 
                       <div className="flex items-center gap-2">
                         <span className="text-xs bg-white/10 text-white/90 border border-white/15 px-3 py-1 rounded-full font-semibold">
@@ -195,7 +208,19 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                             <p className="text-sm font-semibold text-white truncate group-hover:text-brand-green">
                               {song.title}
                             </p>
-                            <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
+                            <p
+                              onClick={(e) => {
+                                if (onNavigateArtist) {
+                                  e.stopPropagation();
+                                  onNavigateArtist(song.artist);
+                                }
+                              }}
+                              className={`text-xs text-zinc-400 truncate ${
+                                onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+                              }`}
+                            >
+                              {song.artist}
+                            </p>
                           </div>
                         </div>
 
@@ -221,7 +246,12 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange })
                 <h3 className="text-lg font-bold text-white">Todas las canciones encontradas</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {results.map((song) => (
-                    <SongCard key={song.id} song={song} contextQueue={results} />
+                    <SongCard
+                      key={song.id}
+                      song={song}
+                      contextQueue={results}
+                      onNavigateArtist={onNavigateArtist}
+                    />
                   ))}
                 </div>
               </div>

@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { Song } from '../../types/music';
 import { usePlayer } from '../../context/PlayerContext';
 import { isSongLiked, toggleLikeSong, getCustomPlaylists, addSongToPlaylist } from '../../services/storageService';
-import { Play, Pause, Heart, MoreVertical, Plus } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Plus, Disc3 } from 'lucide-react';
 
 interface SongCardProps {
   song: Song;
   contextQueue?: Song[];
   index?: number;
+  onNavigateArtist?: (artistName: string) => void;
 }
 
-export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
+export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNavigateArtist }) => {
   const { currentSong, isPlaying, playSong, togglePlay, playNextInQueue, addToQueue } = usePlayer();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -96,7 +97,19 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
         >
           {song.title}
         </h4>
-        <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
+        <p
+          onClick={(e) => {
+            if (onNavigateArtist) {
+              e.stopPropagation();
+              onNavigateArtist(song.artist);
+            }
+          }}
+          className={`text-xs text-zinc-400 truncate ${
+            onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+          }`}
+        >
+          {song.artist}
+        </p>
       </div>
 
       {/* Actions */}
@@ -117,6 +130,18 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue }) => {
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 bottom-full mb-1 w-48 bg-[#202020] border border-white/10 rounded-xl shadow-2xl py-1 z-50 text-xs text-zinc-200 animate-fadeIn"
             >
+              {onNavigateArtist && (
+                <button
+                  onClick={() => {
+                    onNavigateArtist(song.artist);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-white/90"
+                >
+                  <Disc3 className="w-3.5 h-3.5 text-[#1ed760]" /> Ver artista
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   playNextInQueue(song);

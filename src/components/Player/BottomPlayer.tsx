@@ -26,6 +26,7 @@ interface BottomPlayerProps {
   onOpenEqualizer: () => void;
   isLyricsOpen: boolean;
   isQueueOpen: boolean;
+  onNavigateArtist?: (artistName: string) => void;
 }
 
 export const BottomPlayer: React.FC<BottomPlayerProps> = ({
@@ -34,6 +35,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
   onOpenEqualizer,
   isLyricsOpen,
   isQueueOpen,
+  onNavigateArtist,
 }) => {
   const {
     currentSong,
@@ -120,7 +122,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             >
               {currentSong.title}
             </p>
-            <p className="text-xs text-zinc-400 truncate hover:text-white transition-colors">
+            <p
+              onClick={() => onNavigateArtist?.(currentSong.artist)}
+              className="text-xs text-zinc-400 truncate hover:text-white hover:underline cursor-pointer transition-colors"
+            >
               {currentSong.artist}
             </p>
           </div>
@@ -325,7 +330,17 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
               <p className="text-xs font-semibold text-white truncate">
                 {currentSong.title}
               </p>
-              <p className="text-[11px] text-zinc-400 truncate">{currentSong.artist}</p>
+              <p
+                onClick={(e) => {
+                  if (onNavigateArtist) {
+                    e.stopPropagation();
+                    onNavigateArtist(currentSong.artist);
+                  }
+                }}
+                className="text-[11px] text-zinc-400 truncate hover:text-white hover:underline cursor-pointer"
+              >
+                {currentSong.artist}
+              </p>
             </div>
           </div>
 
@@ -406,7 +421,13 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                   <h2 className="text-xl font-extrabold text-white truncate">
                     {currentSong.title}
                   </h2>
-                  <p className="text-sm font-medium text-zinc-400 truncate">
+                  <p
+                    onClick={() => {
+                      setIsMobileExpanded(false);
+                      onNavigateArtist?.(currentSong.artist);
+                    }}
+                    className="text-sm font-medium text-zinc-400 truncate hover:text-white hover:underline cursor-pointer"
+                  >
                     {currentSong.artist}
                   </p>
                 </div>

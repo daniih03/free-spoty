@@ -5,9 +5,10 @@ import { X, Mic2, Music, Sparkles } from 'lucide-react';
 interface LyricsViewProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateArtist?: (artistName: string) => void;
 }
 
-export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
+export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose, onNavigateArtist }) => {
   const { currentSong, currentTime, seek, syncedLyrics, isLoadingLyrics } = usePlayer();
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -81,7 +82,17 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose }) => {
             <h1 className="text-xl md:text-3xl font-bold tracking-tight text-white mb-1 md:mb-2 truncate max-w-xs md:max-w-none">
               {currentSong.title}
             </h1>
-            <p className="text-sm md:text-lg text-zinc-400 font-medium truncate max-w-xs md:max-w-none">
+            <p
+              onClick={() => {
+                if (onNavigateArtist) {
+                  onClose();
+                  onNavigateArtist(currentSong.artist);
+                }
+              }}
+              className={`text-sm md:text-lg text-zinc-400 font-medium truncate max-w-xs md:max-w-none ${
+                onNavigateArtist ? 'hover:text-white hover:underline cursor-pointer transition-colors' : ''
+              }`}
+            >
               {currentSong.artist}
             </p>
           </div>

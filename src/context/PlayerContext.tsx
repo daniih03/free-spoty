@@ -110,18 +110,32 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const unbindError = youtubeService.onError((code) => {
       console.warn('Player error code:', code);
-      setIsLoadingSong(false);
-      setIsPlaying(false);
-      // If error playing this version, try alternative version once, but NEVER auto-skip to nextTrack
       const song = stateRef.current.currentSong;
       if (song) {
-        const currVer = song.currentVersion;
-        if (currVer === 'radio' && song.availableVersions?.lyrics) {
-          switchActiveVersion('lyrics');
-        } else if (currVer === 'lyrics' && song.availableVersions?.original) {
-          switchActiveVersion('original');
+        // 1. Try next candidate video ID if available
+        const currentId = song.youtubeId;
+        const candidates = song.candidateVideoIds || [];
+        const currentIndex = candidates.indexOf(currentId);
+        if (currentIndex >= 0 && currentIndex < candidates.length - 1) {
+          const nextId = candidates[currentIndex + 1];
+          console.log(`[Playback Recovery] Retrying with backup video candidate: ${nextId}`);
+          song.youtubeId = nextId;
+          youtubeService.loadVideo(nextId, 0, true);
+          setIsPlaying(true);
+          return;
+        }
+
+        // 2. Try lyrics or original fallback
+        if (song.availableVersions?.lyrics && song.availableVersions.lyrics !== currentId) {
+          song.youtubeId = song.availableVersions.lyrics;
+          youtubeService.loadVideo(song.availableVersions.lyrics, 0, true);
+          setIsPlaying(true);
+          return;
         }
       }
+
+      setIsLoadingSong(false);
+      setIsPlaying(false);
     });
 
     return () => {

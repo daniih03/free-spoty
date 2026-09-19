@@ -41,6 +41,39 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+// Fast YouTube search endpoint
+app.get('/api/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: 'Missing q parameter' });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  try {
+    let ytSearch;
+    try {
+      ytSearch = require('yt-search');
+    } catch {}
+
+    if (ytSearch) {
+      const results = await ytSearch(q);
+      const videos = (results.videos || []).slice(0, 5).map(v => ({
+        videoId: v.videoId,
+        title: v.title,
+        duration: v.duration.seconds,
+      }));
+      return res.json({ results: videos });
+    }
+
+    // Fallback if yt-search not loaded
+    return res.json({ results: [] });
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ error: err.message, results: [] });
+  }
+});
+
 // Debug endpoint to inspect yt-dlp on Render
 app.get('/api/debug', (req, res) => {
   const { id = 'dQw4w9WgXcQ' } = req.query;

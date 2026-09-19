@@ -21,7 +21,29 @@ export interface Song {
   youtubeId: string;
   currentVersion: VersionType;
   availableVersions?: SongVersions;
+  candidateVideoIds?: string[];
   hasSyncedLyrics?: boolean;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
+  releaseYear: string;
+  trackCount: number;
+  genre?: string;
+  type: 'album' | 'single' | 'ep';
+}
+
+export interface ArtistProfile {
+  id: string;
+  name: string;
+  pictureUrl: string;
+  genre?: string;
+  listeners?: number;
+  topSongs: Song[];
+  albums: Album[];
 }
 
 export interface Playlist {

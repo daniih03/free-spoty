@@ -1,5 +1,6 @@
 import { Song, VersionType, SongVersions } from '../types/music';
 import { FEATURED_PLAYLISTS } from './exploreData';
+import { getCustomBackendUrl } from './youtube';
 
 // User optional YouTube API Key saved in localStorage
 const YT_API_KEY_STORAGE = 'free_spoty_yt_api_key';
@@ -30,10 +31,11 @@ FEATURED_PLAYLISTS.forEach(playlist => {
 // Verified Invidious instances with search API support
 let activeInvidiousInstances: string[] = [
   'invidious.f5.si',
+  'invidious.materialio.us',
+  'yewtu.be',
   'inv.nadeko.net',
-  'invidious.nerdvpn.de',
   'invidious.projectsegfau.lt',
-  'iv.melmac.space',
+  'invidious.nerdvpn.de',
 ];
 
 // Dynamically refresh healthy CORS instances in background
@@ -132,27 +134,52 @@ export async function searchSongsMetadata(query: string, signal?: AbortSignal): 
 }
 
 /**
- * Single fast query to find a YouTube video ID.
+ * Fast search to find multiple YouTube video candidates for playback robustness.
  */
-async function searchYoutubeVideoId(query: string): Promise<string | null> {
-  const apiKey = getCustomApiKey();
+export async function searchYoutubeVideoCandidates(query: string): Promise<string[]> {
+  const candidates: string[] = [];
 
-  // 1. If user provided a YouTube API key
+  // 1. If backend URL is set, try backend search endpoint first
+  const backendUrl = getCustomBackendUrl();
+  if (backendUrl) {
+    try {
+      const res = await fetch(`${backendUrl}/api/search?q=${encodeURIComponent(query)}`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.results)) {
+          for (const item of data.results) {
+            if (item?.videoId && !candidates.includes(item.videoId)) {
+              candidates.push(item.videoId);
+            }
+          }
+          if (candidates.length > 0) return candidates;
+        }
+      }
+    } catch {}
+  }
+
+  // 2. YouTube API Key (if user configured)
+  const apiKey = getCustomApiKey();
   if (apiKey) {
     try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(query)}&type=video&key=${apiKey}`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(query)}&type=video&key=${apiKey}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const id = data.items?.[0]?.id?.videoId;
-        if (id) return id;
+        for (const item of (data.items || [])) {
+          const id = item?.id?.videoId;
+          if (id && !candidates.includes(id)) candidates.push(id);
+        }
+        if (candidates.length > 0) return candidates;
       }
     } catch (e) {
       console.warn('YouTube API query failed:', e);
     }
   }
 
-  // 2. Query active Invidious instances
+  // 3. Query active Invidious instances
   for (const domain of activeInvidiousInstances) {
     try {
       const url = `https://${domain}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
@@ -164,8 +191,13 @@ async function searchYoutubeVideoId(query: string): Promise<string | null> {
 
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0 && data[0]?.videoId) {
-          return data[0].videoId;
+        if (Array.isArray(data) && data.length > 0) {
+          for (const item of data.slice(0, 5)) {
+            if (item?.videoId && !candidates.includes(item.videoId)) {
+              candidates.push(item.videoId);
+            }
+          }
+          if (candidates.length > 0) return candidates;
         }
       }
     } catch {
@@ -173,7 +205,7 @@ async function searchYoutubeVideoId(query: string): Promise<string | null> {
     }
   }
 
-  return null;
+  return candidates;
 }
 
 /**
@@ -198,39 +230,42 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
 
   // 1. Primary: Studio Audio Track / Official Master
   const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
-  let videoId = await searchYoutubeVideoId(audioQuery);
+  let candidates = await searchYoutubeVideoCandidates(audioQuery);
 
   // 2. Fallback: Official Topic Release
-  if (!videoId) {
+  if (candidates.length === 0) {
     const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
-    videoId = await searchYoutubeVideoId(topicQuery);
+    candidates = await searchYoutubeVideoCandidates(topicQuery);
   }
 
   // 3. Fallback: Lyric Video
-  if (!videoId) {
+  if (candidates.length === 0) {
     const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
-    videoId = await searchYoutubeVideoId(lyricQuery);
+    candidates = await searchYoutubeVideoCandidates(lyricQuery);
   }
 
   // 4. Fallback: Direct search
-  if (!videoId) {
+  if (candidates.length === 0) {
     const directQuery = `${cleanArtist} ${cleanTitle}`;
-    videoId = await searchYoutubeVideoId(directQuery);
+    candidates = await searchYoutubeVideoCandidates(directQuery);
   }
 
+  const primaryId = candidates[0] || '';
   const versions: SongVersions = {
-    radio: videoId || undefined,
-    lyrics: videoId || undefined,
+    radio: primaryId || undefined,
+    lyrics: candidates[1] || primaryId || undefined,
+    original: candidates[2] || primaryId || undefined,
   };
 
   const updatedSong: Song = {
     ...song,
-    youtubeId: videoId || '',
+    youtubeId: primaryId,
+    candidateVideoIds: candidates,
     currentVersion: 'radio',
     availableVersions: versions,
   };
 
-  if (videoId) {
+  if (primaryId) {
     songCache.set(song.id, updatedSong);
     songCache.set(cacheKey, updatedSong);
   }
@@ -253,7 +288,8 @@ export async function switchSongVersion(song: Song, targetVersion: VersionType):
     else if (targetVersion === 'lyrics') query = `${cleanArtist} ${cleanTitle} lyrics`;
     else query = `${cleanArtist} ${cleanTitle} video oficial`;
 
-    targetId = (await searchYoutubeVideoId(query)) || song.youtubeId;
+    const candidates = await searchYoutubeVideoCandidates(query);
+    targetId = candidates[0] || song.youtubeId;
   }
 
   const updated: Song = {
