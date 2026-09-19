@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlayerProvider } from './context/PlayerContext';
 import { AuthProvider } from './context/AuthContext';
 import { AuthModal } from './components/UI/AuthModal';
+import { AddToPlaylistModal } from './components/UI/AddToPlaylistModal';
 import { SmartDock } from './components/Navigation/SmartDock';
 import { TopNavbar } from './components/TopNavbar';
 import { FloatingPlayer } from './components/Player/FloatingPlayer';
@@ -275,6 +276,7 @@ const AppContent: React.FC = () => {
       />
 
       <AuthModal />
+      <AddToPlaylistModal />
     </div>
   );
 };

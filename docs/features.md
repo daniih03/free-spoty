@@ -163,3 +163,8 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Seguridad RLS (Row Level Security):** Cada usuario tiene acceso estricto y exclusivo a sus propios registros (`auth.uid() = user_id`).
    - **Modal de Autenticación de Cristal Obsidiana (`AuthModal.tsx`):** Interfaz inmersiva con alternador de inicio de sesión / creación de cuenta, validación en tiempo real y soporte para nombres de usuario personalizados.
    - **Acceso Rápido desde SmartDock y Barra Superior:** Avatar con iniciales, estado "Sincronizado" y botón de desconexión rápida tanto en escritorio como en móvil.
+
+9. **Gestión Directa de Playlists y Añadido Instantáneo (`AddToPlaylistModal.tsx`):**
+   - **Flujo Fluido Cero Fricción:** Si el usuario no tiene ninguna playlist creada, al pulsar en "Añadir a playlist" la aplicación le solicita inmediatamente el título y descripción opcional para crear la lista y añadir la canción de golpe en una sola acción.
+   - **Disponibilidad Universal:** Acceso directo desde el menú contextual de cualquier tarjeta de canción (`SongCard`), la barra inferior del reproductor (`FloatingPlayer`), la vista dividida de visor de letras (`LyricsView`) y la tarjeta destacada de búsqueda (`SearchView`).
+   - **Sincronización Automática con Supabase:** La nueva lista y las canciones añadidas se persisten de inmediato en PostgreSQL bajo la cuenta del usuario (o en almacenamiento local si es invitado), garantizando persistencia en tiempo real.

@@ -40,6 +40,9 @@ interface PlayerContextType {
   playNextInQueue: (song: Song) => void;
   removeFromQueue: (index: number) => void;
   clearUpcomingQueue: () => void;
+  addToPlaylistSong: Song | null;
+  openAddToPlaylistModal: (song: Song) => void;
+  closeAddToPlaylistModal: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -75,6 +78,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [syncedLyrics, setSyncedLyrics] = useState<SyncedLyricLine[] | null>(null);
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false);
   const [sleepTimerSeconds, setSleepTimerSeconds] = useState<number | null>(null);
+  const [addToPlaylistSong, setAddToPlaylistSong] = useState<Song | null>(null);
+
+  const openAddToPlaylistModal = useCallback((song: Song) => {
+    setAddToPlaylistSong(song);
+  }, []);
+
+  const closeAddToPlaylistModal = useCallback(() => {
+    setAddToPlaylistSong(null);
+  }, []);
 
   // References to keep callbacks fresh in event handlers
   const stateRef = useRef({
@@ -512,6 +524,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         playNextInQueue,
         removeFromQueue,
         clearUpcomingQueue,
+        addToPlaylistSong,
+        openAddToPlaylistModal,
+        closeAddToPlaylistModal,
       }}
     >
       {children}

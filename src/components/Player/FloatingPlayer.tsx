@@ -14,6 +14,7 @@ import {
   VolumeX,
   Mic2,
   ListMusic,
+  ListPlus,
   Heart,
   Sliders,
   ChevronDown,
@@ -58,6 +59,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
     toggleMute,
     toggleShuffle,
     cycleRepeatMode,
+    openAddToPlaylistModal,
   } = usePlayer();
 
   const [isSeeking, setIsSeeking] = useState(false);
@@ -158,6 +160,14 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
               title={isLiked ? 'Guardada en Me Gusta' : 'Añadir a Me Gusta'}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+            </button>
+
+            <button
+              onClick={() => openAddToPlaylistModal(currentSong)}
+              className="p-2 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition-transform"
+              title="Añadir a playlist..."
+            >
+              <ListPlus className="w-4 h-4" />
             </button>
           </div>
 
@@ -476,14 +486,24 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                   </p>
                 </div>
 
-                <button
-                  onClick={() => toggleLikeSong(currentSong)}
-                  className={`p-2.5 rounded-full bg-white/5 border border-white/10 ${
-                    isLiked ? 'text-brand-coral' : 'text-zinc-400'
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openAddToPlaylistModal(currentSong)}
+                    className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white"
+                    title="Añadir a playlist"
+                  >
+                    <ListPlus className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={() => toggleLikeSong(currentSong)}
+                    className={`p-2.5 rounded-full bg-white/5 border border-white/10 ${
+                      isLiked ? 'text-brand-coral' : 'text-zinc-400'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
               </div>
 
               {/* Scrubber */}

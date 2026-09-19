@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Song } from '../../types/music';
 import { usePlayer } from '../../context/PlayerContext';
 import { isSongLiked, toggleLikeSong, getCustomPlaylists, addSongToPlaylist } from '../../services/storageService';
-import { Play, Pause, Heart, MoreVertical, Plus, Disc3 } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Plus, Disc3, ListPlus } from 'lucide-react';
 
 interface SongCardProps {
   song: Song;
@@ -12,7 +12,7 @@ interface SongCardProps {
 }
 
 export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNavigateArtist }) => {
-  const { currentSong, isPlaying, playSong, togglePlay, playNextInQueue, addToQueue } = usePlayer();
+  const { currentSong, isPlaying, playSong, togglePlay, playNextInQueue, addToQueue, openAddToPlaylistModal } = usePlayer();
   const [showMenu, setShowMenu] = useState(false);
 
   const isCurrent = currentSong?.id === song.id;
@@ -181,25 +181,36 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
                 <Plus className="w-3.5 h-3.5 text-zinc-400" /> Añadir al final de la cola
               </button>
 
-              {customPlaylists.length > 0 && (
-                <div className="border-t border-white/10 my-1 pt-1">
-                  <div className="px-3.5 py-1 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
-                    Añadir a playlist:
+              <div className="border-t border-white/10 my-1 pt-1">
+                <button
+                  onClick={() => {
+                    openAddToPlaylistModal(song);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-3.5 py-2 hover:bg-white/10 flex items-center gap-2.5 text-white/90 font-medium transition-colors"
+                >
+                  <ListPlus className="w-3.5 h-3.5 text-brand-coral" />
+                  <span>{customPlaylists.length === 0 ? 'Crear playlist y añadir' : 'Añadir a playlist...'}</span>
+                </button>
+
+                {customPlaylists.length > 0 && (
+                  <div className="max-h-28 overflow-y-auto mt-0.5 custom-scrollbar">
+                    {customPlaylists.slice(0, 5).map((pl) => (
+                      <button
+                        key={pl.id}
+                        onClick={() => {
+                          addSongToPlaylist(pl.id, song);
+                          setShowMenu(false);
+                        }}
+                        className="w-full text-left px-5 py-1.5 hover:bg-white/10 text-xs text-white/70 hover:text-white truncate transition-colors flex items-center justify-between"
+                      >
+                        <span className="truncate">{pl.name}</span>
+                        <Plus className="w-2.5 h-2.5 opacity-50 shrink-0 ml-1" />
+                      </button>
+                    ))}
                   </div>
-                  {customPlaylists.map((pl) => (
-                    <button
-                      key={pl.id}
-                      onClick={() => {
-                        addSongToPlaylist(pl.id, song);
-                        setShowMenu(false);
-                      }}
-                      className="w-full text-left px-3.5 py-1.5 hover:bg-white/10 text-xs text-white/80 hover:text-white truncate transition-colors"
-                    >
-                      {pl.name}
-                    </button>
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>

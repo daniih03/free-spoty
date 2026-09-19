@@ -98,6 +98,12 @@ export function saveCustomPlaylist(name: string, description?: string): Playlist
   return newPlaylist;
 }
 
+export function createPlaylistWithSong(name: string, song: Song, description?: string): Playlist {
+  const pl = saveCustomPlaylist(name, description);
+  addSongToPlaylist(pl.id, song);
+  return pl;
+}
+
 export function addSongToPlaylist(playlistId: string, song: Song): boolean {
   const playlists = getCustomPlaylists();
   const pl = playlists.find(p => p.id === playlistId);

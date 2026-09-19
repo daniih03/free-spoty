@@ -11,6 +11,7 @@ import {
   Sparkles,
   Heart,
   Plus,
+  ListPlus,
   Disc3,
   Radio,
 } from 'lucide-react';
@@ -65,7 +66,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   onSearchChange,
   onNavigateArtist,
 }) => {
-  const { playSong, currentSong, isPlaying, togglePlay, addToQueue } = usePlayer();
+  const { playSong, currentSong, isPlaying, togglePlay, addToQueue, openAddToPlaylistModal } = usePlayer();
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -307,6 +308,15 @@ export const SearchView: React.FC<SearchViewProps> = ({
                               isSongLiked(topResult.id) ? 'fill-current' : ''
                             }`}
                           />
+                        </button>
+
+                        <button
+                          onClick={() => openAddToPlaylistModal(topResult)}
+                          className="p-2.5 rounded-full backdrop-blur-md bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all text-xs flex items-center gap-1.5"
+                          title="Añadir a playlist"
+                        >
+                          <ListPlus className="w-4 h-4 text-brand-coral" />
+                          <span className="hidden sm:inline text-xs font-semibold">Playlist</span>
                         </button>
 
                         <button
