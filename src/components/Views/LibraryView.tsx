@@ -65,7 +65,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto select-none">
+    <div className="w-full max-w-full overflow-x-hidden p-3.5 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto select-none">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">

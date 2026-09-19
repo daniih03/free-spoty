@@ -181,3 +181,9 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Carrera Paralela de Instancias Piped de Alta Disponibilidad (`searchService.ts`):** Reemplazo del bucle secuencial sobre instancias obsoletas por una carrera paralela concurrente (`raceFirstSuccessful`) sobre endpoints Piped con CORS abierto y latencia < 500ms (`api.piped.private.coffee`, `pipedapi.ducks.party`).
    - **Resolución Directa de Audio Master:** Búsqueda orientada a pistas de audio de estudio limpias con fallback instantáneo a título y artista directo, garantizando inicio de reproducción limpio y sin anuncios de video comercial.
 
+12. **Blindaje Integral Anti-Desplazamiento Horizontal en Móvil (`overflow-x`):**
+   - **Control Global de Gestos Táctiles (`index.css` & `index.html`):** Configuración de `touch-action: pan-y;` en `html, body` junto con `overflow-x: hidden !important; width: 100%; max-width: 100%;`, bloqueando el desplazamiento o rebote lateral involuntario de derecha a izquierda en pantallas táctiles de iOS y Android.
+   - **Eliminación de Viewport Spills (`App.tsx`):** Sustitución de `w-screen` (que excede el ancho útil en móviles con barras o subpíxeles) por `w-full max-w-full overflow-x-hidden min-w-0` en el contenedor raíz y en el scroll principal de vistas.
+   - **Contención de Flex y Grid en Vistas:** Incorporación de `min-w-0 overflow-hidden` en las tarjetas de `HomeView`, `SongCard`, `SearchView`, `PlaylistView`, `LibraryView` y en la cabecera `TopNavbar`, impidiendo que los textos largos o inputs empujen el ancho fuera de la pantalla.
+
+

@@ -116,7 +116,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto select-none">
+    <div className="w-full max-w-full overflow-x-hidden p-3.5 sm:p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto select-none">
       {/* Header & Status */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>

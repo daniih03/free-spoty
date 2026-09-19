@@ -37,7 +37,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative p-3 rounded-2xl md:rounded-[22px] backdrop-blur-xl transition-all duration-300 cursor-pointer border transform-gpu hover:-translate-y-1 ${
+      className={`group relative p-2.5 sm:p-3 rounded-2xl md:rounded-[22px] backdrop-blur-xl transition-all duration-300 cursor-pointer border transform-gpu hover:-translate-y-1 w-full min-w-0 overflow-hidden ${
         isCurrent
           ? 'bg-brand-burgundy/25 border-brand-red/50 shadow-[0_8px_30px_rgba(200,25,0,0.2)]'
           : 'bg-[#13141f]/50 hover:bg-[#1b1c2b]/75 border-white/[0.06] hover:border-brand-red/35 shadow-[0_4px_20px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_32px_rgba(200,25,0,0.12)]'
@@ -132,7 +132,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
         </div>
 
         {/* Context Menu Trigger */}
-        <div className="relative shrink-0 -mr-1">
+        <div className="relative shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();

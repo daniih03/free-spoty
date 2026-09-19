@@ -112,9 +112,9 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
   const isCurrentArtistPlaying = profile.topSongs.some((s) => s.id === currentSong?.id) && isPlaying;
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-12">
+    <div className="space-y-8 animate-fadeIn pb-12 w-full max-w-full overflow-x-hidden">
       {/* 1. Hero Banner with High-Res Artist Portrait */}
-      <div className="relative -mx-6 -mt-6 h-72 sm:h-96 md:h-[420px] overflow-hidden flex flex-col justify-end p-6 md:p-10 select-none">
+      <div className="relative md:-mx-6 -mt-4 md:-mt-6 h-72 sm:h-96 md:h-[420px] overflow-hidden flex flex-col justify-end p-6 md:p-10 select-none">
         {/* Background Image with Dark Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <img

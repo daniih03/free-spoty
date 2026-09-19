@@ -206,12 +206,12 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="relative h-[100dvh] w-screen overflow-hidden flex flex-col bg-black text-white select-none">
+    <div className="relative h-[100dvh] w-full max-w-full overflow-x-hidden flex flex-col bg-black text-white select-none">
       {/* Dynamic Ambient Background */}
       <AmbientBackground />
 
       {/* Main App Workspace */}
-      <div className="flex-1 flex overflow-hidden z-10">
+      <div className="flex-1 flex overflow-hidden z-10 w-full max-w-full min-w-0">
         {/* SmartDock (Floating minimalist navigation rail on desktop) */}
         <SmartDock
           currentView={currentView === 'playlist' ? `playlist_${selectedPlaylistId}` : currentView}
@@ -220,7 +220,7 @@ const AppContent: React.FC = () => {
         />
 
         {/* Content Area with left offset for the floating dock on desktop */}
-        <main className="flex-1 flex flex-col overflow-hidden relative md:pl-[84px]">
+        <main className="flex-1 flex flex-col overflow-hidden relative md:pl-[84px] w-full max-w-full min-w-0">
           {/* Top Navbar */}
           <TopNavbar
             searchQuery={searchQuery}
@@ -236,7 +236,7 @@ const AppContent: React.FC = () => {
           />
 
           {/* View Container with custom scroll & bottom padding for floating capsule & mobile nav */}
-          <div className="flex-1 overflow-y-auto pb-[calc(148px+env(safe-area-inset-bottom,0px))] md:pb-32 scrollbar-thin">
+          <div className="flex-1 overflow-x-hidden overflow-y-auto pb-[calc(148px+env(safe-area-inset-bottom,0px))] md:pb-32 scrollbar-thin w-full max-w-full min-w-0">
             {currentView === 'home' && (
               <HomeView onSelectPlaylist={(id) => navigateTo('playlist', id)} />
             )}

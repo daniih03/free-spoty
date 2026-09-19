@@ -7,16 +7,20 @@
     color-scheme: dark;
   }
   
-  body {
+  html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    position: relative;
     background-color: #000000;
     color: #ffffff;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
-    overflow: hidden;
+    touch-action: pan-y;
   }
 
   /* Custom sleek scrollbars */

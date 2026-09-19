@@ -37,13 +37,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <header className="h-[calc(56px+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] px-3 md:px-6 flex items-center justify-between gap-2.5 md:gap-4 z-10 select-none bg-transparent">
+    <header className="w-full max-w-full overflow-hidden h-[calc(56px+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] px-2.5 sm:px-3 md:px-6 flex items-center justify-between gap-2 sm:gap-2.5 md:gap-4 z-10 select-none bg-transparent">
       {/* Navigation history arrows */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <button
           onClick={onGoBack}
           disabled={!canGoBack}
-          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
             canGoBack
               ? 'bg-neutral-800/90 hover:bg-neutral-700 text-white border border-white/15 hover:border-white/30 shadow-md shadow-black/40 hover:scale-105 active:scale-95 cursor-pointer'
               : 'bg-black/40 text-zinc-600 border border-white/5 opacity-40 cursor-not-allowed'
@@ -51,12 +51,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           title="Atrás"
           aria-label="Página anterior"
         >
-          <ChevronLeft className="w-5 h-5 stroke-[2.2]" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
         </button>
         <button
           onClick={onGoForward}
           disabled={!canGoForward}
-          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
             canGoForward
               ? 'bg-neutral-800/90 hover:bg-neutral-700 text-white border border-white/15 hover:border-white/30 shadow-md shadow-black/40 hover:scale-105 active:scale-95 cursor-pointer'
               : 'bg-black/40 text-zinc-600 border border-white/5 opacity-40 cursor-not-allowed'
@@ -64,20 +64,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           title="Adelante"
           aria-label="Página siguiente"
         >
-          <ChevronRight className="w-5 h-5 stroke-[2.2]" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
         </button>
       </div>
 
       {/* Global Search Bar with `/` shortcut */}
-      <div className="flex-1 max-w-md relative">
-        <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="flex-1 min-w-0 max-w-md relative">
+        <Search className="w-4 h-4 text-zinc-400 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           ref={searchInputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar canciones, artistas, álbumes..."
-          className="w-full pl-9 pr-8 sm:pr-12 py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-coral/60 focus:ring-1 focus:ring-brand-coral/30 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner"
+          placeholder="Buscar canciones..."
+          className="w-full pl-8 sm:pl-9 pr-6 sm:pr-12 py-1.5 sm:py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-coral/60 focus:ring-1 focus:ring-brand-coral/30 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner truncate"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[10px] text-zinc-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-md font-mono">
           <span>/</span>
@@ -85,7 +85,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       </div>
 
       {/* System Badges & Settings */}
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
 
         {/* True Shuffle Badge */}
         {isShuffle && (
