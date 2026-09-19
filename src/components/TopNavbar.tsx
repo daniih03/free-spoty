@@ -18,6 +18,8 @@ interface TopNavbarProps {
   onOpenEqualizer: () => void;
   canGoBack?: boolean;
   onGoBack?: () => void;
+  canGoForward?: boolean;
+  onGoForward?: () => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -26,6 +28,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenEqualizer,
   canGoBack = false,
   onGoBack,
+  canGoForward = false,
+  onGoForward,
 }) => {
   const { isShuffle } = usePlayer();
   const { user, profile, openAuthModal, signOut } = useAuth();
@@ -33,23 +37,34 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <header className="h-[calc(56px+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 z-10 select-none bg-transparent">
+    <header className="h-[calc(56px+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] px-3 md:px-6 flex items-center justify-between gap-2.5 md:gap-4 z-10 select-none bg-transparent">
       {/* Navigation history arrows */}
-      <div className="flex items-center gap-1.5 md:gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           onClick={onGoBack}
           disabled={!canGoBack}
-          className="p-2 rounded-full bg-black/40 border border-white/5 hover:bg-black/60 text-zinc-300 disabled:opacity-30 disabled:hover:bg-black/40 active:scale-95 transition-all touch-manipulation"
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+            canGoBack
+              ? 'bg-neutral-800/90 hover:bg-neutral-700 text-white border border-white/15 hover:border-white/30 shadow-md shadow-black/40 hover:scale-105 active:scale-95 cursor-pointer'
+              : 'bg-black/40 text-zinc-600 border border-white/5 opacity-40 cursor-not-allowed'
+          }`}
           title="Atrás"
+          aria-label="Página anterior"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5 stroke-[2.2]" />
         </button>
         <button
-          disabled
-          className="p-2 rounded-full bg-black/40 border border-white/5 text-zinc-600 cursor-not-allowed hidden sm:block"
+          onClick={onGoForward}
+          disabled={!canGoForward}
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+            canGoForward
+              ? 'bg-neutral-800/90 hover:bg-neutral-700 text-white border border-white/15 hover:border-white/30 shadow-md shadow-black/40 hover:scale-105 active:scale-95 cursor-pointer'
+              : 'bg-black/40 text-zinc-600 border border-white/5 opacity-40 cursor-not-allowed'
+          }`}
           title="Adelante"
+          aria-label="Página siguiente"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5 stroke-[2.2]" />
         </button>
       </div>
 

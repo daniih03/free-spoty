@@ -28,6 +28,7 @@ const AppContent: React.FC = () => {
   const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewHistory, setViewHistory] = useState<{ view: string; id?: string }[]>([]);
+  const [forwardHistory, setForwardHistory] = useState<{ view: string; id?: string }[]>([]);
 
   // Auto-reload on any new deployment detected across all devices
   useEffect(() => {
@@ -87,6 +88,7 @@ const AppContent: React.FC = () => {
         : undefined;
 
     setViewHistory((prev) => [...prev, { view: currentView, id: previousId }]);
+    setForwardHistory([]); // Clear forward on fresh navigation
 
     if (view === 'playlist') {
       setSelectedPlaylistId(id || null);
@@ -108,6 +110,14 @@ const AppContent: React.FC = () => {
     const last = viewHistory[viewHistory.length - 1];
     setViewHistory((prev) => prev.slice(0, -1));
 
+    const currentId =
+      currentView === 'playlist'
+        ? selectedPlaylistId || undefined
+        : currentView === 'artist'
+        ? selectedArtistName || undefined
+        : undefined;
+    setForwardHistory((prev) => [...prev, { view: currentView, id: currentId }]);
+
     if (last.view === 'playlist') {
       setSelectedPlaylistId(last.id || null);
       setSelectedArtistName(null);
@@ -120,6 +130,34 @@ const AppContent: React.FC = () => {
       setSelectedPlaylistId(null);
       setSelectedArtistName(null);
       setCurrentView(last.view as any);
+    }
+  };
+
+  const handleGoForward = () => {
+    if (forwardHistory.length === 0) return;
+    const next = forwardHistory[forwardHistory.length - 1];
+    setForwardHistory((prev) => prev.slice(0, -1));
+
+    const currentId =
+      currentView === 'playlist'
+        ? selectedPlaylistId || undefined
+        : currentView === 'artist'
+        ? selectedArtistName || undefined
+        : undefined;
+    setViewHistory((prev) => [...prev, { view: currentView, id: currentId }]);
+
+    if (next.view === 'playlist') {
+      setSelectedPlaylistId(next.id || null);
+      setSelectedArtistName(null);
+      setCurrentView('playlist');
+    } else if (next.view === 'artist') {
+      setSelectedArtistName(next.id || null);
+      setSelectedPlaylistId(null);
+      setCurrentView('artist');
+    } else {
+      setSelectedPlaylistId(null);
+      setSelectedArtistName(null);
+      setCurrentView(next.view as any);
     }
   };
 
@@ -193,6 +231,8 @@ const AppContent: React.FC = () => {
             onOpenEqualizer={() => setIsEqualizerOpen(true)}
             canGoBack={viewHistory.length > 0}
             onGoBack={handleGoBack}
+            canGoForward={forwardHistory.length > 0}
+            onGoForward={handleGoForward}
           />
 
           {/* View Container with custom scroll & bottom padding for floating capsule & mobile nav */}
