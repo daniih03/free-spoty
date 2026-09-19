@@ -28,37 +28,58 @@ FEATURED_PLAYLISTS.forEach(playlist => {
   });
 });
 
-// Verified Invidious instances with search API support
+// Verified high-availability Piped API instances with open CORS and zero rate limits
+let activePipedInstances: string[] = [
+  'https://api.piped.private.coffee',
+  'https://pipedapi.ducks.party',
+];
+
+// Verified Invidious instances for secondary fallback
 let activeInvidiousInstances: string[] = [
-  'invidious.f5.si',
-  'invidious.materialio.us',
   'yewtu.be',
-  'inv.nadeko.net',
-  'invidious.projectsegfau.lt',
   'invidious.nerdvpn.de',
 ];
 
-// Dynamically refresh healthy CORS instances in background
-export async function refreshInvidiousInstances() {
-  try {
-    const res = await fetch('https://api.invidious.io/instances.json', { signal: AbortSignal.timeout(3000) });
-    if (res.ok) {
-      const list = await res.json();
-      const healthy = list
-        .filter((item: any) => item[1]?.type === 'https' && item[1]?.api === true && item[1]?.cors === true)
-        .map((item: any) => item[0]);
-      if (healthy.length > 0) {
-        activeInvidiousInstances = [...new Set([...healthy, ...activeInvidiousInstances])];
+// Helper to fetch candidates from a single Piped instance with strict timeout
+async function fetchCandidatesFromPiped(endpoint: string, query: string, timeoutMs = 3500): Promise<string[]> {
+  const url = `${endpoint}/search?q=${encodeURIComponent(query)}&filter=videos`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!res.ok) throw new Error(`Piped ${endpoint} returned status ${res.status}`);
+  const data = await res.json();
+  const candidates: string[] = [];
+  if (Array.isArray(data.items)) {
+    for (const item of data.items) {
+      if (item?.url && item.url.includes('/watch?v=')) {
+        const id = item.url.replace('/watch?v=', '').split('&')[0];
+        if (id && !candidates.includes(id)) {
+          candidates.push(id);
+        }
       }
     }
-  } catch {
-    // Keep fallback list
   }
+  if (candidates.length === 0) throw new Error(`No video items on ${endpoint}`);
+  return candidates;
 }
 
-// Trigger initial instance refresh
-if (typeof window !== 'undefined') {
-  refreshInvidiousInstances();
+// Resilient first-success promise race helper
+async function raceFirstSuccessful<T>(promises: Promise<T>[]): Promise<T> {
+  if (typeof Promise.any === 'function') {
+    return Promise.any(promises);
+  }
+  return new Promise<T>((resolve, reject) => {
+    const errors: any[] = [];
+    let rejectedCount = 0;
+    if (promises.length === 0) return reject(new Error('No promises provided'));
+    promises.forEach((p) => {
+      p.then(resolve).catch((err) => {
+        errors.push(err);
+        rejectedCount++;
+        if (rejectedCount === promises.length) {
+          reject(new Error('All candidate instances failed'));
+        }
+      });
+    });
+  });
 }
 
 /**
@@ -179,16 +200,23 @@ export async function searchYoutubeVideoCandidates(query: string): Promise<strin
     }
   }
 
-  // 3. Query active Invidious instances
+  // 3. Primary Engine: Race active high-availability Piped instances in parallel
+  try {
+    const pipedResults = await raceFirstSuccessful(
+      activePipedInstances.map((ep) => fetchCandidatesFromPiped(ep, query, 3500))
+    );
+    if (pipedResults && pipedResults.length > 0) {
+      return pipedResults;
+    }
+  } catch {
+    // Proceed to fallback
+  }
+
+  // 4. Secondary Fallback: Query Invidious instances
   for (const domain of activeInvidiousInstances) {
     try {
       const url = `https://${domain}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -220,7 +248,7 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
     return existing;
   }
 
-  // Clean title: remove any parentheses and brackets like (Directo Price), [feat. ...], (Remastered)
+  // Clean title: remove any parentheses and brackets like (Remix), [feat. ...], (Remastered)
   const cleanTitle = song.title
     .replace(/\(.*?\)/g, '')
     .replace(/\[.*?\]/g, '')
@@ -229,31 +257,11 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
   const cleanArtist = song.artist.trim();
 
   // 1. Primary: Studio Audio Track (Clean, instant 0:00 start, ad-free on mobile)
-  const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
-  let candidates = await searchYoutubeVideoCandidates(audioQuery);
+  let candidates = await searchYoutubeVideoCandidates(`${cleanArtist} ${cleanTitle} audio`);
 
-  // 2. Fallback: Official Topic Release (YouTube Music Art Track without commercial video ads)
+  // 2. High-precision fallback: direct artist & title
   if (candidates.length === 0) {
-    const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
-    candidates = await searchYoutubeVideoCandidates(topicQuery);
-  }
-
-  // 3. Fallback: Lyric Video (Fan/Artist lyric video with zero video ad placements)
-  if (candidates.length === 0) {
-    const lyricQuery = `${cleanArtist} ${cleanTitle} lyrics`;
-    candidates = await searchYoutubeVideoCandidates(lyricQuery);
-  }
-
-  // 4. Fallback: Radio edit
-  if (candidates.length === 0) {
-    const radioQuery = `${cleanArtist} ${cleanTitle} radio edit`;
-    candidates = await searchYoutubeVideoCandidates(radioQuery);
-  }
-
-  // 5. Fallback: Direct search
-  if (candidates.length === 0) {
-    const directQuery = `${cleanArtist} ${cleanTitle}`;
-    candidates = await searchYoutubeVideoCandidates(directQuery);
+    candidates = await searchYoutubeVideoCandidates(`${cleanArtist} ${cleanTitle}`);
   }
 
   const primaryId = candidates[0] || '';

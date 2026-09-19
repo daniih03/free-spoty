@@ -261,31 +261,44 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const executePlaySong = async (song: Song) => {
+    // Set current song immediately so the floating player and UI display instantly
+    setCurrentSong(song);
     setIsLoadingSong(true);
     setCurrentTime(0);
     setDuration(song.duration || 0);
 
-    // 1. If youtubeId is already cached/known, use immediately; otherwise resolve
-    const resolvedSong = song.youtubeId ? song : await resolveSongWithVersions(song);
-    setCurrentSong(resolvedSong);
-    setActiveVersion(resolvedSong.currentVersion || 'radio');
+    let resolvedSong = song;
+    try {
+      // 1. If youtubeId is already cached/known, use immediately; otherwise resolve in background
+      resolvedSong = song.youtubeId ? song : await resolveSongWithVersions(song);
+      setCurrentSong(resolvedSong);
+      setActiveVersion(resolvedSong.currentVersion || 'radio');
 
-    // 2. Play audio in YouTube engine
-    if (resolvedSong.youtubeId) {
-      isStartingTrackRef.current = true;
-      if (startingTimerRef.current) clearTimeout(startingTimerRef.current);
-      startingTimerRef.current = setTimeout(() => {
-        isStartingTrackRef.current = false;
-      }, 5000);
+      // Update in queue if present so queue tracks contain resolved IDs
+      setQueue((prevQueue) =>
+        prevQueue.map((item) => (item.id === resolvedSong.id ? resolvedSong : item))
+      );
 
-      youtubeService.loadVideo(resolvedSong.youtubeId, 0, true);
-      youtubeService.setVolume(stateRef.current.isMuted ? 0 : stateRef.current.volume);
-      setIsPlaying(true);
-      // Auto-clear loading after 3.5s if mobile browser delays playback event
-      setTimeout(() => setIsLoadingSong(false), 3500);
-    } else {
+      // 2. Play audio in YouTube engine
+      if (resolvedSong.youtubeId) {
+        isStartingTrackRef.current = true;
+        if (startingTimerRef.current) clearTimeout(startingTimerRef.current);
+        startingTimerRef.current = setTimeout(() => {
+          isStartingTrackRef.current = false;
+        }, 5000);
+
+        youtubeService.loadVideo(resolvedSong.youtubeId, 0, true);
+        youtubeService.setVolume(stateRef.current.isMuted ? 0 : stateRef.current.volume);
+        setIsPlaying(true);
+        // Auto-clear loading after 3.5s if mobile browser delays playback event
+        setTimeout(() => setIsLoadingSong(false), 3500);
+      } else {
+        setIsLoadingSong(false);
+        console.warn(`No se encontró audio para "${song.title}" de ${song.artist}`);
+      }
+    } catch (err) {
+      console.error('Error al resolver la canción:', err);
       setIsLoadingSong(false);
-      console.warn(`No se encontró audio para "${song.title}" de ${song.artist}`);
     }
 
     // 3. Add to history

@@ -175,3 +175,9 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Letras Sincronizadas a Pantalla Completa en Móvil:** En teléfonos móviles (`< lg`), el visor de letras prioriza el 85% de la altura vertical de la pantalla para el texto karaoke con desplazamiento suave y salto táctil, acompañado de una barra de control mini superior. En escritorio, se mantiene la vista dividida 50/50 con el vinilo de estudio.
    - **Modales en Formato "Bottom Sheet":** Los diálogos de añadir a playlist, login/registro y ecualizador se despliegan desde la base de la pantalla como hojas táctiles nativas (`items-end sm:items-center`, `rounded-t-3xl sm:rounded-3xl`, manija de arrastre y `max-h-[90dvh]`), evitando que el teclado virtual tape los campos de texto o los botones de acción.
    - **Viewport Dinámico `100dvh` y Safe-Areas Superiores:** Integración de `h-[100dvh]` y `pt-[env(safe-area-inset-top)]` en la cabecera, protegiendo los controles frente al notch y Dynamic Island de iPhone.
+
+11. **Motor de Resolución de Búsqueda Ultrarrápido y Feedback Inmediato:**
+   - **Feedback Visual en 0ms (`PlayerContext.tsx`):** Al hacer clic en reproducir sobre cualquier resultado del buscador, `FloatingPlayer` y la cápsula flotante se despliegan en el acto con la carátula, el título, el artista y el spinner de carga (`isLoadingSong: true`), eliminando la sensación de congelamiento o falta de respuesta.
+   - **Carrera Paralela de Instancias Piped de Alta Disponibilidad (`searchService.ts`):** Reemplazo del bucle secuencial sobre instancias obsoletas por una carrera paralela concurrente (`raceFirstSuccessful`) sobre endpoints Piped con CORS abierto y latencia < 500ms (`api.piped.private.coffee`, `pipedapi.ducks.party`).
+   - **Resolución Directa de Audio Master:** Búsqueda orientada a pistas de audio de estudio limpias con fallback instantáneo a título y artista directo, garantizando inicio de reproducción limpio y sin anuncios de video comercial.
+
