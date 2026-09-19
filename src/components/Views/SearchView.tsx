@@ -244,7 +244,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                     {/* Glowing Vinyl Disc Display */}
                     <div
                       onClick={() => playSong(topResult, results)}
-                      className="group/vinyl relative w-36 h-36 md:w-44 md:h-44 rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer shadow-2xl flex-shrink-0 border border-white/15 bg-zinc-900 transform-gpu"
+                      className="group/vinyl relative w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden cursor-pointer shadow-2xl flex-shrink-0 border-2 border-white/20 ring-4 ring-black/50 bg-zinc-900 transform-gpu"
                       title={
                         currentSong?.id === topResult.id && isPlaying
                           ? 'Pausar tema principal'
@@ -258,14 +258,21 @@ export const SearchView: React.FC<SearchViewProps> = ({
                           (e.target as HTMLImageElement).src =
                             'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
                         }}
-                        className={`w-full h-full object-cover transition-transform duration-500 group-hover/vinyl:scale-105 ${
+                        className={`w-full h-full object-cover transition-transform duration-500 rounded-full group-hover/vinyl:scale-105 ${
                           currentSong?.id === topResult.id && isPlaying ? 'animate-spin-slow' : ''
                         }`}
                       />
 
+                      {/* Vinyl Center Spindle Hole */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <div className="w-8 h-8 rounded-full bg-black/85 border border-white/25 flex items-center justify-center shadow-inner">
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#131420] border border-white/40" />
+                        </div>
+                      </div>
+
                       {/* Glass center hover play badge */}
-                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover/vinyl:opacity-100 flex items-center justify-center transition-all duration-200">
-                        <div className="w-12 h-12 rounded-full bg-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/50">
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover/vinyl:opacity-100 flex items-center justify-center transition-all duration-200 z-20">
+                        <div className="w-12 h-12 rounded-full bg-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/50 hover:scale-110 active:scale-95 transition-transform">
                           {currentSong?.id === topResult.id && isPlaying ? (
                             <Pause className="w-5 h-5 fill-white" />
                           ) : (
