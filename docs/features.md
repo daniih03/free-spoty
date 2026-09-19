@@ -152,6 +152,12 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - Eliminación total de la tabla estilo Excel con columnas frías (`#`, `TÍTULO`, `ÁLBUM`, `🕒`).
    - Reemplazado por un flujo de pistas de cristal esmerilado con soundwaves pulsantes y soporte de visualización conmutable en Stream o Galería.
 
+7. **Visor de Estudio a Pantalla Completa & Letras Dinámicas (`LyricsView.tsx`):**
+   - **Visor de Gran Formato:** Al abrir la pantalla completa (atajo `F` o clic sobre el vinilo del reproductor), se presenta un visor de consola con un vinilo analógico a gran escala (`w-96 h-96`), surcos concéntricos, orificio de eje central y giro en tiempo real, acompañado de controles completos de transporte, scrubber continuo de alta resolución y controles de volumen.
+   - **Modo Dividido con Letras a la Derecha:** Con un solo clic en **"Ver Letra"**, el escenario se transforma en pantalla dividida: el visor de reproducción se sitúa a la izquierda con todos sus controles intactos, mientras que a la derecha se despliega el flujo de letras sincronizadas con scroll automático inteligente, marcado escarlata de la estrofa actual y búsqueda de compás por clic.
+   - Conmutador en la cabecera para alternar entre el Visor de Estudio centrado y la vista dividida con Letra.
+
+
 
 
 
