@@ -18,7 +18,10 @@ import {
   Radio,
   FileText,
   Film,
+  LayoutList,
+  LayoutGrid,
 } from 'lucide-react';
+import { SongCard } from '../UI/SongCard';
 
 interface PlaylistViewProps {
   playlist: Playlist;
@@ -29,6 +32,7 @@ interface PlaylistViewProps {
 export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigateHome, onNavigateArtist }) => {
   const { currentSong, isPlaying, playSong, togglePlay, isShuffle, toggleShuffle } = usePlayer();
   const [searchFilter, setSearchFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'stream' | 'gallery'>('stream');
 
   const totalDurationSecs = playlist.songs.reduce((acc, s) => acc + (s.duration || 0), 0);
   const totalMinutes = Math.floor(totalDurationSecs / 60);
@@ -138,41 +142,57 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
           )}
         </div>
 
-        {/* Filter within playlist */}
-        {playlist.songs.length > 5 && (
-          <input
-            type="text"
-            placeholder="Filtrar en esta lista..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral w-56"
-          />
-        )}
+        {/* Filter and View mode controls */}
+        <div className="flex items-center gap-2.5">
+          {playlist.songs.length > 5 && (
+            <input
+              type="text"
+              placeholder="Filtrar en esta lista..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral w-44 sm:w-56"
+            />
+          )}
+
+          <div className="flex items-center gap-1 p-1 bg-[#141520]/80 border border-white/10 rounded-2xl backdrop-blur-md">
+            <button
+              onClick={() => setViewMode('stream')}
+              className={`p-1.5 rounded-xl transition-colors ${
+                viewMode === 'stream'
+                  ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Vista Stream"
+            >
+              <LayoutList className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('gallery')}
+              className={`p-1.5 rounded-xl transition-colors ${
+                viewMode === 'gallery'
+                  ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Vista Galería"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* 3. Song Table */}
+      {/* 3. Song Presentation */}
       {filteredSongs.length === 0 ? (
-        <div className="p-16 text-center text-zinc-500 space-y-3 bg-white/[0.02] rounded-2xl border border-white/5">
+        <div className="p-16 text-center text-zinc-500 space-y-3 bg-[#13141f]/30 rounded-3xl border border-white/5">
           <Music className="w-12 h-12 mx-auto opacity-30 text-brand-coral" />
           <p className="text-base font-semibold text-zinc-400">Esta playlist está vacía</p>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             Busca cualquier canción o artista y agrégala con el menú de 3 puntos.
           </p>
         </div>
-      ) : (
-        <div className="space-y-1">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 px-4 py-2 text-xs font-semibold text-zinc-500 border-b border-white/10 uppercase tracking-wider">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-6 sm:col-span-5">Título</div>
-            <div className="hidden sm:block sm:col-span-3">Álbum</div>
-            <div className="col-span-3 sm:col-span-2 text-center">Versión</div>
-            <div className="col-span-2 sm:col-span-1 text-right flex items-center justify-end gap-1">
-              <Clock className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          {/* Song Rows */}
+      ) : viewMode === 'stream' ? (
+        <div className="space-y-2">
+          {/* Tracklist items without Spotify table headers */}
           {filteredSongs.map((song, idx) => {
             const isCurrent = currentSong?.id === song.id;
             const isLiked = isSongLiked(song.id);
@@ -181,115 +201,139 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
               <div
                 key={`${song.id}-${idx}`}
                 onClick={() => playSong(song, playlist.songs)}
-                className={`group grid grid-cols-12 items-center px-4 py-2.5 rounded-xl text-xs cursor-pointer transition-colors ${
+                className={`group flex items-center justify-between p-3 rounded-2xl backdrop-blur-xl transition-all duration-200 cursor-pointer border transform-gpu hover:-translate-y-0.5 ${
                   isCurrent
-                    ? 'bg-brand-red/15 text-brand-coral font-semibold shadow-sm'
-                    : 'text-zinc-300 hover:bg-white/5'
+                    ? 'bg-brand-burgundy/30 border-brand-red/50 shadow-[0_4px_24px_rgba(200,25,0,0.18)]'
+                    : 'bg-[#13141f]/40 hover:bg-[#191b29]/75 border-white/[0.05] hover:border-brand-red/30'
                 }`}
               >
-                {/* Index / Play icon */}
-                <div className="col-span-1 text-center font-mono text-zinc-500 group-hover:text-white">
-                  {isCurrent && isPlaying ? (
-                    <div className="flex items-end justify-center gap-0.5 h-3">
-                      <span className="w-0.5 bg-brand-coral h-full animate-pulse" />
-                      <span className="w-0.5 bg-brand-coral h-2/3 animate-pulse" />
-                      <span className="w-0.5 bg-brand-coral h-4/5 animate-pulse" />
-                    </div>
-                  ) : (
-                    <span className="group-hover:hidden">{idx + 1}</span>
-                  )}
-                  <Play className="w-3 h-3 mx-auto hidden group-hover:block fill-current" />
-                </div>
+                {/* Left: Artwork + Title + Artist */}
+                <div className="flex items-center gap-3.5 min-w-0 flex-1 pr-3">
+                  <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-white/[0.03] border border-white/10">
+                    <img
+                      src={song.coverUrl}
+                      alt={song.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                      }}
+                      className="w-full h-full object-cover bg-zinc-800"
+                    />
 
-                {/* Title & Cover & Artist */}
-                <div className="col-span-6 sm:col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                  <img
-                    src={song.coverUrl}
-                    alt={song.title}
-                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-md"
-                  />
-                  <div className="min-w-0">
+                    {/* Soundwave or Play button */}
+                    {isCurrent && isPlaying ? (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-0.5">
+                        <span className="w-0.5 h-3 bg-brand-coral rounded-full animate-pulse" />
+                        <span className="w-0.5 h-4 bg-brand-red rounded-full animate-pulse delay-75" />
+                        <span className="w-0.5 h-2.5 bg-brand-rose rounded-full animate-pulse delay-150" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-0.5">
                     <p
-                      className={`truncate text-sm font-semibold ${
-                        isCurrent ? 'text-brand-coral' : 'text-white'
+                      className={`truncate text-sm font-semibold transition-colors ${
+                        isCurrent ? 'text-brand-coral' : 'text-white/95 group-hover:text-white'
                       }`}
                     >
                       {song.title}
                     </p>
-                    <p
-                      onClick={(e) => {
-                        if (onNavigateArtist) {
-                          e.stopPropagation();
-                          onNavigateArtist(song.artist);
+                    <div className="flex items-center gap-2 text-xs text-white/45 truncate">
+                      <span
+                        onClick={(e) => {
+                          if (onNavigateArtist) {
+                            e.stopPropagation();
+                            onNavigateArtist(song.artist);
+                          }
+                        }}
+                        className={
+                          onNavigateArtist
+                            ? 'hover:underline hover:text-brand-rose cursor-pointer'
+                            : ''
                         }
-                      }}
-                      className={`truncate text-xs text-zinc-400 ${
-                        onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
-                      }`}
-                    >
-                      {song.artist}
-                    </p>
+                      >
+                        {song.artist}
+                      </span>
+                      {song.album && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate max-w-[160px] text-zinc-500">
+                            {song.album}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Album */}
-                <div className="hidden sm:block sm:col-span-3 truncate text-zinc-400 pr-2">
-                  {song.album || '—'}
-                </div>
+                {/* Right: Version + Like + Trash + Duration */}
+                <div
+                  className="flex items-center gap-3 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Version tag */}
+                  <div className="hidden sm:block">
+                    {song.currentVersion === 'radio' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-brand-red/20 text-brand-coral border border-brand-red/30 px-2 py-0.5 rounded-full font-medium">
+                        <Radio className="w-2.5 h-2.5" /> Radio
+                      </span>
+                    ) : song.currentVersion === 'lyrics' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-medium">
+                        <FileText className="w-2.5 h-2.5" /> Lyrics
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium">
+                        <Film className="w-2.5 h-2.5" /> Original
+                      </span>
+                    )}
+                  </div>
 
-                {/* Version badge */}
-                <div className="col-span-3 sm:col-span-2 text-center">
-                  {song.currentVersion === 'radio' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-brand-red/20 text-brand-coral border border-brand-red/30 px-2 py-0.5 rounded-full font-medium">
-                      <Radio className="w-2.5 h-2.5" /> Radio
-                    </span>
-                  ) : song.currentVersion === 'lyrics' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-medium">
-                      <FileText className="w-2.5 h-2.5" /> Lyrics
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium">
-                      <Film className="w-2.5 h-2.5" /> Original
-                    </span>
-                  )}
-                </div>
-
-                {/* Duration & Like action */}
-                <div className="col-span-2 sm:col-span-1 flex items-center justify-end gap-2 text-right">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLikeSong(song);
-                    }}
-                    className={`p-1 rounded-full transition-colors ${
+                    onClick={() => toggleLikeSong(song)}
+                    className={`p-2 rounded-lg transition-colors ${
                       isLiked
                         ? 'text-brand-coral'
-                        : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
+                        : 'text-zinc-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100'
                     }`}
+                    title={isLiked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                   >
                     <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                   </button>
 
                   {playlist.isCustom && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeSongFromPlaylist(playlist.id, song.id);
-                      }}
-                      className="p-1 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeSongFromPlaylist(playlist.id, song.id)}
+                      className="p-2 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-white/10"
                       title="Eliminar de esta playlist"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
 
-                  <span className="font-mono text-zinc-400">
+                  <span className="text-xs font-mono text-zinc-500">
                     {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
                   </span>
                 </div>
               </div>
             );
           })}
+        </div>
+      ) : (
+        /* Gallery Mode */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {filteredSongs.map((song) => (
+            <SongCard
+              key={song.id}
+              song={song}
+              contextQueue={playlist.songs}
+              onNavigateArtist={onNavigateArtist}
+            />
+          ))}
         </div>
       )}
     </div>

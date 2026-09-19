@@ -3,7 +3,27 @@ import { searchSongsMetadata } from '../../services/searchService';
 import { Song } from '../../types/music';
 import { SongCard } from '../UI/SongCard';
 import { usePlayer } from '../../context/PlayerContext';
-import { Search, Music, Play, Pause, Sparkles } from 'lucide-react';
+import {
+  isSongLiked,
+  toggleLikeSong,
+  addSongToPlaylist,
+  getCustomPlaylists,
+} from '../../services/storageService';
+import {
+  Search,
+  Play,
+  Pause,
+  Sparkles,
+  Heart,
+  Plus,
+  MoreVertical,
+  Disc3,
+  LayoutList,
+  LayoutGrid,
+  Radio,
+  Sliders,
+  Check,
+} from 'lucide-react';
 
 interface SearchViewProps {
   query: string;
@@ -11,22 +31,57 @@ interface SearchViewProps {
   onNavigateArtist?: (artistName: string) => void;
 }
 
-const GENRE_CARDS = [
-  { name: 'Pop Global', color: 'from-pink-600 to-rose-900', query: 'pop hits' },
-  { name: 'Urbano Latino', color: 'from-amber-600 to-orange-900', query: 'reggaeton latino' },
-  { name: 'Rock & Alternativo', color: 'from-red-600 to-stone-900', query: 'rock classics' },
-  { name: 'Hip Hop & Trap', color: 'from-purple-600 to-indigo-950', query: 'hip hop' },
-  { name: 'Lo-Fi Chill & Study', color: 'from-brand-ruby via-brand-crimson to-stone-950', query: 'lofi chill' },
-  { name: 'Electrónica & Dance', color: 'from-cyan-600 to-blue-900', query: 'electronic dance' },
-  { name: 'Indie & Acústico', color: 'from-rose-700 via-brand-wine to-zinc-950', query: 'indie' },
-  { name: 'Éxitos España', color: 'from-yellow-600 to-amber-900', query: 'exitos espana' },
+const MOOD_PORTALS = [
+  {
+    name: 'Urbano & Fuego',
+    desc: 'Reggaetón, Trap y ritmos nocturnos',
+    gradient: 'from-brand-burgundy/80 via-brand-crimson/30 to-black',
+    query: 'reggaeton latino',
+  },
+  {
+    name: 'Estudio & Lo-Fi',
+    desc: 'Beats analógicos para máxima concentración',
+    gradient: 'from-purple-950/70 via-indigo-900/30 to-black',
+    query: 'lofi chill',
+  },
+  {
+    name: 'Pop & Vanguardia',
+    desc: 'Los lanzamientos más escuchados del planeta',
+    gradient: 'from-rose-950/70 via-pink-900/30 to-black',
+    query: 'pop hits',
+  },
+  {
+    name: 'Rock & Distorsión',
+    desc: 'Guitarras puras, solos y clásicos de culto',
+    gradient: 'from-stone-900 via-brand-wine/40 to-black',
+    query: 'rock classics',
+  },
+  {
+    name: 'Noche Electrónica',
+    desc: 'Synthwave, Melodic House & Techno',
+    gradient: 'from-blue-950/80 via-cyan-950/30 to-black',
+    query: 'electronic dance',
+  },
+  {
+    name: 'Acústico & Madera',
+    desc: 'Sesiones íntimas, guitarras y vocales',
+    gradient: 'from-amber-950/70 via-orange-950/30 to-black',
+    query: 'indie',
+  },
 ];
 
-export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, onNavigateArtist }) => {
-  const { playSong, currentSong, isPlaying, togglePlay } = usePlayer();
+export const SearchView: React.FC<SearchViewProps> = ({
+  query,
+  onSearchChange,
+  onNavigateArtist,
+}) => {
+  const { playSong, currentSong, isPlaying, togglePlay, addToQueue, playNextInQueue } = usePlayer();
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [viewMode, setViewMode] = useState<'stream' | 'gallery'>('stream');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const customPlaylists = getCustomPlaylists();
 
   useEffect(() => {
     if (!query.trim()) {
@@ -35,7 +90,6 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
       return;
     }
 
-    // Cancel previous in-flight search request immediately
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -64,199 +118,472 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
   }, [query]);
 
   const topResult = results[0];
+  const remainingSongs = results.slice(1);
+
+  const formatDuration = (sec: number) => {
+    if (!sec || isNaN(sec)) return '3:20';
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto select-none">
-      {/* Search Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
-          {query.trim() ? `Resultados para "${query}"` : 'Explorar y Buscar'}
-        </h2>
-        <p className="text-xs text-zinc-400">
-          Audio oficial en alta fidelidad sin anuncios ni interrupciones
-        </p>
+      {/* Header & Status */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-brand-coral animate-pulse" />
+            <span className="text-[11px] uppercase tracking-widest font-bold text-brand-coral">
+              Sonic Studio Explorer
+            </span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            {query.trim() ? `Pistas para "${query}"` : 'Exploración Sonora'}
+          </h2>
+        </div>
+
+        {/* View Mode Switcher (When results are active) */}
+        {results.length > 0 && (
+          <div className="flex items-center gap-1 p-1 bg-[#141520]/80 border border-white/10 rounded-2xl self-start sm:self-auto backdrop-blur-md">
+            <button
+              onClick={() => setViewMode('stream')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === 'stream'
+                  ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/30'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Vista Stream: doble canal ergonómico"
+            >
+              <LayoutList className="w-3.5 h-3.5" />
+              <span>Stream</span>
+            </button>
+            <button
+              onClick={() => setViewMode('gallery')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === 'gallery'
+                  ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/30'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Vista Galería: vinilos y carátulas"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Galería</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Genre Categories when query is empty */}
+      {/* Mood Portals (Empty query) */}
       {!query.trim() && (
         <div className="space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand-coral" />
-            Explorar por géneros
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {GENRE_CARDS.map((card) => (
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white/90 flex items-center gap-2">
+              <Radio className="w-4 h-4 text-brand-coral" />
+              Portales de Frecuencia
+            </h3>
+            <span className="text-xs text-white/40">Selecciona un ambiente sonoro</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOOD_PORTALS.map((portal) => (
               <div
-                key={card.name}
-                onClick={() => onSearchChange(card.query)}
-                className={`group relative h-28 rounded-2xl bg-gradient-to-br ${card.color} p-4 cursor-pointer overflow-hidden border border-white/10 hover:border-white/25 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex items-end transform-gpu`}
+                key={portal.name}
+                onClick={() => onSearchChange(portal.query)}
+                className={`group relative p-5 rounded-3xl bg-gradient-to-br ${portal.gradient} border border-white/[0.08] hover:border-brand-red/40 shadow-xl hover:shadow-2xl hover:shadow-brand-red/10 cursor-pointer transition-all duration-300 transform-gpu hover:-translate-y-1 overflow-hidden`}
               >
-                <div className="absolute top-3 right-3 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <Music className="w-12 h-12" />
+                <div className="relative z-10 space-y-1">
+                  <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-4 h-4 text-brand-coral" />
+                  </div>
+                  <h4 className="text-lg font-bold text-white tracking-tight group-hover:text-brand-coral transition-colors">
+                    {portal.name}
+                  </h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{portal.desc}</p>
                 </div>
-                <h4 className="text-base font-bold text-white tracking-tight drop-shadow-md z-10">
-                  {card.name}
-                </h4>
+
+                {/* Subtle decorative vinyl ring watermark */}
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full border border-white/[0.06] group-hover:border-brand-red/20 transition-colors pointer-events-none" />
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Loading indicator */}
+      {/* Searching Loader */}
       {isSearching && (
-        <div className="flex flex-col items-center justify-center py-16 space-y-3 text-zinc-400">
-          <div className="w-8 h-8 border-2 border-brand-coral border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm">Buscando pistas oficiales en alta fidelidad...</p>
+        <div className="flex flex-col items-center justify-center py-20 space-y-3 text-zinc-400">
+          <div className="w-9 h-9 border-2 border-brand-coral border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium tracking-wide text-zinc-300">
+            Sintonizando catálogo oficial sin anuncios...
+          </p>
         </div>
       )}
 
-      {/* Results view */}
+      {/* Results View */}
       {!isSearching && query.trim() && (
         <>
           {results.length === 0 ? (
-            <div className="p-16 text-center text-zinc-500 space-y-3">
+            <div className="p-16 text-center text-zinc-500 space-y-3 bg-[#13141f]/30 rounded-3xl border border-white/5">
               <Search className="w-12 h-12 mx-auto opacity-30 text-brand-coral" />
-              <p className="text-lg font-medium text-zinc-400">
-                No encontramos resultados para "{query}"
+              <p className="text-base font-semibold text-zinc-300">
+                Sin coincidencias para "{query}"
               </p>
               <p className="text-xs text-zinc-500">
-                Intenta buscar por el nombre del artista o título de la canción.
+                Verifica el nombre del artista o título de la canción e inténtalo de nuevo.
               </p>
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Top Result Spotlight */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {topResult && (
-                  <div className="lg:col-span-5 space-y-3">
-                    <h3 className="text-lg font-bold text-white">Resultado principal</h3>
+              {/* ================================================================= */}
+              {/* 1. STUDIO STAGE: Widescreen Panoramic Showcase for Lead Track     */}
+              {/* ================================================================= */}
+              {topResult && (
+                <div className="relative rounded-3xl p-6 md:p-8 bg-gradient-to-r from-brand-burgundy/30 via-[#131420]/90 to-[#0e1017]/80 border border-white/[0.1] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+                  <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                    {/* Glowing Vinyl Disc Display */}
                     <div
                       onClick={() => playSong(topResult, results)}
-                      className="group p-6 rounded-3xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-brand-red/30 transition-all duration-200 cursor-pointer relative shadow-xl transform-gpu"
+                      className="group/vinyl relative w-36 h-36 md:w-44 md:h-44 rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer shadow-2xl flex-shrink-0 border border-white/15 bg-zinc-900 transform-gpu"
+                      title={
+                        currentSong?.id === topResult.id && isPlaying
+                          ? 'Pausar tema principal'
+                          : 'Reproducir tema principal'
+                      }
                     >
                       <img
                         src={topResult.coverUrl}
                         alt={topResult.title}
-                        loading="lazy"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
                         }}
-                        className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-4 group-hover:scale-105 transition-transform bg-zinc-800"
+                        className={`w-full h-full object-cover transition-transform duration-500 group-hover/vinyl:scale-105 ${
+                          currentSong?.id === topResult.id && isPlaying ? 'animate-spin-slow' : ''
+                        }`}
                       />
-                      <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-coral transition-colors">
+
+                      {/* Glass center hover play badge */}
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover/vinyl:opacity-100 flex items-center justify-center transition-all duration-200">
+                        <div className="w-12 h-12 rounded-full bg-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/50">
+                          {currentSong?.id === topResult.id && isPlaying ? (
+                            <Pause className="w-5 h-5 fill-white" />
+                          ) : (
+                            <Play className="w-5 h-5 fill-white ml-0.5" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metadata & Actions */}
+                    <div className="flex-1 min-w-0 text-center md:text-left space-y-3">
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-brand-red/20 border border-brand-red/40 text-[10px] font-extrabold uppercase tracking-wider text-brand-coral">
+                          Pista Destacada
+                        </span>
+                        <span className="text-[11px] text-zinc-400 font-mono">
+                          {formatDuration(topResult.duration)} • Audio HD Master
+                        </span>
+                      </div>
+
+                      <h3
+                        onClick={() => playSong(topResult, results)}
+                        className="text-2xl md:text-4xl font-extrabold text-white tracking-tight truncate cursor-pointer hover:text-brand-coral transition-colors"
+                      >
                         {topResult.title}
-                      </h4>
+                      </h3>
+
                       <p
-                        onClick={(e) => {
-                          if (onNavigateArtist) {
-                            e.stopPropagation();
-                            onNavigateArtist(topResult.artist);
-                          }
-                        }}
-                        className={`text-sm text-zinc-400 font-medium mb-3 ${
-                          onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+                        onClick={() => onNavigateArtist?.(topResult.artist)}
+                        className={`text-sm md:text-base text-zinc-300 font-medium truncate ${
+                          onNavigateArtist
+                            ? 'hover:underline hover:text-brand-rose cursor-pointer'
+                            : ''
                         }`}
                       >
                         {topResult.artist}
                       </p>
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-white/10 text-white/90 border border-white/15 px-3 py-1 rounded-full font-semibold">
-                          Canción
-                        </span>
-                      </div>
+                      {/* Studio Action Bar */}
+                      <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                        <button
+                          onClick={() => {
+                            if (currentSong?.id === topResult.id) {
+                              togglePlay();
+                            } else {
+                              playSong(topResult, results);
+                            }
+                          }}
+                          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-brand-red/30 hover:scale-105 active:scale-95 transition-all"
+                        >
+                          {currentSong?.id === topResult.id && isPlaying ? (
+                            <>
+                              <Pause className="w-4 h-4 fill-white" />
+                              <span>Pausar</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 fill-white ml-0.5" />
+                              <span>Reproducir ahora</span>
+                            </>
+                          )}
+                        </button>
 
-                      {/* Always Visible Play Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (currentSong?.id === topResult.id) {
-                            togglePlay();
-                          } else {
-                            playSong(topResult, results);
-                          }
-                        }}
-                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-2xl shadow-brand-red/40 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
-                        title={currentSong?.id === topResult.id && isPlaying ? 'Pausar' : 'Reproducir'}
-                      >
-                        {currentSong?.id === topResult.id && isPlaying ? (
-                          <Pause className="w-6 h-6 fill-white text-white" />
-                        ) : (
-                          <Play className="w-6 h-6 fill-white text-white ml-0.5" />
+                        <button
+                          onClick={() => toggleLikeSong(topResult)}
+                          className={`p-2.5 rounded-full backdrop-blur-md border transition-all ${
+                            isSongLiked(topResult.id)
+                              ? 'bg-brand-burgundy/40 border-brand-red/50 text-brand-coral shadow-md'
+                              : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+                          }`}
+                          title="Me gusta"
+                        >
+                          <Heart
+                            className={`w-4 h-4 ${
+                              isSongLiked(topResult.id) ? 'fill-current' : ''
+                            }`}
+                          />
+                        </button>
+
+                        <button
+                          onClick={() => addToQueue(topResult)}
+                          className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all text-xs flex items-center gap-1.5"
+                          title="Añadir a la cola"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline text-xs font-semibold">En cola</span>
+                        </button>
+
+                        {onNavigateArtist && (
+                          <button
+                            onClick={() => onNavigateArtist(topResult.artist)}
+                            className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-brand-coral transition-all text-xs flex items-center gap-1.5"
+                            title="Ir al perfil del artista"
+                          >
+                            <Disc3 className="w-4 h-4" />
+                            <span className="hidden sm:inline text-xs font-semibold">
+                              Ver artista
+                            </span>
+                          </button>
                         )}
-                      </button>
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Top 5 Songs List */}
-                <div className="lg:col-span-7 space-y-3">
-                  <h3 className="text-lg font-bold text-white">Canciones</h3>
-                  <div className="space-y-1">
-                    {results.slice(0, 5).map((song) => (
-                      <div
-                        key={song.id}
-                        onClick={() => playSong(song, results)}
-                        className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={song.coverUrl}
-                            alt={song.title}
-                            loading="lazy"
-                            className="w-11 h-11 rounded-lg object-cover flex-shrink-0 shadow-md"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-white truncate group-hover:text-brand-coral transition-colors">
-                              {song.title}
-                            </p>
-                            <p
-                              onClick={(e) => {
-                                if (onNavigateArtist) {
-                                  e.stopPropagation();
-                                  onNavigateArtist(song.artist);
-                                }
-                              }}
-                              className={`text-xs text-zinc-400 truncate ${
-                                onNavigateArtist ? 'hover:underline hover:text-white cursor-pointer' : ''
+              {/* ================================================================= */}
+              {/* 2. AUDIO STREAM / GALLERY: Disposición No-Spotify                  */}
+              {/* ================================================================= */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-white/90">
+                    Catálogo Coincidente ({results.length})
+                  </h3>
+                  <span className="text-xs text-white/40">Audio de alta fidelidad sin anuncios</span>
+                </div>
+
+                {viewMode === 'stream' ? (
+                  /* Double-Channel Horizontal Stream Capsules */
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                    {results.map((song) => {
+                      const isCurrent = currentSong?.id === song.id;
+                      const isLiked = isSongLiked(song.id);
+                      const isMenuOpen = activeMenuId === song.id;
+
+                      return (
+                        <div
+                          key={song.id}
+                          onClick={() => playSong(song, results)}
+                          className={`group relative p-3 rounded-2xl backdrop-blur-xl transition-all duration-200 cursor-pointer flex items-center justify-between gap-3.5 border transform-gpu hover:-translate-y-0.5 ${
+                            isCurrent
+                              ? 'bg-brand-burgundy/30 border-brand-red/50 shadow-[0_4px_24px_rgba(200,25,0,0.18)]'
+                              : 'bg-[#13141f]/50 hover:bg-[#191b29]/80 border-white/[0.06] hover:border-brand-red/35'
+                          }`}
+                        >
+                          {/* Left: Cover with soundwave / play trigger */}
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="relative w-13 h-13 rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-white/[0.03] border border-white/10">
+                              <img
+                                src={song.coverUrl}
+                                alt={song.title}
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                                }}
+                                className="w-full h-full object-cover bg-zinc-800"
+                              />
+
+                              {/* Live Soundwave or Play Overlay */}
+                              {isCurrent && isPlaying ? (
+                                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-0.5">
+                                  <span className="w-0.5 h-3 bg-brand-coral rounded-full animate-pulse" />
+                                  <span className="w-0.5 h-4 bg-brand-red rounded-full animate-pulse delay-75" />
+                                  <span className="w-0.5 h-2.5 bg-brand-rose rounded-full animate-pulse delay-150" />
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Details */}
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <p
+                                className={`text-sm font-semibold truncate transition-colors ${
+                                  isCurrent ? 'text-brand-coral' : 'text-white/95 group-hover:text-white'
+                                }`}
+                              >
+                                {song.title}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-white/45 truncate">
+                                <span
+                                  onClick={(e) => {
+                                    if (onNavigateArtist) {
+                                      e.stopPropagation();
+                                      onNavigateArtist(song.artist);
+                                    }
+                                  }}
+                                  className={
+                                    onNavigateArtist
+                                      ? 'hover:underline hover:text-brand-rose cursor-pointer'
+                                      : ''
+                                  }
+                                >
+                                  {song.artist}
+                                </span>
+                                {song.album && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="truncate max-w-[140px] text-zinc-500">
+                                      {song.album}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right: Quick actions & Duration */}
+                          <div
+                            className="flex items-center gap-1.5 flex-shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-[11px] font-mono text-zinc-500 mr-1.5 hidden sm:inline">
+                              {formatDuration(song.duration)}
+                            </span>
+
+                            <button
+                              onClick={() => toggleLikeSong(song)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isLiked
+                                  ? 'text-brand-coral'
+                                  : 'text-zinc-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100'
                               }`}
+                              title={isLiked ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                             >
-                              {song.artist}
-                            </p>
+                              <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                            </button>
+
+                            <button
+                              onClick={() => addToQueue(song)}
+                              className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-colors"
+                              title="Añadir a la cola"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            <div className="relative">
+                              <button
+                                onClick={() =>
+                                  setActiveMenuId(isMenuOpen ? null : song.id)
+                                }
+                                className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
+                                title="Opciones"
+                              >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+
+                              {isMenuOpen && (
+                                <div className="absolute right-0 bottom-full mb-1.5 w-48 bg-[#161722]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-1.5 z-50 text-xs text-zinc-200 animate-fadeIn">
+                                  {onNavigateArtist && (
+                                    <button
+                                      onClick={() => {
+                                        onNavigateArtist(song.artist);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full text-left px-3.5 py-2 hover:bg-white/10 flex items-center gap-2.5 text-white/90"
+                                    >
+                                      <Disc3 className="w-3.5 h-3.5 text-brand-coral" />
+                                      Ver artista
+                                    </button>
+                                  )}
+
+                                  <button
+                                    onClick={() => {
+                                      playNextInQueue(song);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 hover:bg-white/10 flex items-center gap-2.5 text-white/90"
+                                  >
+                                    <Plus className="w-3.5 h-3.5 text-brand-coral" />
+                                    Reproducir siguiente
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      addToQueue(song);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 hover:bg-white/10 flex items-center gap-2.5 text-white/80"
+                                  >
+                                    <Plus className="w-3.5 h-3.5 text-zinc-400" />
+                                    Añadir al final de la cola
+                                  </button>
+
+                                  {customPlaylists.length > 0 && (
+                                    <div className="border-t border-white/10 my-1 pt-1">
+                                      <div className="px-3.5 py-1 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
+                                        Añadir a playlist:
+                                      </div>
+                                      {customPlaylists.map((pl) => (
+                                        <button
+                                          key={pl.id}
+                                          onClick={() => {
+                                            addSongToPlaylist(pl.id, song);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="w-full text-left px-3.5 py-1.5 hover:bg-white/10 text-xs text-white/80 hover:text-white truncate"
+                                        >
+                                          {pl.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-zinc-500 font-mono">
-                            {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
-                          </span>
-                          <button
-                            className="p-2 rounded-full text-zinc-400 group-hover:text-white group-hover:bg-white/10 transition-colors"
-                            title="Reproducir"
-                          >
-                            <Play className="w-4 h-4 fill-current ml-0.5" />
-                          </button>
-                        </div>
-                      </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Visual Gallery: Aura Minimalist Cards */
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {results.map((song) => (
+                      <SongCard
+                        key={song.id}
+                        song={song}
+                        contextQueue={results}
+                        onNavigateArtist={onNavigateArtist}
+                      />
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Grid of all results */}
-              <div className="space-y-4 pt-4">
-                <h3 className="text-lg font-bold text-white">Todas las canciones encontradas</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {results.map((song) => (
-                    <SongCard
-                      key={song.id}
-                      song={song}
-                      contextQueue={results}
-                      onNavigateArtist={onNavigateArtist}
-                    />
-                  ))}
-                </div>
+                )}
               </div>
             </div>
           )}
