@@ -7,9 +7,9 @@ interface ColorResult {
 }
 
 const DEFAULT_RESULT: ColorResult = {
-  primary: 'rgb(30, 215, 96)',
-  secondary: 'rgb(70, 185, 156)',
-  ambientGradient: 'radial-gradient(circle at 50% 20%, rgba(30, 215, 96, 0.28) 0%, rgba(0, 0, 0, 0) 80%)',
+  primary: 'rgb(22, 28, 45)', // Deep luxury midnight indigo
+  secondary: 'rgb(14, 18, 30)', // Dark slate obsidian
+  ambientGradient: 'radial-gradient(circle at 50% 20%, rgba(26, 34, 56, 0.45) 0%, rgba(9, 11, 16, 0) 80%)',
 };
 
 // Global cache to avoid recomputing colors for same album art
@@ -69,12 +69,18 @@ export function useDominantColor(imageUrl?: string): ColorResult {
         }
 
         if (count > 0 && isMounted) {
-          const avgR = Math.round(r / count);
-          const avgG = Math.round(g / count);
-          const avgB = Math.round(b / count);
+          let avgR = Math.round(r / count);
+          let avgG = Math.round(g / count);
+          let avgB = Math.round(b / count);
+
+          // Ensure no green ambient hue is ever cast; shift towards deep slate/indigo if green dominates
+          if (avgG > avgR * 1.15 && avgG > avgB * 1.15) {
+            avgG = Math.round(avgG * 0.4);
+            avgB = Math.max(avgB, Math.round(avgG * 1.3));
+          }
 
           const primary = `rgb(${avgR}, ${avgG}, ${avgB})`;
-          const secondary = `rgb(${Math.min(255, avgR + 35)}, ${Math.max(0, avgG - 20)}, ${Math.min(255, avgB + 50)})`;
+          const secondary = `rgb(${Math.min(255, avgR + 30)}, ${Math.max(0, avgG - 15)}, ${Math.min(255, avgB + 45)})`;
           const ambientGradient = `radial-gradient(circle at 50% 20%, rgba(${avgR}, ${avgG}, ${avgB}, 0.28) 0%, rgba(0, 0, 0, 0) 80%)`;
 
           const calculated = { primary, secondary, ambientGradient };
