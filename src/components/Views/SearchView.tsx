@@ -139,7 +139,10 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                         src={topResult.coverUrl}
                         alt={topResult.title}
                         loading="lazy"
-                        className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-4 group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                        }}
+                        className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-4 group-hover:scale-105 transition-transform bg-zinc-800"
                       />
                       <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-green transition-colors">
                         {topResult.title}

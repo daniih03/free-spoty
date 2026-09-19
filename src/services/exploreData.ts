@@ -1,4 +1,4 @@
-import { Playlist, Song } from '../types/music';
+import { Playlist } from '../types/music';
 
 export const FEATURED_PLAYLISTS: Playlist[] = [
   {
@@ -13,13 +13,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Dua Lipa',
         album: 'Radical Optimism',
         duration: 185,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/05/85/ca/0585ca45-9a84-0a65-1d63-5491796d11f8/190296181467.jpg/600x600bb.jpg',
-        youtubeId: 'BHIpvqhydLo', // Dua Lipa - Houdini (Lyrics) - Ad-free community upload
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/dd/af/ea/ddafeab5-797a-5b6f-7735-f96c537b45e0/5054197894091.jpg/600x600bb.jpg',
+        youtubeId: 'suAR1PYFNYA',
+        candidateVideoIds: ['suAR1PYFNYA', 'BHIpvqhydLo'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'BHIpvqhydLo',
+          radio: 'suAR1PYFNYA',
           lyrics: 'BHIpvqhydLo',
-          original: 'BHIpvqhydLo'
+          original: 'suAR1PYFNYA'
         },
         hasSyncedLyrics: true
       },
@@ -29,12 +30,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'The Weeknd',
         album: 'After Hours',
         duration: 200,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/25/74/bf257404-5858-a400-0e42-1fb3950ef775/20UMGIM08611.rgb.jpg/600x600bb.jpg',
-        youtubeId: '4NRXx6U8ABQ', // Blinding Lights (Official Audio)
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6f/bc/e6/6fbce6c4-c38c-72d8-4fd0-66cfff32f679/20UMGIM12176.rgb.jpg/600x600bb.jpg',
+        youtubeId: '4NRXx6U8ABQ',
+        candidateVideoIds: ['4NRXx6U8ABQ', 'fHI8X4OXluQ'],
         currentVersion: 'radio',
         availableVersions: {
           radio: '4NRXx6U8ABQ',
-          lyrics: 'XbGs_qK2PQA',
+          lyrics: 'fHI8X4OXluQ',
           original: '4NRXx6U8ABQ'
         },
         hasSyncedLyrics: true
@@ -45,13 +47,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Sabrina Carpenter',
         album: 'Short n\' Sweet',
         duration: 175,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/64/63/1f/64631f13-ee0b-db7f-561b-90f92b772c68/24UMGIM47820.rgb.jpg/600x600bb.jpg',
-        youtubeId: '2I9eC2MRhto', // Sabrina Carpenter - Espresso (Lyrics) - Ad-free
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/57/e8/7b/57e87ba0-5057-9bb9-c247-ce7dbe426e89/24UMGIM55213.rgb.jpg/600x600bb.jpg',
+        youtubeId: 'eVli-tstM5E',
+        candidateVideoIds: ['eVli-tstM5E', '2I9eC2MRhto'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: '2I9eC2MRhto',
+          radio: 'eVli-tstM5E',
           lyrics: '2I9eC2MRhto',
-          original: '2I9eC2MRhto'
+          original: 'eVli-tstM5E'
         },
         hasSyncedLyrics: true
       },
@@ -61,8 +64,9 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Harry Styles',
         album: 'Harry\'s House',
         duration: 167,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/dc/4b/32/dc4b3208-8e65-a83d-3b74-12ea2c1ea3ad/886449989679.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/19/fb/2a19fb85-2f70-9e44-f2a9-82abe679b88e/886449990061.jpg/600x600bb.jpg',
         youtubeId: 'H5v3kku4y6Q',
+        candidateVideoIds: ['H5v3kku4y6Q', 'e-O1b5Jp6-g'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'H5v3kku4y6Q',
@@ -77,8 +81,9 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Taylor Swift',
         album: 'Lover',
         duration: 178,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/74/13/2e/74132e4d-7a76-2007-88f5-93ec5d81b379/19UMGIM53909.rgb.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/49/3d/ab/493dab54-f920-9043-6181-80993b8116c9/19UMGIM53909.rgb.jpg/600x600bb.jpg',
         youtubeId: 'ic8j13piAhQ',
+        candidateVideoIds: ['ic8j13piAhQ', 'kIHCflZc9wU'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'ic8j13piAhQ',
@@ -93,13 +98,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Billie Eilish',
         album: 'HIT ME HARD AND SOFT',
         duration: 190,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/77/89/a3/7789a318-7b9c-7e61-a5be-91c64eb324a1/24UMGIM39257.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'd5gf9dXbPi0',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/600x600bb.jpg',
+        youtubeId: 'V9PVRfjEBTI',
+        candidateVideoIds: ['V9PVRfjEBTI', 'd5gf9dXbPi0'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'd5gf9dXbPi0',
-          lyrics: 'eXJ6vX0Fq-A',
-          original: 'd5gf9dXbPi0'
+          radio: 'V9PVRfjEBTI',
+          lyrics: 'd5gf9dXbPi0',
+          original: 'V9PVRfjEBTI'
         },
         hasSyncedLyrics: true
       }
@@ -117,13 +123,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Bad Bunny',
         album: 'nadie sabe lo que va a pasar mañana',
         duration: 267,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/c3/56/9e/c3569e2a-e152-e9e0-c8aa-d5ca35e408ec/197189704257.jpg/600x600bb.jpg',
-        youtubeId: 'WzM7a5h2dbs', // Clean audio
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/90/5e/7e/905e7ed5-a8fa-a8f3-cd06-0028fdf3afaa/199066342442.jpg/600x600bb.jpg',
+        youtubeId: '_PJvpq8uOZM',
+        candidateVideoIds: ['_PJvpq8uOZM', 'p_j-sKxZ858'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'WzM7a5h2dbs',
-          lyrics: 'uI4vXwV9t-8',
-          original: 'XbZ0D8J8XkI'
+          radio: '_PJvpq8uOZM',
+          lyrics: 'p_j-sKxZ858',
+          original: '_PJvpq8uOZM'
         },
         hasSyncedLyrics: true
       },
@@ -133,12 +140,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Bizarrap & Quevedo',
         album: 'Bzrp Music Sessions',
         duration: 200,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/73/80/7e/73807e32-a5ec-08be-ffae-e42a03cf81b1/196925585141.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/b5/76/a0b576ad-667d-1140-4694-23e5d598e89e/196925240499.jpg/600x600bb.jpg',
         youtubeId: 'A_g3lMcWVy0',
+        candidateVideoIds: ['A_g3lMcWVy0', 'ERbm2g_v0yE'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'A_g3lMcWVy0',
-          lyrics: 'A_g3lMcWVy0',
+          lyrics: 'ERbm2g_v0yE',
           original: 'A_g3lMcWVy0'
         },
         hasSyncedLyrics: true
@@ -149,13 +157,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Myke Towers',
         album: 'LA VIDA ES UNA',
         duration: 198,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/b8/b6/ec/b8b6ec26-3ff4-c1f0-0ef5-5aa30c25a0a3/190296181467.jpg/600x600bb.jpg',
-        youtubeId: 'p2wNl4Z-00I',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/d9/e3/67/d9e367d7-4033-3dd1-1f7d-7843dc29428c/5059801117160.jpg/600x600bb.jpg',
+        youtubeId: 'BVdngsy95mY',
+        candidateVideoIds: ['BVdngsy95mY', 'MkO9g3ywnG4', 'DFb1i0d1hTE'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'p2wNl4Z-00I',
-          lyrics: '2i5yF4Y7g24',
-          original: 'p2wNl4Z-00I'
+          radio: 'BVdngsy95mY',
+          lyrics: 'DFb1i0d1hTE',
+          original: 'MkO9g3ywnG4'
         },
         hasSyncedLyrics: true
       },
@@ -165,13 +174,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Quevedo',
         album: 'Buenas Noches',
         duration: 186,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/05/1c/b4/051cb4ee-590b-a6be-ebcf-f0c0ae276686/8445162423377.jpg/600x600bb.jpg',
-        youtubeId: '9GqZ5g_7a_U',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8a/d9/3e/8ad93ec4-5d61-9759-c92d-d9571b86224c/197338610251.jpg/600x600bb.jpg',
+        youtubeId: 'QlZNGcVfeF0',
+        candidateVideoIds: ['QlZNGcVfeF0', '1XJ1lW5N9n8'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: '9GqZ5g_7a_U',
-          lyrics: '9GqZ5g_7a_U',
-          original: '9GqZ5g_7a_U'
+          radio: 'QlZNGcVfeF0',
+          lyrics: '1XJ1lW5N9n8',
+          original: 'QlZNGcVfeF0'
         },
         hasSyncedLyrics: true
       }
@@ -191,6 +201,7 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         duration: 266,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f5/93/8c/f5938c49-964c-31d1-4b33-78b634f71fb7/190295978075.jpg/600x600bb.jpg',
         youtubeId: 'yKNxeF4KMsY',
+        candidateVideoIds: ['yKNxeF4KMsY', '1G4isv_Fylg'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'yKNxeF4KMsY',
@@ -205,12 +216,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Linkin Park',
         album: 'Hybrid Theory',
         duration: 216,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/4a/01/a7/4a01a7bb-69b7-b0a6-1e67-d86ea5242273/093624893240.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/53/a7/7f/53a77fab-c54c-a57b-8130-248fc12d0c80/093624948995.jpg/600x600bb.jpg',
         youtubeId: 'eVTXPUF4Oz4',
+        candidateVideoIds: ['eVTXPUF4Oz4', 'kXYiU_JCYtU'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'eVTXPUF4Oz4',
-          lyrics: 'eVTXPUF4Oz4',
+          lyrics: 'kXYiU_JCYtU',
           original: 'eVTXPUF4Oz4'
         },
         hasSyncedLyrics: true
@@ -221,12 +233,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Nirvana',
         album: 'Nevermind',
         duration: 301,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/07/04/79/0704791d-e08b-21d1-6e3e-001292026197/00720642442524.rgb.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/95/fd/b9/95fdb9b2-6d2b-92a6-97f2-51c1a6d77f1a/00602527874609.rgb.jpg/600x600bb.jpg',
         youtubeId: 'hTWKbfoikeg',
+        candidateVideoIds: ['hTWKbfoikeg', 'zYxkezUr8MQ'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'hTWKbfoikeg',
-          lyrics: 'hTWKbfoikeg',
+          lyrics: 'zYxkezUr8MQ',
           original: 'hTWKbfoikeg'
         },
         hasSyncedLyrics: true
@@ -237,12 +250,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Queen',
         album: 'A Night at the Opera',
         duration: 354,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ce/eb/e6/ceebe6bb-49e0-aa31-e408-db2c13032d84/00602547202758.rgb.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8b/0a/ea/8b0aea60-6f4a-195b-5958-cdf459c2333b/602527644271.jpg/600x600bb.jpg',
         youtubeId: 'fJ9rUzIMcZQ',
+        candidateVideoIds: ['fJ9rUzIMcZQ', 'vsl3gBVO2k4'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'fJ9rUzIMcZQ',
-          lyrics: 'fJ9rUzIMcZQ',
+          lyrics: 'vsl3gBVO2k4',
           original: 'fJ9rUzIMcZQ'
         },
         hasSyncedLyrics: true
@@ -263,6 +277,7 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         duration: 300,
         coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&auto=format&fit=crop&q=80',
         youtubeId: 'jfKfPfyJRdk',
+        candidateVideoIds: ['jfKfPfyJRdk'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'jfKfPfyJRdk',
@@ -277,8 +292,9 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Sia',
         album: 'Everyday Is Christmas',
         duration: 165,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/91/97/35/919735d4-4bb1-6380-0a25-a131804f32a0/075679883582.jpg/600x600bb.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/85/c3/21/85c32113-1c4c-571c-7602-88f568d8081c/075679861016.jpg/600x600bb.jpg',
         youtubeId: 'gset79KMmt0',
+        candidateVideoIds: ['gset79KMmt0'],
         currentVersion: 'radio',
         availableVersions: {
           radio: 'gset79KMmt0',
@@ -301,13 +317,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'M-Clan',
         album: 'Definitivamente Vivo',
         duration: 278,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/74/d3/63/74d36371-a077-d6b0-7561-24ff0daae7a1/0825646194217.jpg/600x600bb.jpg',
-        youtubeId: 'o_7gNZvJx1I', // M Clan Miedo - Studio audio with lyrics, zero ads
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/7e/a2/81/7ea281a4-c3a5-65fd-2b7b-549834cafc44/825646320547.jpg/600x600bb.jpg',
+        youtubeId: 'gDwmVHSe6s8',
+        candidateVideoIds: ['gDwmVHSe6s8', 'o_7gNZvJx1I'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'o_7gNZvJx1I',
-          lyrics: 'o_7gNZvJx1I',
-          original: '05lSSYQAENo'
+          radio: 'gDwmVHSe6s8',
+          lyrics: 'gDwmVHSe6s8',
+          original: 'o_7gNZvJx1I'
         },
         hasSyncedLyrics: true
       },
@@ -317,13 +334,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Fito y Fitipaldis',
         album: 'Lo más lejos a tu lado',
         duration: 250,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/80/f7/a3/80f7a378-fc7b-fdb2-c15c-0bb2312675d0/825646961448.jpg/600x600bb.jpg',
-        youtubeId: 'ba7_3yytb7E', // Fito y Fitipaldis - Soldadito Marinero LETRA
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/4b/ff/86/4bff860f-d9af-5400-6465-afef0599d09b/5050466821928.jpg/600x600bb.jpg',
+        youtubeId: 'GxQjx7FkmNA',
+        candidateVideoIds: ['GxQjx7FkmNA', 'ba7_3yytb7E'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'ba7_3yytb7E',
+          radio: 'GxQjx7FkmNA',
           lyrics: 'ba7_3yytb7E',
-          original: 'ba7_3yytb7E'
+          original: 'GxQjx7FkmNA'
         },
         hasSyncedLyrics: true
       },
@@ -333,13 +351,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'El Canto del Loco',
         album: 'Zapatillas',
         duration: 172,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b4/d9/95/b4d9959f-7e0b-d278-f3d2-3bfd3f28cf69/886444474774.jpg/600x600bb.jpg',
-        youtubeId: 'Oukwim3UyRs',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/58/39/17/583917b9-d4f3-86f7-2d37-c2991cc02e48/dj.kqfjwqjx.jpg/600x600bb.jpg',
+        youtubeId: 'nHxam-MQg-o',
+        candidateVideoIds: ['nHxam-MQg-o', 'Oukwim3UyRs'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'Oukwim3UyRs',
+          radio: 'nHxam-MQg-o',
           lyrics: 'Oukwim3UyRs',
-          original: 'Oukwim3UyRs'
+          original: 'nHxam-MQg-o'
         },
         hasSyncedLyrics: true
       },
@@ -349,13 +368,14 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         artist: 'Pereza',
         album: 'Animales',
         duration: 218,
-        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/05/cf/43/05cf43c6-9467-f377-61c1-4ba29e7116cb/886443657383.jpg/600x600bb.jpg',
-        youtubeId: 'vtq1iD967Xw',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/0c/cf/be/0ccfbe5e-8e2a-a796-c5d7-aa58270e8ad9/828766916522.jpg/600x600bb.jpg',
+        youtubeId: 'A9UdCLGvjXg',
+        candidateVideoIds: ['A9UdCLGvjXg', 'vtq1iD967Xw'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'vtq1iD967Xw',
+          radio: 'A9UdCLGvjXg',
           lyrics: 'vtq1iD967Xw',
-          original: 'vtq1iD967Xw'
+          original: 'A9UdCLGvjXg'
         },
         hasSyncedLyrics: true
       }

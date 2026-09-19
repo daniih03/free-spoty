@@ -137,6 +137,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const nextId = candidates[currentIndex + 1];
           console.log(`[Playback Recovery] Retrying with backup video candidate: ${nextId}`);
           song.youtubeId = nextId;
+          isStartingTrackRef.current = true;
           youtubeService.loadVideo(nextId, 0, true);
           setIsPlaying(true);
           return;
@@ -145,10 +146,30 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // 2. Try lyrics or original fallback
         if (song.availableVersions?.lyrics && song.availableVersions.lyrics !== currentId) {
           song.youtubeId = song.availableVersions.lyrics;
+          isStartingTrackRef.current = true;
           youtubeService.loadVideo(song.availableVersions.lyrics, 0, true);
           setIsPlaying(true);
           return;
         }
+
+        // 3. Last resort: Dynamic re-resolution
+        resolveSongWithVersions({ ...song, youtubeId: '' }).then((freshSong) => {
+          if (freshSong.youtubeId && freshSong.youtubeId !== currentId) {
+            console.log(`[Playback Recovery] Dynamically found new video ID: ${freshSong.youtubeId}`);
+            song.youtubeId = freshSong.youtubeId;
+            song.candidateVideoIds = freshSong.candidateVideoIds;
+            isStartingTrackRef.current = true;
+            youtubeService.loadVideo(freshSong.youtubeId, 0, true);
+            setIsPlaying(true);
+          } else {
+            setIsLoadingSong(false);
+            setIsPlaying(false);
+          }
+        }).catch(() => {
+          setIsLoadingSong(false);
+          setIsPlaying(false);
+        });
+        return;
       }
 
       setIsLoadingSong(false);

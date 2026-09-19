@@ -108,7 +108,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <img
               src={currentSong.coverUrl}
               alt={currentSong.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+              }}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 bg-zinc-800"
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
               <Maximize2 className="w-4 h-4 text-white" />
@@ -324,7 +327,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <img
               src={currentSong.coverUrl}
               alt={currentSong.title}
-              className="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+              }}
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow bg-zinc-800"
             />
             <div className="min-w-0">
               <p className="text-xs font-semibold text-white truncate">
@@ -409,7 +415,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 <img
                   src={currentSong.coverUrl}
                   alt={currentSong.title}
-                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                  }}
+                  className="w-full h-full object-cover bg-zinc-800"
                 />
               </div>
             </div>

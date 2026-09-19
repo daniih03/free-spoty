@@ -48,7 +48,10 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
           alt={song.title}
           loading="lazy"
           decoding="async"
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 transform-gpu"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+          }}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 transform-gpu bg-zinc-800"
         />
 
         {/* Play Button Overlay */}
