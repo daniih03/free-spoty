@@ -1,0 +1,95 @@
+# 📱 Catálogo de Funcionalidades de Free-Spoty
+
+Este documento describe todas las características implementadas en **Free-Spoty**, su diseño inspirado en Spotify y los detalles de interacción.
+
+---
+
+## 🌟 Resumen de Funcionalidades
+
+| Característica | Estado | Ubicación Principal |
+| :--- | :--- | :--- |
+| 🔍 **Buscador Universal con Spotlight** | Activo | `src/components/Views/SearchView.tsx` |
+| 🎤 **Perfil de Artista y Discografía** | Activo | `src/components/Views/ArtistView.tsx` |
+| 💿 **Explorador de Discos y Álbumes** | Activo | `src/components/UI/AlbumModal.tsx` |
+| 📜 **Letras Sincronizadas en Vivo** | Activo | `src/components/Player/LyricsView.tsx` |
+| 🎵 **Reproductor Multipantalla** | Activo | `src/components/Player/BottomPlayer.tsx` |
+| 🔀 **True Shuffle (Aleatorio Real)** | Activo | `src/context/PlayerContext.tsx` |
+| ⏱️ **Temporizador de Apagado (Sleep Timer)** | Activo | `src/context/PlayerContext.tsx` |
+| 📱 **MediaSession API (Pantalla de Bloqueo)** | Activo | `src/context/PlayerContext.tsx` |
+| ❤️ **Colección de Favoritos y Playlists** | Activo | `src/context/MusicContext.tsx` |
+
+---
+
+## 🔍 1. Buscador Inteligente y Tarjeta Spotlight
+
+- **Búsqueda Instantánea:** Al escribir en la barra superior o en la vista de búsqueda, se consultan metadatos mediante la API de iTunes en tiempo real con debounce y cancelación de peticiones obsoletas (`AbortController`).
+- **Tarjeta "Resultado principal" (Spotlight):**
+  - Muestra el resultado más relevante con carátula en 600x600, título, nombre de artista interactivo y la etiqueta oficial `Canción`.
+  - **Botón de Play Spotify Siempre Visible:** Un botón verde circular (`#1ed760`) con el icono oficial de reproducción/pausa negro (`fill-black`), permanentemente visible en la esquina inferior derecha tanto en pantallas táctiles como en escritorio (sin depender de `hover`).
+- **Lista Top Canciones:** Los siguientes resultados se muestran en un formato de lista compacta con carátula, número de pista, botón de me gusta y duración en formato `mm:ss`.
+
+---
+
+## 🎤 2. Perfil Oficial del Artista y Discografía
+
+- **Acceso Universal:** Puedes hacer clic sobre el nombre de cualquier artista en:
+  - Tarjetas de canciones (`SongCard`).
+  - Resultado principal del buscador (`SearchView`).
+  - Barra de reproducción inferior de escritorio (`BottomPlayer`).
+  - Mini-player y reproductor expandido en móviles.
+  - Pantalla completa de letras (`LyricsView`).
+- **Diseño Oficial Estilo Spotify:**
+  - **Hero Banner:** Fotografía del artista en gran formato (resolución 1000x1000 de Deezer), insignia de **Artista Verificado**, nombre en tipografía negrita destacada, conteo de oyentes mensuales y botón verde circular de reproducción total.
+  - **Canciones Populares:** Lista interactiva con los 10 temas más escuchados del artista, duraciones reales y botón para añadir a favoritos.
+  - **Discografía Completa:**
+    - Filtro por pestañas: **Todos**, **Álbumes**, y **Sencillos / EPs**.
+    - Cuadrícula con carátulas en alta definición, año de lanzamiento y tipo de publicación.
+- **Explorador de Álbumes (`AlbumModal.tsx`):**
+  - Al pulsar sobre cualquier disco, se despliega un modal con la lista de temas del álbum.
+  - Permite reproducir canciones específicas o el álbum completo en orden.
+
+---
+
+## 📜 3. Letras Sincronizadas en Vivo (`LyricsView.tsx`)
+
+- **Proveedor:** Integración con la API de LRCLIB mediante `lyricsService.ts`.
+- **Sincronización al Milisegundo:** El bucle de tiempo (`timeTracker`) del reproductor corre 4 veces por segundo (cada 250ms), logrando transiciones fluidas de estrofas.
+- **Scroll Automático Inteligente:** La línea actual se resalta con texto blanco agrandado (`text-white font-bold scale-105`) y se desplaza automáticamente hacia el tercio central de la pantalla.
+- **Modo Pantalla Completa:** Accesible con la tecla `F` o pulsando el icono de letras en la barra inferior. Cuenta con fondo dinámico derivado de la carátula y controles de transporte flotantes.
+
+---
+
+## 🎵 4. Reproductor Multipantalla Adaptativo
+
+- **Desktop View (`md:flex`):**
+  - Barra inferior fija de altura 96px (`h-24`) con desenfoque de fondo (`backdrop-blur-2xl`).
+  - Zona izquierda: carátula interactiva con botón de maximizar letras, título y artista clicable, botón de Me Gusta.
+  - Zona central: botones de control (Shuffle, Anterior, Play/Pause verde, Siguiente, Repetir), barra de progreso (scrubber) con hover verde y tiempos.
+  - Zona derecha: botón de vista de letras, cola de reproducción y control de volumen con soporte de silenciado.
+- **Mobile Mini Player:**
+  - Barra compacta fija sobre la navegación inferior con carátula, título y controles esenciales (Like, Play/Pause).
+- **Mobile Fullscreen Player Sheet:**
+  - Al pulsar sobre el mini-player, se desliza hacia arriba una hoja a pantalla completa con carátula gigante en 300x300, barra de scrubber táctil, controles de reproducción ampliados y selector de temporizador.
+
+---
+
+## 🔀 5. True Shuffle (Aleatorio Real)
+
+A diferencia de los reproductores convencionales que repiten canciones o desordenan torpemente la lista:
+- `True Shuffle` mantiene la canción actual en el índice 0.
+- Aplica el algoritmo **Fisher-Yates** al resto de la cola, garantizando una distribución 100% equiprobable sin repeticiones hasta agotar la lista.
+
+---
+
+## ⏱️ 6. Temporizador de Apagado (Sleep Timer)
+
+- Opciones preconfiguradas: 5, 10, 15, 30, 45, 60 minutos o fin de la pista actual.
+- **Desvanecimiento Suave (Smooth Fade Out):** En los últimos 10 segundos antes de expirar, el volumen se atenúa progresivamente hasta 0 para no despertar al usuario bruscamente, tras lo cual se pausa la reproducción de forma limpia.
+
+---
+
+## 📱 7. MediaSession API Nativa
+
+- Conexión con los controladores del sistema operativo (iOS Dynamic Island, pantalla de bloqueo de Android, teclas multimedia de teclados Windows/Mac).
+- Metadatos sincronizados: título, artista, álbum y conjunto de carátulas en resoluciones 192x192 y 512x512.
+- Manejadores soportados: `play`, `pause`, `nexttrack`, `previoustrack`, `seekto`.
