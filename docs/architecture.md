@@ -10,9 +10,10 @@ Este documento describe la arquitectura general de **Free-Spoty**, la jerarquía
 flowchart TD
     subgraph UI ["Capa de Presentación (React 18 + Tailwind Minimalist Studio)"]
         App["App.tsx (Enrutador de Vistas e Historial)"]
-        SmartDock["SmartDock (Dock flotante retráctil 68px/240px)"]
+        SmartDock["SmartDock (Dock flotante retráctil con Perfil/Login)"]
         MobileNav["MobileNav (Navegación Móvil)"]
-        TopNavbar["TopNavbar (Buscador, Ecualizador, Navegación)"]
+        TopNavbar["TopNavbar (Buscador, Ecualizador, Estado de Usuario)"]
+        AuthModal["AuthModal (Ventana Modal de Login / Registro Obsidiana)"]
         
         subgraph Views ["Vistas Principales"]
             HomeView["HomeView (Listas destacadas y Mix)"]
@@ -30,10 +31,12 @@ flowchart TD
 
     subgraph State ["Capa de Estado Global (React Context)"]
         PlayerCtx["PlayerContext (isPlaying, currentSong, queue, progress)"]
-        StorageSvc["storageService.ts (Playlists, Liked, History, LocalStorage)"]
+        AuthCtx["AuthContext (user, session, profile, signIn, signUp, signOut)"]
+        StorageSvc["storageService.ts (Playlists, Liked, LocalStorage + Sync Trigger)"]
     end
 
     subgraph Services ["Capa de Servicios y Red"]
+        SupabaseSvc["supabaseClient.ts & cloudStorageService.ts (PostgreSQL + RLS + Auth)"]
         SearchSvc["searchService.ts (iTunes API + Invidious Resolver)"]
         ArtistSvc["artistService.ts (iTunes Discography + Deezer Visuals)"]
         LyricsSvc["lyricsService.ts (LRCLIB Synced Lyrics API)"]
@@ -45,12 +48,18 @@ flowchart TD
     App --> MobileNav
     App --> Views
     App --> FloatingPlayer
+    App --> AuthModal
 
     Views --> PlayerCtx
     Views --> StorageSvc
+    Views --> AuthCtx
     PlayerUI --> PlayerCtx
     PlayerUI --> StorageSvc
+    SmartDock --> AuthCtx
+    TopNavbar --> AuthCtx
 
+    StorageSvc --> SupabaseSvc
+    AuthCtx --> SupabaseSvc
     PlayerCtx --> YTSvc
     PlayerCtx --> SearchSvc
     PlayerCtx --> LyricsSvc

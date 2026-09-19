@@ -10,6 +10,8 @@ import {
   Trash2,
   Library,
   Sparkles,
+  User as UserIcon,
+  LogOut,
 } from 'lucide-react';
 import {
   getCustomPlaylists,
@@ -17,6 +19,7 @@ import {
   deleteCustomPlaylist,
   getLikedSongs,
 } from '../../services/storageService';
+import { useAuth } from '../../context/AuthContext';
 import { Playlist } from '../../types/music';
 
 interface SmartDockProps {
@@ -30,6 +33,7 @@ export const SmartDock: React.FC<SmartDockProps> = ({
   onNavigate,
   onOpenImportExport,
 }) => {
+  const { user, profile, openAuthModal, signOut } = useAuth();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [likedCount, setLikedCount] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -187,6 +191,46 @@ export const SmartDock: React.FC<SmartDockProps> = ({
                 Copias & Backup
               </span>
             </button>
+
+            {/* Account / Auth Trigger */}
+            {user ? (
+              <div
+                title={!isExpanded ? (profile?.displayName || user.email || 'Mi Perfil') : undefined}
+                className="w-full flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/5 text-xs text-white group mt-1"
+              >
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-coral flex items-center justify-center text-[11px] font-bold text-white uppercase flex-shrink-0">
+                    {(profile?.displayName || user.email || 'U')[0]}
+                  </div>
+                  <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0'}`}>
+                    <p className="font-semibold truncate text-[11px] text-white">
+                      {profile?.displayName || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-[9px] text-zinc-400 truncate">Sincronizado</p>
+                  </div>
+                </div>
+                {isExpanded && (
+                  <button
+                    onClick={() => signOut()}
+                    title="Cerrar sesión"
+                    className="p-1.5 text-zinc-400 hover:text-red-400 rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => openAuthModal('login')}
+                title={!isExpanded ? 'Iniciar Sesión / Registrarse' : undefined}
+                className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-xs font-semibold bg-gradient-to-r from-red-600/20 to-rose-600/10 border border-red-500/20 text-white hover:from-red-600/30 hover:to-rose-600/20 transition-all group mt-1"
+              >
+                <UserIcon className="w-5 h-5 text-red-400 group-hover:scale-105 flex-shrink-0" />
+                <span className={`whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0 overflow-hidden'}`}>
+                  Iniciar Sesión
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </aside>

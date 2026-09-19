@@ -156,7 +156,10 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Modo Dividido con Letras a la Derecha:** Con un solo clic en **"Ver Letra"**, el escenario se transforma en pantalla dividida: el visor de reproducción se sitúa a la izquierda con todos sus controles intactos, mientras que a la derecha se despliega el flujo de letras sincronizadas con scroll automático inteligente, marcado escarlata de la estrofa actual y búsqueda de compás por clic.
    - Conmutador en la cabecera para alternar entre el Visor de Estudio centrado y la vista dividida con Letra.
 
-
-
-
-
+8. **Sistema de Usuarios y Sincronización en la Nube con Supabase:**
+   - **Autenticación Gratuita y Segura:** Registro e inicio de sesión mediante correo y contraseña con Supabase Auth y PostgreSQL en la nube.
+   - **Arquitectura Híbrida Cero Barreras:** Los usuarios pueden utilizar la app de forma 100% libre como invitados (`localStorage`), o iniciar sesión para sincronizar su música en cualquier teléfono, tablet o PC.
+   - **Migración Automática de Invitado:** Al registrarse o iniciar sesión, cualquier canción guardada en local y playlists creadas previamente se suben automáticamente a la cuenta del usuario en Supabase sin pérdida de datos.
+   - **Seguridad RLS (Row Level Security):** Cada usuario tiene acceso estricto y exclusivo a sus propios registros (`auth.uid() = user_id`).
+   - **Modal de Autenticación de Cristal Obsidiana (`AuthModal.tsx`):** Interfaz inmersiva con alternador de inicio de sesión / creación de cuenta, validación en tiempo real y soporte para nombres de usuario personalizados.
+   - **Acceso Rápido desde SmartDock y Barra Superior:** Avatar con iniciales, estado "Sincronizado" y botón de desconexión rápida tanto en escritorio como en móvil.

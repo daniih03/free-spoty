@@ -1,4 +1,14 @@
 import { Playlist, Song } from '../types/music';
+import {
+  generateUUID,
+  syncCloudAddLikedSong,
+  syncCloudRemoveLikedSong,
+  syncCloudCreatePlaylist,
+  syncCloudDeletePlaylist,
+  syncCloudAddSongToPlaylist,
+  syncCloudRemoveSongFromPlaylist,
+  syncOnLogin,
+} from './cloudStorageService';
 
 const LIKED_SONGS_KEY = 'free_spoty_liked_songs';
 const CUSTOM_PLAYLISTS_KEY = 'free_spoty_custom_playlists';
@@ -42,9 +52,13 @@ export function toggleLikeSong(song: Song): boolean {
   if (existsIndex >= 0) {
     songs.splice(existsIndex, 1);
     isNowLiked = false;
+    // Async background sync with Supabase
+    syncCloudRemoveLikedSong(song.id).catch(console.error);
   } else {
     songs.unshift(song);
     isNowLiked = true;
+    // Async background sync with Supabase
+    syncCloudAddLikedSong(song).catch(console.error);
   }
 
   localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(songs));
@@ -65,7 +79,7 @@ export function getCustomPlaylists(): Playlist[] {
 export function saveCustomPlaylist(name: string, description?: string): Playlist {
   const playlists = getCustomPlaylists();
   const newPlaylist: Playlist = {
-    id: `playlist_${Date.now()}`,
+    id: generateUUID(),
     name,
     description: description || 'Playlist personalizada en Free-Spoty',
     coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
@@ -77,6 +91,10 @@ export function saveCustomPlaylist(name: string, description?: string): Playlist
   playlists.push(newPlaylist);
   localStorage.setItem(CUSTOM_PLAYLISTS_KEY, JSON.stringify(playlists));
   window.dispatchEvent(new Event('free_spoty_storage_change'));
+
+  // Async background sync with Supabase
+  syncCloudCreatePlaylist(newPlaylist).catch(console.error);
+
   return newPlaylist;
 }
 
@@ -92,6 +110,9 @@ export function addSongToPlaylist(playlistId: string, song: Song): boolean {
     }
     localStorage.setItem(CUSTOM_PLAYLISTS_KEY, JSON.stringify(playlists));
     window.dispatchEvent(new Event('free_spoty_storage_change'));
+
+    // Async background sync with Supabase
+    syncCloudAddSongToPlaylist(playlistId, song).catch(console.error);
     return true;
   }
   return false;
@@ -105,6 +126,9 @@ export function removeSongFromPlaylist(playlistId: string, songId: string): bool
   pl.songs = pl.songs.filter(s => s.id !== songId);
   localStorage.setItem(CUSTOM_PLAYLISTS_KEY, JSON.stringify(playlists));
   window.dispatchEvent(new Event('free_spoty_storage_change'));
+
+  // Async background sync with Supabase
+  syncCloudRemoveSongFromPlaylist(playlistId, songId).catch(console.error);
   return true;
 }
 
@@ -113,7 +137,32 @@ export function deleteCustomPlaylist(playlistId: string): boolean {
   playlists = playlists.filter(p => p.id !== playlistId);
   localStorage.setItem(CUSTOM_PLAYLISTS_KEY, JSON.stringify(playlists));
   window.dispatchEvent(new Event('free_spoty_storage_change'));
+
+  // Async background sync with Supabase
+  syncCloudDeletePlaylist(playlistId).catch(console.error);
   return true;
+}
+
+// Full Cloud Sync upon Login / Register
+export async function syncLocalAndCloudData(): Promise<void> {
+  try {
+    const localLikes = getLikedSongs();
+    const localPlaylists = getCustomPlaylists();
+    const synced = await syncOnLogin(localLikes, localPlaylists);
+
+    localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(synced.likedSongs));
+    localStorage.setItem(CUSTOM_PLAYLISTS_KEY, JSON.stringify(synced.playlists));
+    window.dispatchEvent(new Event('free_spoty_storage_change'));
+  } catch (err) {
+    console.error('Error syncing local and cloud data:', err);
+  }
+}
+
+// Reset data on explicit sign out (keeps settings and history)
+export function resetUserDataOnSignOut(): void {
+  localStorage.removeItem(LIKED_SONGS_KEY);
+  localStorage.removeItem(CUSTOM_PLAYLISTS_KEY);
+  window.dispatchEvent(new Event('free_spoty_storage_change'));
 }
 
 // Play History

@@ -1,12 +1,16 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Search,
   Sliders,
   Shuffle,
+  User as UserIcon,
+  LogOut,
+  Sparkles,
 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
+import { useAuth } from '../context/AuthContext';
 
 interface TopNavbarProps {
   searchQuery: string;
@@ -23,7 +27,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   canGoBack = false,
   onGoBack,
 }) => {
-  const { isShuffle, activeVersion } = usePlayer();
+  const { isShuffle } = usePlayer();
+  const { user, profile, openAuthModal, signOut } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -85,6 +91,59 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         >
           <Sliders className="w-4 h-4" />
         </button>
+
+        {/* User Profile / Iniciar Sesión */}
+        <div className="relative">
+          {user ? (
+            <div>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-medium transition-all"
+              >
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-coral flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                  {(profile?.displayName || user.email || 'U')[0]}
+                </div>
+                <span className="hidden sm:inline max-w-[90px] truncate">
+                  {profile?.displayName || user.email?.split('@')[0]}
+                </span>
+              </button>
+
+              {showUserMenu && (
+                <div
+                  className="absolute right-0 mt-2 w-48 bg-neutral-900/95 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-xl z-50 animate-fade-in"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <div className="px-3 py-2 border-b border-white/5 mb-1">
+                    <p className="text-xs font-semibold text-white truncate">
+                      {profile?.displayName || 'Usuario'}
+                    </p>
+                    <p className="text-[10px] text-neutral-400 truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal('login')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-semibold shadow-md shadow-red-600/20 transition-all transform active:scale-95"
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+              <span>Entrar</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
