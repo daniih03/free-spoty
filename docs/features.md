@@ -114,4 +114,34 @@ La interfaz está construida con una paleta cromática sofisticada basada exclus
 | **Rosa Cálido** | `#ff6b57` | Subtítulos, etiquetas de fidelidad de audio y chips informativos |
 | **Blanco Puro** | `#ffffff` | Iconografía dentro de botones de acción, glifos del logo y tipografía titular |
 
+---
+
+## 🔮 9. Rediseño Minimalista Studio (Aura UI vs Spotify)
+
+Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spoty implementa una arquitectura visual **espaciosa, ergonómica y futurista**:
+
+1. **SmartDock Flotante (`SmartDock.tsx`):**
+   - Sustituye a la columna lateral fija de 280px por un rail suspendido en 3D (`left-4`, `w-[68px]`).
+   - Al posar el cursor, se expande suavemente a 240px con efecto blur `backdrop-blur-2xl bg-[#121217]/85` sin desplazar el contenido ni provocar saltos de diseño (cero layout shift).
+   - Libera más del 90% del ancho del viewport para la música.
+
+2. **Cápsula de Sonido Flotante (`FloatingPlayer.tsx`):**
+   - Sustituye la barra inferior fija de 96px por una píldora flotante centrada (`bottom-5`, `max-w-4xl`, `rounded-full`).
+   - Barra de progreso (scrubber) integrada en el borde perimétrico superior con hover responsivo.
+   - Vinilo en rotación continua sincronizado con el estado de reproducción (`animate-spin-slow`).
+   - Botón central de reproducción con gradiente escarlata-carmesí (`from-brand-crimson via-brand-red to-brand-coral`).
+   - Control de volumen expansible que se oculta inteligentemente para mantener el minimalismo.
+   - En móvil, cápsula flotante sobre la barra de navegación con acceso a la hoja inmersiva **Zen Listening Sheet**.
+
+3. **Tarjetas Minimalistas Aura (`SongCard.tsx`):**
+   - Bordes redondeados ultra-suaves (`rounded-2xl md:rounded-[22px]`) con vidrio esmerilado carbón.
+   - Iluminación perimétrica reactiva (rim glow) al hacer hover.
+   - **Indicador Soundwave Dinámico:** Cuando un tema está en reproducción activa, una insignia de ecualizador de 3 barras pulsantes escarlatas indica el estado visualmente en tiempo real.
+   - Acciones integradas: Me Gusta con micro-blur, botón Play flotante, menú contextual con opciones de cola y guardado en listas.
+
+4. **Fondo Midnight Obsidian Indigo (`AmbientBackground.tsx`):**
+   - Fondo base oscuro profundo (`#090b10`) combinado con un resplandor índigo nocturno (`rgb(22, 28, 45)`).
+   - Filtro anti-verdes que previene la filtración de tonalidades verdosas al procesar carátulas externas.
+
+
 

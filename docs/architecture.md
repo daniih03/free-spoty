@@ -8,11 +8,11 @@ Este documento describe la arquitectura general de **Free-Spoty**, la jerarquía
 
 ```mermaid
 flowchart TD
-    subgraph UI ["Capa de Presentación (React 18 + Tailwind)"]
+    subgraph UI ["Capa de Presentación (React 18 + Tailwind Minimalist Studio)"]
         App["App.tsx (Enrutador de Vistas e Historial)"]
-        Sidebar["Sidebar (Navegación Desktop)"]
+        SmartDock["SmartDock (Dock flotante retráctil 68px/240px)"]
         MobileNav["MobileNav (Navegación Móvil)"]
-        Header["Header (Búsqueda, Perfil, Actualizador)"]
+        TopNavbar["TopNavbar (Buscador, Ecualizador, Navegación)"]
         
         subgraph Views ["Vistas Principales"]
             HomeView["HomeView (Listas destacadas y Mix)"]
@@ -22,34 +22,34 @@ flowchart TD
             LyricsView["LyricsView (Letras Sincronizadas Fullscreen)"]
         end
 
-        subgraph PlayerUI ["Controles del Reproductor"]
-            BottomPlayer["BottomPlayer (Desktop Bar / Mobile Mini / Fullsheet)"]
-            SongCard["SongCard (Tarjetas con Play Overlay)"]
+        subgraph PlayerUI ["Controles del Reproductor Minimalista"]
+            FloatingPlayer["FloatingPlayer (Cápsula Flotante Suspendida / Zen Sheet)"]
+            SongCard["SongCard (Aura Cards con Soundwave Dinámico)"]
         end
     end
 
     subgraph State ["Capa de Estado Global (React Context)"]
         PlayerCtx["PlayerContext (isPlaying, currentSong, queue, progress)"]
-        MusicCtx["MusicContext (playlists, likedSongs, history)"]
+        StorageSvc["storageService.ts (Playlists, Liked, History, LocalStorage)"]
     end
 
     subgraph Services ["Capa de Servicios y Red"]
         SearchSvc["searchService.ts (iTunes API + Invidious Resolver)"]
         ArtistSvc["artistService.ts (iTunes Discography + Deezer Visuals)"]
         LyricsSvc["lyricsService.ts (LRCLIB Synced Lyrics API)"]
-        YTSvc["youtube.ts (YouTube Iframe Engine + HTMLAudio Fallback)"]
+        YTSvc["youtube.ts (YouTube Iframe Engine + Fallback Resolver)"]
     end
 
-    App --> Header
-    App --> Sidebar
+    App --> TopNavbar
+    App --> SmartDock
     App --> MobileNav
     App --> Views
-    App --> BottomPlayer
+    App --> FloatingPlayer
 
     Views --> PlayerCtx
-    Views --> MusicCtx
+    Views --> StorageSvc
     PlayerUI --> PlayerCtx
-    PlayerUI --> MusicCtx
+    PlayerUI --> StorageSvc
 
     PlayerCtx --> YTSvc
     PlayerCtx --> SearchSvc
@@ -64,36 +64,38 @@ flowchart TD
 
 ```text
 src/
-├── App.tsx                      # Orquestador raíz: gestión de rutas ('home' | 'search' | 'playlist' | 'artist') y pila de historial
+├── App.tsx                      # Orquestador raíz: layout libre, dock y cápsula flotante con enrutamiento de vistas
 ├── main.tsx                     # Punto de entrada de React 18 en Vite
 ├── index.css                    # Estilos globales y personalización Tailwind
 ├── types/
 │   └── music.ts                 # Interfaces TypeScript: Song, Album, ArtistProfile, Playlist, etc.
 ├── context/
-│   ├── PlayerContext.tsx        # Estado del reproductor, sincronización de eventos de YouTube, cola, volumen y MediaSession
-│   └── MusicContext.tsx         # Gestión de favoritos, playlists personalizadas e historial local
+│   └── PlayerContext.tsx        # Estado central del reproductor, cola inteligente, volumen y MediaSession
 ├── components/
-│   ├── Layout/
-│   │   ├── Header.tsx           # Barra superior: buscador, botones atrás/adelante, indicador de versión
-│   │   ├── Sidebar.tsx          # Menú lateral para pantallas de escritorio
+│   ├── Navigation/
+│   │   ├── SmartDock.tsx        # Dock flotante retráctil 3D (68px contraído, 240px al interactuar)
 │   │   └── MobileNav.tsx        # Barra de navegación inferior fija para móviles
 │   ├── Player/
-│   │   ├── BottomPlayer.tsx     # Barra inferior en desktop, mini-player y hoja modal a pantalla completa en móvil
-│   │   └── LyricsView.tsx       # Pantalla completa de letras sincronizadas con scroll automático
+│   │   ├── FloatingPlayer.tsx   # Cápsula de sonido flotante suspendida con scrubber perimétrico y Zen Sheet
+│   │   ├── LyricsView.tsx       # Pantalla completa de letras sincronizadas con scroll automático
+│   │   ├── QueueDrawer.tsx      # Cajón lateral de cola interactiva con reordenación
+│   │   └── EqualizerModal.tsx   # Ecualizador de 5 bandas con presets de audio pro
 │   ├── UI/
-│   │   ├── SongCard.tsx         # Tarjeta de canción reutilizable con botón Play y menú de 3 puntos
-│   │   ├── Modal.tsx            # Modal genérico para crear playlists
-│   │   └── AlbumModal.tsx       # Modal para ver y reproducir canciones de un álbum específico
-│   └── Views/
-│       ├── HomeView.tsx         # Pantalla de inicio con playlists destacadas
-│       ├── SearchView.tsx       # Buscador instantáneo con tarjeta "Resultado principal"
-│       ├── PlaylistView.tsx     # Vista detallada de listas de reproducción
-│       └── ArtistView.tsx       # Perfil oficial de artista estilo Spotify
+│   │   ├── SongCard.tsx         # Aura Minimalist Card con soundwave dinámico y rim glow
+│   │   ├── AmbientBackground.tsx# Fondo ambiental reactivo (Obsidian Midnight sin tonos verdes)
+│   │   └── Modal.tsx            # Modales genéricos de la aplicación
+│   ├── Views/
+│   │   ├── HomeView.tsx         # Pantalla de inicio con playlists destacadas y accesos rápidos
+│   │   ├── SearchView.tsx       # Buscador instantáneo con tarjeta "Resultado principal"
+│   │   ├── PlaylistView.tsx     # Vista detallada de listas de reproducción con cabecera dinámica
+│   │   └── ArtistView.tsx       # Perfil oficial de artista con discografía y oyentes
+│   └── TopNavbar.tsx            # Barra superior con buscador integrado y ecualizador
 └── services/
     ├── youtube.ts               # Motor de reproducción de YouTube Iframe API y gestor de watchdog
     ├── searchService.ts         # Consultas de metadatos (iTunes) y resolución dinámica de audio (Invidious)
     ├── artistService.ts         # Obtención de discografía, portadas en 1000x1000 y conteo de oyentes
     ├── lyricsService.ts         # Proveedor de letras sincronizadas (LRCLIB)
+    ├── storageService.ts        # Persistencia en localStorage (favoritos, playlists, historial)
     └── exploreData.ts           # Listas destacadas precargadas con metadatos verificados
 ```
 

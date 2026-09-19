@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PlayerProvider } from './context/PlayerContext';
-import { Sidebar } from './components/Sidebar';
+import { SmartDock } from './components/Navigation/SmartDock';
 import { TopNavbar } from './components/TopNavbar';
-import { BottomPlayer } from './components/Player/BottomPlayer';
+import { FloatingPlayer } from './components/Player/FloatingPlayer';
 import { LyricsView } from './components/Player/LyricsView';
 import { QueueDrawer } from './components/Player/QueueDrawer';
 import { EqualizerModal } from './components/Player/EqualizerModal';
@@ -171,15 +171,15 @@ const AppContent: React.FC = () => {
 
       {/* Main App Workspace */}
       <div className="flex-1 flex overflow-hidden z-10">
-        {/* Sidebar (Hidden on mobile, 100% visible on desktop) */}
-        <Sidebar
+        {/* SmartDock (Floating minimalist navigation rail on desktop) */}
+        <SmartDock
           currentView={currentView === 'playlist' ? `playlist_${selectedPlaylistId}` : currentView}
           onNavigate={(view, playlistId) => navigateTo(view, playlistId)}
           onOpenImportExport={() => setIsImportExportOpen(true)}
         />
 
-        {/* Content Area */}
-        <main className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Content Area with left offset for the floating dock on desktop */}
+        <main className="flex-1 flex flex-col overflow-hidden relative md:pl-[84px]">
           {/* Top Navbar */}
           <TopNavbar
             searchQuery={searchQuery}
@@ -192,8 +192,8 @@ const AppContent: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          {/* View Container with custom scroll & bottom padding for player/nav */}
-          <div className="flex-1 overflow-y-auto pb-36 md:pb-28 scrollbar-thin">
+          {/* View Container with custom scroll & bottom padding for floating capsule & mobile nav */}
+          <div className="flex-1 overflow-y-auto pb-44 md:pb-32 scrollbar-thin">
             {currentView === 'home' && (
               <HomeView onSelectPlaylist={(id) => navigateTo('playlist', id)} />
             )}
@@ -234,8 +234,8 @@ const AppContent: React.FC = () => {
         </main>
       </div>
 
-      {/* Bottom Player: Desktop bar on desktop, Mini-player + Sheet on mobile */}
-      <BottomPlayer
+      {/* Floating Sound Capsule Player */}
+      <FloatingPlayer
         onOpenLyrics={() => setIsLyricsOpen(true)}
         onOpenQueue={() => setIsQueueOpen(true)}
         onOpenEqualizer={() => setIsEqualizerOpen(true)}
