@@ -35,7 +35,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
             onClick={() => setActiveTab('queue')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
               activeTab === 'queue'
-                ? 'bg-brand-green text-black'
+                ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-sm shadow-brand-red/20'
                 : 'text-zinc-400 hover:text-white bg-white/5'
             }`}
           >
@@ -47,7 +47,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
             onClick={() => setActiveTab('history')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
               activeTab === 'history'
-                ? 'bg-brand-green text-black'
+                ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-sm shadow-brand-red/20'
                 : 'text-zinc-400 hover:text-white bg-white/5'
             }`}
           >
@@ -74,23 +74,23 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
                   Sonando Ahora
                 </h3>
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-brand-green/30">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-brand-red/10 border border-brand-red/30 shadow-md shadow-brand-red/5">
                   <img
                     src={currentSong.coverUrl}
                     alt={currentSong.title}
-                    className="w-12 h-12 rounded-lg object-cover"
+                    className="w-12 h-12 rounded-lg object-cover shadow-sm"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-brand-green truncate">
+                    <p className="text-sm font-semibold text-brand-coral truncate">
                       {currentSong.title}
                     </p>
                     <p className="text-xs text-zinc-400 truncate">{currentSong.artist}</p>
                   </div>
                   {/* Equalizer mini animation */}
                   <div className="flex items-end gap-0.5 h-4 w-4">
-                    <span className="w-1 bg-brand-green h-full animate-pulse" />
-                    <span className="w-1 bg-brand-green h-2/3 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                    <span className="w-1 bg-brand-green h-4/5 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    <span className="w-1 bg-brand-coral h-full animate-pulse" />
+                    <span className="w-1 bg-brand-coral h-2/3 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    <span className="w-1 bg-brand-coral h-4/5 animate-pulse" style={{ animationDelay: '0.4s' }} />
                   </div>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
 
               {upcomingSongs.length === 0 ? (
                 <div className="p-8 text-center text-zinc-500 text-xs">
-                  <Music className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <Music className="w-8 h-8 mx-auto mb-2 opacity-30 text-brand-coral" />
                   No hay más canciones en la cola. Añade canciones con el menú contextual o reproduce una playlist.
                 </div>
               ) : (
@@ -135,7 +135,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
                           className="w-10 h-10 rounded-md object-cover"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-white truncate group-hover:text-brand-green">
+                          <p className="text-xs font-medium text-white truncate group-hover:text-brand-coral transition-colors">
                             {song.title}
                           </p>
                           <p className="text-[11px] text-zinc-400 truncate">{song.artist}</p>
@@ -175,19 +175,19 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
                     <img
                       src={song.coverUrl}
                       alt={song.title}
-                      className="w-10 h-10 rounded-md object-cover"
+                      className="w-10 h-10 rounded-md object-cover shadow-sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-white truncate group-hover:text-brand-green">
+                      <p className="text-xs font-medium text-white truncate group-hover:text-brand-coral transition-colors">
                         {song.title}
                       </p>
                       <p className="text-[11px] text-zinc-400 truncate">{song.artist}</p>
                     </div>
                     <button
-                      className="p-1.5 rounded-full bg-brand-green text-black opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1.5 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white opacity-0 group-hover:opacity-100 shadow-md shadow-brand-red/30 transition-all"
                       title="Reproducir de nuevo"
                     >
-                      <Play className="w-3 h-3 fill-current" />
+                      <Play className="w-3 h-3 fill-white ml-0.5" />
                     </button>
                   </div>
                 ))}

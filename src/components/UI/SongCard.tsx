@@ -37,8 +37,8 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-200 cursor-pointer border border-white/[0.06] hover:border-white/20 hover:shadow-xl hover:-translate-y-1 transform-gpu ${
-        isCurrent ? 'bg-white/[0.08] border-brand-green/40 shadow-lg shadow-brand-green/5' : ''
+      className={`group relative p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-200 cursor-pointer border border-white/[0.06] hover:border-brand-red/30 hover:shadow-xl hover:shadow-brand-red/5 hover:-translate-y-1 transform-gpu ${
+        isCurrent ? 'bg-brand-red/10 border-brand-red/40 shadow-lg shadow-brand-red/10' : ''
       }`}
     >
       {/* Cover with Play Overlay */}
@@ -67,7 +67,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
               e.stopPropagation();
               handleCardClick();
             }}
-            className="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-xl shadow-brand-red/30 hover:scale-110 active:scale-95 transition-transform"
             title={isCurrent && isPlaying ? 'Pausar' : 'Reproducir'}
           >
             {isCurrent && isPlaying ? (
@@ -83,7 +83,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
           onClick={handleLike}
           className={`absolute top-2 left-2 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-opacity ${
             isLiked
-              ? 'text-brand-green opacity-100'
+              ? 'text-brand-coral opacity-100'
               : 'text-white/70 hover:text-white opacity-0 group-hover:opacity-100'
           }`}
         >
@@ -95,7 +95,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
       <div className="space-y-1">
         <h4
           className={`text-sm font-semibold truncate transition-colors ${
-            isCurrent ? 'text-brand-green' : 'text-white group-hover:text-white'
+            isCurrent ? 'text-brand-coral' : 'text-white group-hover:text-white'
           }`}
         >
           {song.title}
@@ -141,7 +141,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
                   }}
                   className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-white/90"
                 >
-                  <Disc3 className="w-3.5 h-3.5 text-brand-red" /> Ver artista
+                  <Disc3 className="w-3.5 h-3.5 text-brand-coral" /> Ver artista
                 </button>
               )}
 
@@ -152,7 +152,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5 text-brand-green" /> Reproducir siguiente
+                <Plus className="w-3.5 h-3.5 text-brand-coral" /> Reproducir siguiente
               </button>
 
               <button

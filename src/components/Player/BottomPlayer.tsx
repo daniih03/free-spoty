@@ -136,7 +136,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
           <button
             onClick={() => toggleLikeSong(currentSong)}
             className={`p-1.5 rounded-full hover:scale-110 transition-transform ${
-              isLiked ? 'text-brand-green' : 'text-zinc-400 hover:text-white'
+              isLiked ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
             }`}
             title={isLiked ? 'Eliminar de canciones que te gustan' : 'Añadir a canciones que te gustan'}
           >
@@ -152,7 +152,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <button
               onClick={toggleShuffle}
               className={`relative p-1.5 rounded-full transition-colors ${
-                isShuffle ? 'text-brand-green' : 'text-zinc-400 hover:text-white'
+                isShuffle ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
               }`}
               title={
                 isShuffle
@@ -162,7 +162,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             >
               <Shuffle className="w-4 h-4" />
               {isShuffle && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-green rounded-full shadow-[0_0_8px_#c81900]" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full shadow-[0_0_8px_#ff3b24]" />
               )}
             </button>
 
@@ -204,13 +204,13 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <button
               onClick={cycleRepeatMode}
               className={`relative p-1.5 rounded-full transition-colors ${
-                repeatMode !== 'off' ? 'text-brand-green' : 'text-zinc-400 hover:text-white'
+                repeatMode !== 'off' ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
               }`}
               title={`Repetición: ${repeatMode === 'off' ? 'Desactivada' : repeatMode === 'all' ? 'Toda la lista' : 'Canción actual'}`}
             >
               {repeatMode === 'one' ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
               {repeatMode !== 'off' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-green rounded-full" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full" />
               )}
             </button>
           </div>
@@ -221,7 +221,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <div className="relative flex-1 group flex items-center cursor-pointer">
               <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden group-hover:h-1.5 transition-all">
                 <div
-                  className="h-full bg-white group-hover:bg-brand-green transition-all"
+                  className="h-full bg-white group-hover:bg-brand-coral transition-all"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -248,7 +248,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
           <button
             onClick={onOpenLyrics}
             className={`p-2 rounded-full transition-colors ${
-              isLyricsOpen ? 'text-brand-green bg-brand-green/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              isLyricsOpen ? 'text-brand-coral bg-brand-red/15 shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/5'
             }`}
             title="Letras sincronizadas Apple Music (F)"
           >
@@ -258,13 +258,13 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
           <button
             onClick={onOpenQueue}
             className={`relative p-2 rounded-full transition-colors ${
-              isQueueOpen ? 'text-brand-green bg-brand-green/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              isQueueOpen ? 'text-brand-coral bg-brand-red/15 shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/5'
             }`}
             title="Cola de reproducción e historial"
           >
             <ListMusic className="w-4 h-4" />
             {upcomingCount > 0 && (
-              <span className="absolute -top-1 -right-1 text-[9px] bg-brand-green text-white font-bold px-1 rounded-full">
+              <span className="absolute -top-1 -right-1 text-[9px] bg-gradient-to-r from-brand-crimson to-brand-red text-white font-bold px-1 rounded-full shadow-sm shadow-brand-red/30">
                 {upcomingCount}
               </span>
             )}
@@ -296,7 +296,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <div className="relative flex-1 group flex items-center cursor-pointer">
               <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden group-hover:h-1.5 transition-all">
                 <div
-                  className="h-full bg-white group-hover:bg-brand-green"
+                  className="h-full bg-white group-hover:bg-brand-coral transition-colors"
                   style={{ width: `${isMuted ? 0 : volume}%` }}
                 />
               </div>
@@ -355,7 +355,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             <button
               onClick={() => toggleLikeSong(currentSong)}
               className={`p-2 rounded-full transition-colors ${
-                isLiked ? 'text-brand-green' : 'text-zinc-400'
+                isLiked ? 'text-brand-coral' : 'text-zinc-400'
               }`}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
@@ -379,7 +379,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
           {/* Thin bottom progress line */}
           <div className="absolute bottom-0 inset-x-3 h-[2px] bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand-green"
+              className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -444,7 +444,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 <button
                   onClick={() => toggleLikeSong(currentSong)}
                   className={`p-2 rounded-full ${
-                    isLiked ? 'text-brand-green' : 'text-zinc-400'
+                    isLiked ? 'text-brand-coral' : 'text-zinc-400'
                   }`}
                 >
                   <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
@@ -456,7 +456,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 <div className="relative flex items-center cursor-pointer py-2">
                   <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-brand-green"
+                      className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -485,7 +485,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 <button
                   onClick={toggleShuffle}
                   className={`p-2 transition-colors ${
-                    isShuffle ? 'text-brand-green' : 'text-zinc-400'
+                    isShuffle ? 'text-brand-coral' : 'text-zinc-400'
                   }`}
                 >
                   <Shuffle className="w-5 h-5" />
@@ -516,7 +516,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                 <button
                   onClick={cycleRepeatMode}
                   className={`p-2 transition-colors ${
-                    repeatMode !== 'off' ? 'text-brand-green' : 'text-zinc-400'
+                    repeatMode !== 'off' ? 'text-brand-coral' : 'text-zinc-400'
                   }`}
                 >
                   {repeatMode === 'one' ? (
@@ -536,7 +536,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                       onOpenLyrics();
                     }}
                     className={`p-2 rounded-full ${
-                      isLyricsOpen ? 'text-brand-green' : 'text-zinc-400'
+                      isLyricsOpen ? 'text-brand-coral' : 'text-zinc-400'
                     }`}
                     title="Letras"
                   >
@@ -549,7 +549,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
                       onOpenQueue();
                     }}
                     className={`p-2 rounded-full ${
-                      isQueueOpen ? 'text-brand-green' : 'text-zinc-400'
+                      isQueueOpen ? 'text-brand-coral' : 'text-zinc-400'
                     }`}
                     title="Cola"
                   >

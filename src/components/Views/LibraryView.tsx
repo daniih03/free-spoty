@@ -81,7 +81,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </button>
           <button
             onClick={onOpenImportExport}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/15 text-emerald-400 transition-colors"
+            className="p-2 rounded-full bg-white/10 hover:bg-white/15 text-brand-coral transition-colors"
             title="Importar de Spotify"
           >
             <DownloadCloud className="w-5 h-5" />
@@ -103,16 +103,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <p className="text-xs text-purple-200 mt-1">{likedCount} canciones</p>
         </div>
 
-        {/* History Card */}
+        {/* History Card - Luxury Velvet Wine & Ruby */}
         <div
           onClick={onNavigateHistory}
-          className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-800 to-teal-950 border border-white/10 hover:border-white/25 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-200 transform-gpu"
+          className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-red-950 via-brand-wine to-brand-burgundy border border-brand-red/20 hover:border-brand-red/45 cursor-pointer shadow-lg hover:shadow-xl hover:shadow-brand-red/10 transition-all duration-200 transform-gpu"
         >
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
-            <History className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-brand-red/25 border border-brand-red/30 flex items-center justify-center mb-3">
+            <History className="w-5 h-5 text-brand-coral" />
           </div>
           <h3 className="text-base sm:text-lg font-bold text-white">Historial</h3>
-          <p className="text-xs text-emerald-200 mt-1">{historyCount} recientes</p>
+          <p className="text-xs text-brand-rose mt-1">{historyCount} recientes</p>
         </div>
       </div>
 
@@ -120,12 +120,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       <div className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Music className="w-4 h-4 text-brand-green" />
+            <Music className="w-4 h-4 text-brand-coral" />
             Tus Listas ({playlists.length})
           </h2>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="text-xs font-semibold text-brand-green hover:underline"
+            className="text-xs font-semibold text-brand-coral hover:underline"
           >
             + Crear nueva
           </button>
@@ -133,14 +133,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         {playlists.length === 0 ? (
           <div className="p-8 text-center bg-white/[0.02] border border-white/5 rounded-2xl text-zinc-400 space-y-2">
-            <Music className="w-8 h-8 mx-auto opacity-30 text-brand-green" />
+            <Music className="w-8 h-8 mx-auto opacity-30 text-brand-coral" />
             <p className="text-sm font-semibold text-white">Aún no tienes playlists</p>
             <p className="text-xs text-zinc-500">
               Crea tu primera lista o importa directamente desde Spotify.
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="mt-2 px-4 py-1.5 rounded-full bg-brand-green text-black font-semibold text-xs inline-block"
+              className="mt-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-semibold text-xs inline-block shadow-md shadow-brand-red/20 transition-all"
             >
               Crear playlist
             </button>
@@ -151,16 +151,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <div
                 key={pl.id}
                 onClick={() => onSelectPlaylist(pl.id)}
-                className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 bg-white/[0.03] border border-white/5 cursor-pointer transition-all"
+                className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 bg-white/[0.03] border border-white/5 hover:border-brand-red/20 cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={pl.coverUrl}
                     alt={pl.name}
-                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0 shadow-md"
                   />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate group-hover:text-brand-green">
+                    <p className="text-sm font-semibold text-white truncate group-hover:text-brand-coral transition-colors">
                       {pl.name}
                     </p>
                     <p className="text-xs text-zinc-400">{pl.songs.length} canciones</p>
@@ -194,7 +194,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               placeholder="Nombre de la playlist..."
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green"
+              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
             />
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -207,7 +207,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="submit"
                 disabled={!newPlaylistName.trim()}
-                className="px-4 py-2 rounded-xl bg-brand-green text-black font-semibold text-xs disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-semibold text-xs disabled:opacity-50 shadow-md shadow-brand-red/20 transition-all"
               >
                 Crear
               </button>

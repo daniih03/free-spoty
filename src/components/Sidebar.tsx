@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
         >
           <div className="flex items-center gap-3.5">
-            <Heart className="w-4 h-4 text-brand-green fill-brand-green/20" />
+            <Heart className="w-4 h-4 text-brand-coral fill-brand-coral/20" />
             Tus Me Gusta
           </div>
           {likedCount > 0 && (
@@ -145,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Playlist Section Divider */}
       <div className="px-5 mt-6 mb-2 flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-          <Music className="w-3 h-3 text-brand-green" />
+          <Music className="w-3 h-3 text-brand-coral" />
           Tus Playlists
         </span>
         <button
@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <p className="mb-2">No tienes playlists creadas todavía.</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="text-brand-green hover:underline font-semibold"
+              className="text-brand-coral hover:underline font-semibold"
             >
               + Crear la primera
             </button>
@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onNavigate('playlist', pl.id)}
                 className={`group flex items-center justify-between px-4 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
                   isSelected
-                    ? 'bg-white/10 text-brand-green font-semibold'
+                    ? 'bg-brand-red/15 text-brand-coral font-semibold border-l-2 border-brand-coral'
                     : 'text-zinc-400 hover:text-white hover:bg-white/5'
                 }`}
               >

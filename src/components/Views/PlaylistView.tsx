@@ -81,7 +81,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
         </div>
 
         <div className="flex-1 text-center sm:text-left space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-green">
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-coral">
             {playlist.isCustom ? 'Playlist Personalizada' : 'Playlist'}
           </span>
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
@@ -96,7 +96,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
             <span>•</span>
             <span>Aprox. {totalMinutes} min</span>
             <span>•</span>
-            <span className="text-emerald-400">Audio Alta Fidelidad</span>
+            <span className="text-brand-coral font-medium">Audio Alta Fidelidad</span>
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
           <button
             onClick={handlePlayAll}
             disabled={playlist.songs.length === 0}
-            className="w-14 h-14 rounded-full bg-brand-green text-white flex items-center justify-center shadow-xl shadow-brand-green/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-xl shadow-brand-red/35 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             title={isPlaylistPlaying ? 'Pausar' : 'Reproducir playlist'}
           >
             {isPlaylistPlaying ? (
@@ -145,7 +145,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
             placeholder="Filtrar en esta lista..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green w-56"
+            className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral w-56"
           />
         )}
       </div>
@@ -153,7 +153,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
       {/* 3. Song Table */}
       {filteredSongs.length === 0 ? (
         <div className="p-16 text-center text-zinc-500 space-y-3 bg-white/[0.02] rounded-2xl border border-white/5">
-          <Music className="w-12 h-12 mx-auto opacity-30 text-brand-green" />
+          <Music className="w-12 h-12 mx-auto opacity-30 text-brand-coral" />
           <p className="text-base font-semibold text-zinc-400">Esta playlist está vacía</p>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             Busca cualquier canción o artista y agrégala con el menú de 3 puntos.
@@ -183,7 +183,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                 onClick={() => playSong(song, playlist.songs)}
                 className={`group grid grid-cols-12 items-center px-4 py-2.5 rounded-xl text-xs cursor-pointer transition-colors ${
                   isCurrent
-                    ? 'bg-white/15 text-brand-green font-semibold'
+                    ? 'bg-brand-red/15 text-brand-coral font-semibold shadow-sm'
                     : 'text-zinc-300 hover:bg-white/5'
                 }`}
               >
@@ -191,9 +191,9 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                 <div className="col-span-1 text-center font-mono text-zinc-500 group-hover:text-white">
                   {isCurrent && isPlaying ? (
                     <div className="flex items-end justify-center gap-0.5 h-3">
-                      <span className="w-0.5 bg-brand-green h-full animate-pulse" />
-                      <span className="w-0.5 bg-brand-green h-2/3 animate-pulse" />
-                      <span className="w-0.5 bg-brand-green h-4/5 animate-pulse" />
+                      <span className="w-0.5 bg-brand-coral h-full animate-pulse" />
+                      <span className="w-0.5 bg-brand-coral h-2/3 animate-pulse" />
+                      <span className="w-0.5 bg-brand-coral h-4/5 animate-pulse" />
                     </div>
                   ) : (
                     <span className="group-hover:hidden">{idx + 1}</span>
@@ -206,12 +206,12 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                   <img
                     src={song.coverUrl}
                     alt={song.title}
-                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-md"
                   />
                   <div className="min-w-0">
                     <p
                       className={`truncate text-sm font-semibold ${
-                        isCurrent ? 'text-brand-green' : 'text-white'
+                        isCurrent ? 'text-brand-coral' : 'text-white'
                       }`}
                     >
                       {song.title}
@@ -240,15 +240,15 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                 {/* Version badge */}
                 <div className="col-span-3 sm:col-span-2 text-center">
                   {song.currentVersion === 'radio' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-brand-red/20 text-brand-coral border border-brand-red/30 px-2 py-0.5 rounded-full font-medium">
                       <Radio className="w-2.5 h-2.5" /> Radio
                     </span>
                   ) : song.currentVersion === 'lyrics' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-medium">
                       <FileText className="w-2.5 h-2.5" /> Lyrics
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium">
                       <Film className="w-2.5 h-2.5" /> Original
                     </span>
                   )}
@@ -263,7 +263,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
                     }}
                     className={`p-1 rounded-full transition-colors ${
                       isLiked
-                        ? 'text-brand-green'
+                        ? 'text-brand-coral'
                         : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
                     }`}
                   >

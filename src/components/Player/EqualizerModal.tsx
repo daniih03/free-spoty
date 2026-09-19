@@ -68,7 +68,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-brand-green/20 text-brand-green">
+            <div className="p-2 rounded-xl bg-brand-red/20 text-brand-coral border border-brand-red/30">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
@@ -87,7 +87,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
         {/* 1. Equalizer Presets */}
         <div className="space-y-3">
           <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-green" />
+            <Sparkles className="w-3.5 h-3.5 text-brand-coral" />
             Presets de Ecualización
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -99,7 +99,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
                   onClick={() => setActivePreset(p.id)}
                   className={`px-3 py-2 rounded-xl text-xs font-medium text-left border transition-all ${
                     isSelected
-                      ? 'border-brand-green bg-brand-green/10 text-brand-green font-semibold shadow-md'
+                      ? 'border-brand-red bg-brand-red/15 text-brand-coral font-semibold shadow-md shadow-brand-red/10'
                       : 'border-white/5 bg-white/5 text-zinc-300 hover:bg-white/10 hover:border-white/10'
                   }`}
                 >
@@ -123,7 +123,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
                 onClick={() => setPlaybackRate(rate)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   playbackRate === rate
-                    ? 'bg-brand-green text-white font-bold shadow-md'
+                    ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white font-bold shadow-md shadow-brand-red/20'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -141,7 +141,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
               Temporizador de Apagado (Sleep Timer)
             </label>
             {sleepTimerSeconds !== null && (
-              <span className="text-xs text-brand-green font-mono font-bold animate-pulse">
+              <span className="text-xs text-brand-coral font-mono font-bold animate-pulse">
                 {formatTimer(sleepTimerSeconds)}
               </span>
             )}
@@ -178,11 +178,11 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
         <div className="space-y-2 pt-2 border-t border-white/10">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Server className="w-3.5 h-3.5 text-brand-green" />
+              <Server className="w-3.5 h-3.5 text-brand-coral" />
               Servidor de Audio (0 Anuncios)
             </label>
             {backendInput && (
-              <span className="flex items-center gap-1 text-[11px] text-brand-green font-medium">
+              <span className="flex items-center gap-1 text-[11px] text-brand-coral font-medium">
                 <ShieldCheck className="w-3.5 h-3.5" /> Activo
               </span>
             )}
@@ -193,13 +193,13 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
               value={backendInput}
               onChange={(e) => setBackendInput(e.target.value)}
               placeholder="https://tu-servidor.onrender.com"
-              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
             />
             <button
               onClick={handleSaveBackend}
-              className="px-3 py-1.5 rounded-lg bg-brand-green/20 hover:bg-brand-green/30 text-brand-green text-xs font-semibold flex items-center gap-1 transition-colors border border-brand-green/30"
+              className="px-3 py-1.5 rounded-lg bg-brand-red/20 hover:bg-brand-red/30 text-brand-coral text-xs font-semibold flex items-center gap-1 transition-colors border border-brand-red/30"
             >
-              {isBackendSaved ? <Check className="w-3.5 h-3.5 text-brand-green" /> : 'Guardar'}
+              {isBackendSaved ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
             </button>
           </div>
           <p className="text-[11px] text-zinc-500">
@@ -219,13 +219,13 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="Pega tu API Key de Google Cloud..."
-              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
             />
             <button
               onClick={handleSaveApiKey}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1 transition-colors"
             >
-              {isKeySaved ? <Check className="w-3.5 h-3.5 text-brand-green" /> : 'Guardar'}
+              {isKeySaved ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
             </button>
           </div>
           <p className="text-[11px] text-zinc-500">

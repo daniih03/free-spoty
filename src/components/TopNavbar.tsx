@@ -56,7 +56,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="¿Qué quieres escuchar hoy? (Canciones, artistas, álbumes...)"
-          className="w-full pl-10 pr-12 py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-green/60 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner"
+          className="w-full pl-10 pr-12 py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-coral/60 focus:ring-1 focus:ring-brand-coral/30 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[10px] text-zinc-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-md font-mono">
           <span>/</span>

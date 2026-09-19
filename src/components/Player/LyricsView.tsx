@@ -42,13 +42,13 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose, onNavig
       {/* Top action bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-white/10 text-brand-green">
+          <div className="p-2 rounded-xl bg-brand-red/20 text-brand-coral border border-brand-red/30">
             <Mic2 className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-sm font-semibold tracking-wide uppercase text-zinc-400 flex items-center gap-2">
               Letras Sincronizadas (Karaoke)
-              <Sparkles className="w-3.5 h-3.5 text-brand-green" />
+              <Sparkles className="w-3.5 h-3.5 text-brand-coral" />
             </h2>
             <p className="text-xs text-zinc-500">Haz clic en cualquier verso para saltar directamente a ese momento</p>
           </div>
@@ -106,7 +106,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose, onNavig
         >
           {isLoadingLyrics ? (
             <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-3">
-              <div className="w-8 h-8 border-2 border-brand-green border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-brand-coral border-t-transparent rounded-full animate-spin" />
               <p className="text-sm">Buscando letra sincronizada...</p>
             </div>
           ) : syncedLyrics && syncedLyrics.length > 0 ? (
@@ -121,7 +121,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose, onNavig
                   onClick={() => seek(line.time)}
                   className={`group cursor-pointer transition-all duration-300 rounded-2xl px-4 py-2 ${
                     isActive
-                      ? 'text-white text-2xl md:text-3xl font-extrabold scale-[1.02] bg-white/10 shadow-lg border-l-4 border-brand-green pl-6'
+                      ? 'text-white text-2xl md:text-3xl font-extrabold scale-[1.02] bg-brand-red/20 shadow-xl shadow-brand-red/10 border-l-4 border-brand-coral pl-6'
                       : isPast
                       ? 'text-zinc-500 text-lg md:text-xl font-semibold opacity-60 hover:opacity-100 hover:text-zinc-300'
                       : 'text-zinc-400 text-lg md:text-xl font-semibold opacity-80 hover:opacity-100 hover:text-white'
@@ -135,7 +135,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({ isOpen, onClose, onNavig
             })
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4">
-              <Music className="w-12 h-12 opacity-40 text-brand-green" />
+              <Music className="w-12 h-12 opacity-40 text-brand-coral" />
               <p className="text-lg font-medium">Letra instrumental o no disponible para este tema</p>
               <p className="text-xs text-zinc-600 max-w-sm text-center">
                 Disfruta de la música en alta fidelidad con tu ecualizador y audio limpio.

@@ -98,13 +98,20 @@ A diferencia de los reproductores convencionales que repiten canciones o desorde
 
 ## 🎨 8. Identidad Visual y Sistema de Diseño de Marca
 
-La interfaz está construida siguiendo la paleta de colores y proporciones del logotipo oficial de la aplicación (`logo.png`):
+La interfaz está construida con una paleta cromática sofisticada basada exclusivamente en **tonos de rojo hiperprofesionales y fondos carbón mate**, sin presencia alguna de verdes:
 
-| Elemento | Color Hexadecimal | Uso en la Aplicación |
+| Elemento / Tonalidad | Color Hexadecimal | Uso en la Aplicación |
 | :--- | :--- | :--- |
 | **Fondo Mate Carbón** | `#1a1a1a` | Color de superficie de cards, sidebar, navbar y fondo general de la app |
-| **Rojo Carmesí Profundo** | `#a51500` | Barra de subrayado del logo, acentos secundarios y sombras sutiles |
+| **Garnet / Sombra Ambiental**| `#220300` | Sombras sutiles y resplandor ambiental inferior |
+| **Burgundy Profundo** | `#360500` | Gradiente base de tarjetas destacadas (como Historial) y modales |
+| **Velvet Wine** | `#540900` | Degradados de transición en tarjetas de género y banner de bienvenida |
+| **Ruby Joya** | `#8e0f00` | Tarjetas de exploración temática (Lo-Fi) y acentos secundarios |
+| **Rojo Carmesí Profundo** | `#a51500` | Barra de subrayado del logo, acentos y botones degradados |
 | **Rojo Escarlata Primario** | `#c81900` | Botones de acción principales (Play Spotlight, Verified Artist, Discografía) |
 | **Rojo Vibrante Hover** | `#e02200` | Efectos hover de botones interactivos y elementos activos |
+| **Coral Neón Alta Claridad** | `#ff3b24` | Indicadores de estado activo (Shuffle, Repeat, Me Gusta, ecualizador animado) |
+| **Rosa Cálido** | `#ff6b57` | Subtítulos, etiquetas de fidelidad de audio y chips informativos |
 | **Blanco Puro** | `#ffffff` | Iconografía dentro de botones de acción, glifos del logo y tipografía titular |
+
 

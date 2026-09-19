@@ -28,10 +28,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
               isActive ? 'text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <div className={`transition-transform duration-200 ${isActive ? 'scale-110 text-brand-green' : ''}`}>
+            <div className={`transition-transform duration-200 ${isActive ? 'scale-110 text-brand-coral drop-shadow-[0_0_8px_rgba(255,59,36,0.5)]' : ''}`}>
               {tab.icon}
             </div>
-            <span className="text-[10px] mt-1 tracking-tight">{tab.label}</span>
+            <span className={`text-[10px] mt-1 tracking-tight ${isActive ? 'text-brand-coral font-bold' : ''}`}>{tab.label}</span>
           </button>
         );
       })}

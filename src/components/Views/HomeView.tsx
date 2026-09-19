@@ -29,7 +29,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
       <div>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 flex items-center gap-3">
           {getGreeting()}
-          <span className="text-brand-green text-2xl animate-pulse">✦</span>
+          <span className="text-brand-coral text-2xl animate-pulse">✦</span>
         </h1>
         <p className="text-sm text-zinc-400">
           Tu música favorita sin anuncios, con audio limpio de radio y letras en tiempo real.
@@ -37,8 +37,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
 
         {/* Feature Highlights Banner */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-brand-red/15 via-brand-wine/10 to-transparent border border-brand-red/25 backdrop-blur-md flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-brand-red/20 text-brand-coral">
               <Radio className="w-4 h-4" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
       {/* 2. Quick Picks Grid (6 items) */}
       <div>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Flame className="w-5 h-5 text-brand-green" />
+          <Flame className="w-5 h-5 text-brand-coral" />
           Escucha rápida recomendada
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -90,7 +90,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
             <div
               key={song.id}
               onClick={() => playSong(song, quickPicks)}
-              className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/20 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+              className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.06] hover:border-brand-red/30 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-brand-red/5"
             >
               <img
                 src={song.coverUrl}
@@ -98,13 +98,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
                 className="w-14 h-14 rounded-lg object-cover flex-shrink-0 shadow-md"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate group-hover:text-brand-green transition-colors">
+                <p className="text-sm font-semibold text-white truncate group-hover:text-brand-coral transition-colors">
                   {song.title}
                 </p>
                 <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
               </div>
               <button
-                className="w-9 h-9 rounded-full bg-brand-green text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg mr-2"
+                className="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg shadow-brand-red/30 mr-2 hover:from-brand-red hover:to-brand-coral"
                 title="Reproducir ahora"
               >
                 <Play className="w-4 h-4 fill-white ml-0.5" />
@@ -130,7 +130,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
 
             <button
               onClick={() => onSelectPlaylist(playlist.id)}
-              className="text-xs font-semibold text-zinc-400 hover:text-brand-green transition-colors"
+              className="text-xs font-semibold text-zinc-400 hover:text-brand-coral transition-colors"
             >
               Ver todas ({playlist.songs.length})
             </button>

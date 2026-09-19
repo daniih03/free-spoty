@@ -16,9 +16,9 @@ const GENRE_CARDS = [
   { name: 'Urbano Latino', color: 'from-amber-600 to-orange-900', query: 'reggaeton latino' },
   { name: 'Rock & Alternativo', color: 'from-red-600 to-stone-900', query: 'rock classics' },
   { name: 'Hip Hop & Trap', color: 'from-purple-600 to-indigo-950', query: 'hip hop' },
-  { name: 'Lo-Fi Chill & Study', color: 'from-teal-600 to-emerald-950', query: 'lofi chill' },
+  { name: 'Lo-Fi Chill & Study', color: 'from-brand-ruby via-brand-crimson to-stone-950', query: 'lofi chill' },
   { name: 'Electrónica & Dance', color: 'from-cyan-600 to-blue-900', query: 'electronic dance' },
-  { name: 'Indie & Acústico', color: 'from-emerald-600 to-teal-950', query: 'indie' },
+  { name: 'Indie & Acústico', color: 'from-rose-700 via-brand-wine to-zinc-950', query: 'indie' },
   { name: 'Éxitos España', color: 'from-yellow-600 to-amber-900', query: 'exitos espana' },
 ];
 
@@ -81,7 +81,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
       {!query.trim() && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-brand-green" />
+            <Sparkles className="w-4 h-4 text-brand-coral" />
             Explorar por géneros
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -106,7 +106,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
       {/* Loading indicator */}
       {isSearching && (
         <div className="flex flex-col items-center justify-center py-16 space-y-3 text-zinc-400">
-          <div className="w-8 h-8 border-2 border-brand-green border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-coral border-t-transparent rounded-full animate-spin" />
           <p className="text-sm">Buscando pistas oficiales en alta fidelidad...</p>
         </div>
       )}
@@ -116,7 +116,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
         <>
           {results.length === 0 ? (
             <div className="p-16 text-center text-zinc-500 space-y-3">
-              <Search className="w-12 h-12 mx-auto opacity-30 text-brand-green" />
+              <Search className="w-12 h-12 mx-auto opacity-30 text-brand-coral" />
               <p className="text-lg font-medium text-zinc-400">
                 No encontramos resultados para "{query}"
               </p>
@@ -133,7 +133,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                     <h3 className="text-lg font-bold text-white">Resultado principal</h3>
                     <div
                       onClick={() => playSong(topResult, results)}
-                      className="group p-6 rounded-3xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer relative shadow-xl transform-gpu"
+                      className="group p-6 rounded-3xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-brand-red/30 transition-all duration-200 cursor-pointer relative shadow-xl transform-gpu"
                     >
                       <img
                         src={topResult.coverUrl}
@@ -144,7 +144,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                         }}
                         className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-4 group-hover:scale-105 transition-transform bg-zinc-800"
                       />
-                      <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-green transition-colors">
+                      <h4 className="text-2xl font-black text-white truncate mb-1 group-hover:text-brand-coral transition-colors">
                         {topResult.title}
                       </h4>
                       <p
@@ -167,7 +167,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                         </span>
                       </div>
 
-                      {/* Always Visible Spotify Play Button */}
+                      {/* Always Visible Play Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -177,7 +177,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                             playSong(topResult, results);
                           }
                         }}
-                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#c81900] hover:bg-[#e02200] text-white flex items-center justify-center shadow-2xl shadow-[#c81900]/40 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
+                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-2xl shadow-brand-red/40 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
                         title={currentSong?.id === topResult.id && isPlaying ? 'Pausar' : 'Reproducir'}
                       >
                         {currentSong?.id === topResult.id && isPlaying ? (
@@ -205,10 +205,10 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                             src={song.coverUrl}
                             alt={song.title}
                             loading="lazy"
-                            className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
+                            className="w-11 h-11 rounded-lg object-cover flex-shrink-0 shadow-md"
                           />
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-white truncate group-hover:text-brand-green">
+                            <p className="text-sm font-semibold text-white truncate group-hover:text-brand-coral transition-colors">
                               {song.title}
                             </p>
                             <p
