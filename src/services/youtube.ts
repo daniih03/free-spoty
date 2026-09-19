@@ -12,11 +12,13 @@ export const BACKEND_URL_STORAGE_KEY = 'free_spoty_backend_url';
 
 export function getCustomBackendUrl(): string {
   if (typeof window === 'undefined') return '';
-  return (
-    localStorage.getItem(BACKEND_URL_STORAGE_KEY) ||
-    (import.meta as any).env?.VITE_STREAM_API_URL ||
-    ''
-  );
+  const stored = localStorage.getItem(BACKEND_URL_STORAGE_KEY) || (import.meta as any).env?.VITE_STREAM_API_URL || '';
+  if (stored && stored.includes('onrender.com')) {
+    // Clear dormant/slow Render datacenter URL that blocks playback
+    localStorage.removeItem(BACKEND_URL_STORAGE_KEY);
+    return '';
+  }
+  return stored;
 }
 
 export function setCustomBackendUrl(url: string) {
@@ -140,9 +142,9 @@ class YouTubeService {
       container.style.right = '0px';
       container.style.width = '200px';
       container.style.height = '120px';
-      container.style.opacity = '0.001';
+      container.style.opacity = '1';
       container.style.pointerEvents = 'none';
-      container.style.zIndex = '-1';
+      container.style.zIndex = '-9999';
       document.body.appendChild(container);
     }
 
@@ -150,7 +152,6 @@ class YouTubeService {
       this.player = new window.YT.Player(this.containerId, {
         height: '120',
         width: '200',
-        host: 'https://www.youtube-nocookie.com',
         playerVars: {
           autoplay: 1,
           controls: 0,
@@ -205,6 +206,13 @@ class YouTubeService {
   public unlockAudio() {
     if (!this.player) {
       this.initApi();
+    } else if (this.player && this.isPlayerReady && typeof this.player.playVideo === 'function') {
+      try {
+        const state = typeof this.player.getPlayerState === 'function' ? this.player.getPlayerState() : -1;
+        if (state === 2) {
+          this.player.playVideo();
+        }
+      } catch {}
     }
   }
 
@@ -342,12 +350,12 @@ class YouTubeService {
         this.watchdogTimer = setTimeout(() => {
           if (this.player && typeof this.player.getPlayerState === 'function') {
             const state = this.player.getPlayerState();
-            if (state === 3 || state === -1) {
+            if (state === 3 || state === -1 || state === 2) {
               console.warn('[YouTube Watchdog] Audio stalled, attempting play kick...');
               try { this.player.playVideo(); } catch {}
             }
           }
-        }, 5000);
+        }, 3000);
       } catch (err) {
         console.warn('Error calling loadVideoById:', err);
       }

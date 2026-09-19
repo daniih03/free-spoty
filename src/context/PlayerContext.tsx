@@ -87,20 +87,37 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     isMuted
   });
   stateRef.current = { currentSong, queue, queueIndex, repeatMode, isShuffle, volume, isMuted };
+  const isStartingTrackRef = useRef(false);
+  const startingTimerRef = useRef<any>(null);
 
   // Sync YouTube player state
   useEffect(() => {
     const unbindState = youtubeService.onStateChange((state) => {
       // YT.PlayerState: 1 = PLAYING, 2 = PAUSED, 0 = ENDED, 3 = BUFFERING
       if (state === 1) {
+        isStartingTrackRef.current = false;
+        if (startingTimerRef.current) {
+          clearTimeout(startingTimerRef.current);
+          startingTimerRef.current = null;
+        }
         setIsPlaying(true);
         setIsLoadingSong(false);
         const dur = youtubeService.getDuration();
         if (dur > 0) setDuration(dur);
       } else if (state === 2) {
+        if (isStartingTrackRef.current) {
+          // If the player emits pause during transition, re-kick play
+          youtubeService.play();
+          return;
+        }
         setIsPlaying(false);
         setIsLoadingSong(false);
       } else if (state === 0) {
+        isStartingTrackRef.current = false;
+        if (startingTimerRef.current) {
+          clearTimeout(startingTimerRef.current);
+          startingTimerRef.current = null;
+        }
         // Track ended
         handleTrackEnded();
       } else if (state === 3) {
@@ -222,6 +239,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // 2. Play audio in YouTube engine
     if (resolvedSong.youtubeId) {
+      isStartingTrackRef.current = true;
+      if (startingTimerRef.current) clearTimeout(startingTimerRef.current);
+      startingTimerRef.current = setTimeout(() => {
+        isStartingTrackRef.current = false;
+      }, 5000);
+
       youtubeService.loadVideo(resolvedSong.youtubeId, 0, true);
       youtubeService.setVolume(stateRef.current.isMuted ? 0 : stateRef.current.volume);
       setIsPlaying(true);
@@ -299,9 +322,16 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!currentSong) return;
     youtubeService.unlockAudio();
     if (isPlaying) {
+      isStartingTrackRef.current = false;
+      if (startingTimerRef.current) clearTimeout(startingTimerRef.current);
       youtubeService.pause();
       setIsPlaying(false);
     } else {
+      isStartingTrackRef.current = true;
+      if (startingTimerRef.current) clearTimeout(startingTimerRef.current);
+      startingTimerRef.current = setTimeout(() => {
+        isStartingTrackRef.current = false;
+      }, 4000);
       youtubeService.play();
       setIsPlaying(true);
     }

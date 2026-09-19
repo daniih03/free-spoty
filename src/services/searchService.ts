@@ -184,7 +184,7 @@ export async function searchYoutubeVideoCandidates(query: string): Promise<strin
     try {
       const url = `https://${domain}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2800);
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
 
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -228,26 +228,26 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
     .trim();
   const cleanArtist = song.artist.trim();
 
-  // 1. Primary: Studio Audio Track / Official Master
-  const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
-  let candidates = await searchYoutubeVideoCandidates(audioQuery);
+  // 1. Primary: Direct artist + title search (returns official release / official audio in top 3)
+  const directQuery = `${cleanArtist} ${cleanTitle}`;
+  let candidates = await searchYoutubeVideoCandidates(directQuery);
 
-  // 2. Fallback: Official Topic Release
+  // 2. Fallback: Studio Audio Track / Official Master
+  if (candidates.length === 0) {
+    const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
+    candidates = await searchYoutubeVideoCandidates(audioQuery);
+  }
+
+  // 3. Fallback: Official Topic Release
   if (candidates.length === 0) {
     const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
     candidates = await searchYoutubeVideoCandidates(topicQuery);
   }
 
-  // 3. Fallback: Lyric Video
+  // 4. Fallback: Lyric Video
   if (candidates.length === 0) {
     const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
     candidates = await searchYoutubeVideoCandidates(lyricQuery);
-  }
-
-  // 4. Fallback: Direct search
-  if (candidates.length === 0) {
-    const directQuery = `${cleanArtist} ${cleanTitle}`;
-    candidates = await searchYoutubeVideoCandidates(directQuery);
   }
 
   const primaryId = candidates[0] || '';
