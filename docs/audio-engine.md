@@ -66,13 +66,14 @@ sequenceDiagram
   container.style.zIndex = '-9999';        // Físicamente oculto tras la app (#09090b)
   ```
 
-### 3. Resolución Dinámica de Multi-Candidatos (`candidateVideoIds`)
-Para evitar depender de un único video que pudiera tener restricciones geográficas o bloqueos de inserción (Error 150/101), `searchService.ts` obtiene una lista jerarquizada de identificadores de video:
-1. **Consulta Primaria Directa:** `${artista} ${título}` (devuelve el video oficial y versiones con letra en los primeros 3 resultados).
-2. **Consulta de Respaldo 1:** `${artista} ${título} audio` (versión pista de estudio).
-3. **Consulta de Respaldo 2:** `${artista} ${título} Topic` (lanzamiento oficial de YouTube Music).
+### 3. Resolución Dinámica Libre de Anuncios (`candidateVideoIds`)
+Para evitar los anuncios de video comerciales que las discográficas imponen en los videoclips oficiales (VEVO) en dispositivos móviles, `searchService.ts` obtiene una lista jerarquizada orientada a audio limpio:
+1. **Pista de Audio de Estudio (`${artista} ${título} audio`):** Comienza directamente en el segundo 0:00 sin introducciones de videoclip ni cortes de diálogo, y carece de campañas de anuncios pre-roll en embebidos móviles.
+2. **Lanzamiento Oficial Topic (`${artista} ${título} Topic`):** Pistas de audio oficiales generadas automáticamente por YouTube Music / distribuidores digitales (Sound Recording).
+3. **Letras Oficiales / Lyric Videos (`${artista} ${título} lyrics`):** Videos con letra sincronizada sin anuncios de inserción forzados.
+4. **Videoclip Oficial (Solo como último recurso):** `${artista} ${título}` se utiliza únicamente si no se encuentra ninguna versión de audio previa.
 
-Los identificadores válidos se almacenan en `candidateVideoIds`.
+Adicionalmente, el reproductor opera bajo `host: 'https://www.youtube-nocookie.com'`, bloqueando cookies publicitarias de seguimiento y reduciendo la carga de anuncios de subasta programática.
 
 ### 4. Recuperación Automática ante Errores (`unbindError`)
 Si YouTube devuelve un código de error (150, 101, 100):

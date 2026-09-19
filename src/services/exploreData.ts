@@ -14,11 +14,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Radical Optimism',
         duration: 185,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/dd/af/ea/ddafeab5-797a-5b6f-7735-f96c537b45e0/5054197894091.jpg/600x600bb.jpg',
-        youtubeId: 'suAR1PYFNYA',
-        candidateVideoIds: ['suAR1PYFNYA', 'BHIpvqhydLo'],
+        youtubeId: 'BHIpvqhydLo',
+        candidateVideoIds: ['BHIpvqhydLo', 'suAR1PYFNYA'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'suAR1PYFNYA',
+          radio: 'BHIpvqhydLo',
           lyrics: 'BHIpvqhydLo',
           original: 'suAR1PYFNYA'
         },
@@ -31,11 +31,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'After Hours',
         duration: 200,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6f/bc/e6/6fbce6c4-c38c-72d8-4fd0-66cfff32f679/20UMGIM12176.rgb.jpg/600x600bb.jpg',
-        youtubeId: '4NRXx6U8ABQ',
-        candidateVideoIds: ['4NRXx6U8ABQ', 'fHI8X4OXluQ'],
+        youtubeId: 'fHI8X4OXluQ',
+        candidateVideoIds: ['fHI8X4OXluQ', '4NRXx6U8ABQ'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: '4NRXx6U8ABQ',
+          radio: 'fHI8X4OXluQ',
           lyrics: 'fHI8X4OXluQ',
           original: '4NRXx6U8ABQ'
         },
@@ -48,11 +48,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Short n\' Sweet',
         duration: 175,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/57/e8/7b/57e87ba0-5057-9bb9-c247-ce7dbe426e89/24UMGIM55213.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'eVli-tstM5E',
-        candidateVideoIds: ['eVli-tstM5E', '2I9eC2MRhto'],
+        youtubeId: '2I9eC2MRhto',
+        candidateVideoIds: ['2I9eC2MRhto', 'eVli-tstM5E'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'eVli-tstM5E',
+          radio: '2I9eC2MRhto',
           lyrics: '2I9eC2MRhto',
           original: 'eVli-tstM5E'
         },
@@ -65,11 +65,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Harry\'s House',
         duration: 167,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/19/fb/2a19fb85-2f70-9e44-f2a9-82abe679b88e/886449990061.jpg/600x600bb.jpg',
-        youtubeId: 'H5v3kku4y6Q',
-        candidateVideoIds: ['H5v3kku4y6Q', 'e-O1b5Jp6-g'],
+        youtubeId: 'e-O1b5Jp6-g',
+        candidateVideoIds: ['e-O1b5Jp6-g', 'H5v3kku4y6Q'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'H5v3kku4y6Q',
+          radio: 'e-O1b5Jp6-g',
           lyrics: 'e-O1b5Jp6-g',
           original: 'H5v3kku4y6Q'
         },
@@ -82,11 +82,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Lover',
         duration: 178,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/49/3d/ab/493dab54-f920-9043-6181-80993b8116c9/19UMGIM53909.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'ic8j13piAhQ',
-        candidateVideoIds: ['ic8j13piAhQ', 'kIHCflZc9wU'],
+        youtubeId: 'kIHCflZc9wU',
+        candidateVideoIds: ['kIHCflZc9wU', 'ic8j13piAhQ'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'ic8j13piAhQ',
+          radio: 'kIHCflZc9wU',
           lyrics: 'kIHCflZc9wU',
           original: 'ic8j13piAhQ'
         },
@@ -99,11 +99,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'HIT ME HARD AND SOFT',
         duration: 190,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'V9PVRfjEBTI',
-        candidateVideoIds: ['V9PVRfjEBTI', 'd5gf9dXbPi0'],
+        youtubeId: 'd5gf9dXbPi0',
+        candidateVideoIds: ['d5gf9dXbPi0', 'V9PVRfjEBTI'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'V9PVRfjEBTI',
+          radio: 'd5gf9dXbPi0',
           lyrics: 'd5gf9dXbPi0',
           original: 'V9PVRfjEBTI'
         },
@@ -124,11 +124,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'nadie sabe lo que va a pasar mañana',
         duration: 267,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/90/5e/7e/905e7ed5-a8fa-a8f3-cd06-0028fdf3afaa/199066342442.jpg/600x600bb.jpg',
-        youtubeId: '_PJvpq8uOZM',
-        candidateVideoIds: ['_PJvpq8uOZM', 'p_j-sKxZ858'],
+        youtubeId: 'p_j-sKxZ858',
+        candidateVideoIds: ['p_j-sKxZ858', '_PJvpq8uOZM'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: '_PJvpq8uOZM',
+          radio: 'p_j-sKxZ858',
           lyrics: 'p_j-sKxZ858',
           original: '_PJvpq8uOZM'
         },
@@ -141,11 +141,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Bzrp Music Sessions',
         duration: 200,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/b5/76/a0b576ad-667d-1140-4694-23e5d598e89e/196925240499.jpg/600x600bb.jpg',
-        youtubeId: 'A_g3lMcWVy0',
-        candidateVideoIds: ['A_g3lMcWVy0', 'ERbm2g_v0yE'],
+        youtubeId: 'ERbm2g_v0yE',
+        candidateVideoIds: ['ERbm2g_v0yE', 'A_g3lMcWVy0'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'A_g3lMcWVy0',
+          radio: 'ERbm2g_v0yE',
           lyrics: 'ERbm2g_v0yE',
           original: 'A_g3lMcWVy0'
         },
@@ -158,13 +158,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'LA VIDA ES UNA',
         duration: 198,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/d9/e3/67/d9e367d7-4033-3dd1-1f7d-7843dc29428c/5059801117160.jpg/600x600bb.jpg',
-        youtubeId: 'BVdngsy95mY',
-        candidateVideoIds: ['BVdngsy95mY', 'MkO9g3ywnG4', 'DFb1i0d1hTE'],
+        youtubeId: 'DFb1i0d1hTE',
+        candidateVideoIds: ['DFb1i0d1hTE', 'BVdngsy95mY'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'BVdngsy95mY',
+          radio: 'DFb1i0d1hTE',
           lyrics: 'DFb1i0d1hTE',
-          original: 'MkO9g3ywnG4'
+          original: 'BVdngsy95mY'
         },
         hasSyncedLyrics: true
       },
@@ -175,11 +175,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Buenas Noches',
         duration: 186,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8a/d9/3e/8ad93ec4-5d61-9759-c92d-d9571b86224c/197338610251.jpg/600x600bb.jpg',
-        youtubeId: 'QlZNGcVfeF0',
-        candidateVideoIds: ['QlZNGcVfeF0', '1XJ1lW5N9n8'],
+        youtubeId: '1XJ1lW5N9n8',
+        candidateVideoIds: ['1XJ1lW5N9n8', 'QlZNGcVfeF0'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'QlZNGcVfeF0',
+          radio: '1XJ1lW5N9n8',
           lyrics: '1XJ1lW5N9n8',
           original: 'QlZNGcVfeF0'
         },
@@ -200,11 +200,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Parachutes',
         duration: 266,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f5/93/8c/f5938c49-964c-31d1-4b33-78b634f71fb7/190295978075.jpg/600x600bb.jpg',
-        youtubeId: 'yKNxeF4KMsY',
-        candidateVideoIds: ['yKNxeF4KMsY', '1G4isv_Fylg'],
+        youtubeId: '1G4isv_Fylg',
+        candidateVideoIds: ['1G4isv_Fylg', 'yKNxeF4KMsY'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'yKNxeF4KMsY',
+          radio: '1G4isv_Fylg',
           lyrics: '1G4isv_Fylg',
           original: 'yKNxeF4KMsY'
         },
@@ -217,11 +217,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Hybrid Theory',
         duration: 216,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/53/a7/7f/53a77fab-c54c-a57b-8130-248fc12d0c80/093624948995.jpg/600x600bb.jpg',
-        youtubeId: 'eVTXPUF4Oz4',
-        candidateVideoIds: ['eVTXPUF4Oz4', 'kXYiU_JCYtU'],
+        youtubeId: 'kXYiU_JCYtU',
+        candidateVideoIds: ['kXYiU_JCYtU', 'eVTXPUF4Oz4'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'eVTXPUF4Oz4',
+          radio: 'kXYiU_JCYtU',
           lyrics: 'kXYiU_JCYtU',
           original: 'eVTXPUF4Oz4'
         },
@@ -234,11 +234,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Nevermind',
         duration: 301,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/95/fd/b9/95fdb9b2-6d2b-92a6-97f2-51c1a6d77f1a/00602527874609.rgb.jpg/600x600bb.jpg',
-        youtubeId: 'hTWKbfoikeg',
-        candidateVideoIds: ['hTWKbfoikeg', 'zYxkezUr8MQ'],
+        youtubeId: 'zYxkezUr8MQ',
+        candidateVideoIds: ['zYxkezUr8MQ', 'hTWKbfoikeg'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'hTWKbfoikeg',
+          radio: 'zYxkezUr8MQ',
           lyrics: 'zYxkezUr8MQ',
           original: 'hTWKbfoikeg'
         },
@@ -251,11 +251,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'A Night at the Opera',
         duration: 354,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8b/0a/ea/8b0aea60-6f4a-195b-5958-cdf459c2333b/602527644271.jpg/600x600bb.jpg',
-        youtubeId: 'fJ9rUzIMcZQ',
-        candidateVideoIds: ['fJ9rUzIMcZQ', 'vsl3gBVO2k4'],
+        youtubeId: 'vsl3gBVO2k4',
+        candidateVideoIds: ['vsl3gBVO2k4', 'fJ9rUzIMcZQ'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'fJ9rUzIMcZQ',
+          radio: 'vsl3gBVO2k4',
           lyrics: 'vsl3gBVO2k4',
           original: 'fJ9rUzIMcZQ'
         },
@@ -318,13 +318,13 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Definitivamente Vivo',
         duration: 278,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/7e/a2/81/7ea281a4-c3a5-65fd-2b7b-549834cafc44/825646320547.jpg/600x600bb.jpg',
-        youtubeId: 'gDwmVHSe6s8',
-        candidateVideoIds: ['gDwmVHSe6s8', 'o_7gNZvJx1I'],
+        youtubeId: 'o_7gNZvJx1I',
+        candidateVideoIds: ['o_7gNZvJx1I', 'gDwmVHSe6s8'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'gDwmVHSe6s8',
-          lyrics: 'gDwmVHSe6s8',
-          original: 'o_7gNZvJx1I'
+          radio: 'o_7gNZvJx1I',
+          lyrics: 'o_7gNZvJx1I',
+          original: 'gDwmVHSe6s8'
         },
         hasSyncedLyrics: true
       },
@@ -335,11 +335,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Lo más lejos a tu lado',
         duration: 250,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/4b/ff/86/4bff860f-d9af-5400-6465-afef0599d09b/5050466821928.jpg/600x600bb.jpg',
-        youtubeId: 'GxQjx7FkmNA',
-        candidateVideoIds: ['GxQjx7FkmNA', 'ba7_3yytb7E'],
+        youtubeId: 'ba7_3yytb7E',
+        candidateVideoIds: ['ba7_3yytb7E', 'GxQjx7FkmNA'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'GxQjx7FkmNA',
+          radio: 'ba7_3yytb7E',
           lyrics: 'ba7_3yytb7E',
           original: 'GxQjx7FkmNA'
         },
@@ -352,11 +352,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Zapatillas',
         duration: 172,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/58/39/17/583917b9-d4f3-86f7-2d37-c2991cc02e48/dj.kqfjwqjx.jpg/600x600bb.jpg',
-        youtubeId: 'nHxam-MQg-o',
-        candidateVideoIds: ['nHxam-MQg-o', 'Oukwim3UyRs'],
+        youtubeId: 'Oukwim3UyRs',
+        candidateVideoIds: ['Oukwim3UyRs', 'nHxam-MQg-o'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'nHxam-MQg-o',
+          radio: 'Oukwim3UyRs',
           lyrics: 'Oukwim3UyRs',
           original: 'nHxam-MQg-o'
         },
@@ -369,11 +369,11 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
         album: 'Animales',
         duration: 218,
         coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/0c/cf/be/0ccfbe5e-8e2a-a796-c5d7-aa58270e8ad9/828766916522.jpg/600x600bb.jpg',
-        youtubeId: 'A9UdCLGvjXg',
-        candidateVideoIds: ['A9UdCLGvjXg', 'vtq1iD967Xw'],
+        youtubeId: 'vtq1iD967Xw',
+        candidateVideoIds: ['vtq1iD967Xw', 'A9UdCLGvjXg'],
         currentVersion: 'radio',
         availableVersions: {
-          radio: 'A9UdCLGvjXg',
+          radio: 'vtq1iD967Xw',
           lyrics: 'vtq1iD967Xw',
           original: 'A9UdCLGvjXg'
         },

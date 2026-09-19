@@ -152,6 +152,7 @@ class YouTubeService {
       this.player = new window.YT.Player(this.containerId, {
         height: '120',
         width: '200',
+        host: 'https://www.youtube-nocookie.com',
         playerVars: {
           autoplay: 1,
           controls: 0,
@@ -163,6 +164,7 @@ class YouTubeService {
           iv_load_policy: 3,
           enablejsapi: 1,
           origin: window.location.origin,
+          widget_referrer: window.location.href,
         },
         events: {
           onReady: () => {

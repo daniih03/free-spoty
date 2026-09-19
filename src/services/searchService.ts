@@ -228,26 +228,32 @@ export async function resolveSongWithVersions(song: Song): Promise<Song> {
     .trim();
   const cleanArtist = song.artist.trim();
 
-  // 1. Primary: Direct artist + title search (returns official release / official audio in top 3)
-  const directQuery = `${cleanArtist} ${cleanTitle}`;
-  let candidates = await searchYoutubeVideoCandidates(directQuery);
+  // 1. Primary: Studio Audio Track (Clean, instant 0:00 start, ad-free on mobile)
+  const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
+  let candidates = await searchYoutubeVideoCandidates(audioQuery);
 
-  // 2. Fallback: Studio Audio Track / Official Master
-  if (candidates.length === 0) {
-    const audioQuery = `${cleanArtist} ${cleanTitle} audio`;
-    candidates = await searchYoutubeVideoCandidates(audioQuery);
-  }
-
-  // 3. Fallback: Official Topic Release
+  // 2. Fallback: Official Topic Release (YouTube Music Art Track without commercial video ads)
   if (candidates.length === 0) {
     const topicQuery = `${cleanArtist} ${cleanTitle} Topic`;
     candidates = await searchYoutubeVideoCandidates(topicQuery);
   }
 
-  // 4. Fallback: Lyric Video
+  // 3. Fallback: Lyric Video (Fan/Artist lyric video with zero video ad placements)
   if (candidates.length === 0) {
-    const lyricQuery = `${cleanArtist} ${cleanTitle} lyric video`;
+    const lyricQuery = `${cleanArtist} ${cleanTitle} lyrics`;
     candidates = await searchYoutubeVideoCandidates(lyricQuery);
+  }
+
+  // 4. Fallback: Radio edit
+  if (candidates.length === 0) {
+    const radioQuery = `${cleanArtist} ${cleanTitle} radio edit`;
+    candidates = await searchYoutubeVideoCandidates(radioQuery);
+  }
+
+  // 5. Fallback: Direct search
+  if (candidates.length === 0) {
+    const directQuery = `${cleanArtist} ${cleanTitle}`;
+    candidates = await searchYoutubeVideoCandidates(directQuery);
   }
 
   const primaryId = candidates[0] || '';
