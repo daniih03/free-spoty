@@ -99,34 +99,15 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
       {/* ========================================================================= */}
       {/* 1. DESKTOP FLOATING SOUND CAPSULE (md: and up)                            */}
       {/* ========================================================================= */}
-      <div className="hidden md:flex fixed bottom-5 left-1/2 -translate-x-1/2 w-[92%] max-w-4xl z-40 transition-all select-none">
-        <div className="relative w-full h-[76px] rounded-full bg-[#12131a]/85 backdrop-blur-3xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex items-center justify-between px-5 group/capsule overflow-hidden">
-          {/* Subtle perimeter top scrubber bar */}
-          <div className="absolute top-0 inset-x-8 h-[3px] bg-white/[0.08] rounded-full overflow-hidden group-hover/capsule:h-[5px] transition-all cursor-pointer">
-            <div
-              className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              step={0.5}
-              value={currentDisplayTime}
-              onChange={handleSliderChange}
-              onMouseDown={handleSliderMouseDown}
-              onMouseUp={handleSliderMouseUp}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              title="Avanzar / Retroceder canción"
-            />
-          </div>
-
+      <div className="hidden md:flex fixed bottom-5 left-1/2 -translate-x-1/2 w-[94%] max-w-5xl z-40 transition-all select-none">
+        <div className="relative w-full h-[88px] rounded-full bg-[#101119]/90 backdrop-blur-3xl border border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_40px_rgba(200,25,0,0.08)] hover:border-brand-red/30 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(200,25,0,0.16)] flex items-center justify-between px-6 transition-all duration-300">
           {/* Left: Disc Artwork & Song Details */}
-          <div className="flex items-center gap-3.5 min-w-[200px] max-w-[280px]">
+          <div className="flex items-center gap-3.5 min-w-[220px] max-w-[320px]">
+            {/* Spinning Vinyl Record with spindle hole */}
             <div
               onClick={onOpenLyrics}
-              className="relative w-12 h-12 rounded-full overflow-hidden cursor-pointer shadow-lg flex-shrink-0 border border-white/20 group/art"
-              title="Abrir vista completa y letras (F)"
+              className="group/art relative w-14 h-14 rounded-full overflow-hidden cursor-pointer shadow-xl flex-shrink-0 border-2 border-white/20 ring-2 ring-black/70 bg-zinc-900 transform-gpu"
+              title="Abrir letras y vista completa (F)"
             >
               <img
                 src={currentSong.coverUrl}
@@ -135,25 +116,33 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                   (e.target as HTMLImageElement).src =
                     'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
                 }}
-                className={`w-full h-full object-cover bg-zinc-800 ${
+                className={`w-full h-full object-cover transition-transform duration-500 group-hover/art:scale-105 ${
                   isPlaying ? 'animate-spin-slow' : ''
                 }`}
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 flex items-center justify-center transition-opacity">
-                <Maximize2 className="w-3.5 h-3.5 text-white" />
+
+              {/* Vinyl center spindle hole */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="w-3.5 h-3.5 rounded-full bg-black/90 border border-white/30" />
+              </div>
+
+              {/* Hover maximize hint */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 flex items-center justify-center transition-opacity z-20">
+                <Maximize2 className="w-4 h-4 text-white" />
               </div>
             </div>
 
-            <div className="min-w-0 pr-1">
+            {/* Song title, artist & favorite button */}
+            <div className="min-w-0 flex-1 space-y-0.5">
               <p
                 onClick={onOpenLyrics}
-                className="text-xs font-bold text-white truncate hover:text-brand-coral cursor-pointer transition-colors"
+                className="text-sm font-bold text-white tracking-tight truncate hover:text-brand-coral cursor-pointer transition-colors"
               >
                 {currentSong.title}
               </p>
               <p
                 onClick={() => onNavigateArtist?.(currentSong.artist)}
-                className="text-[11px] text-zinc-400 truncate hover:text-white hover:underline cursor-pointer transition-colors"
+                className="text-xs text-zinc-400 truncate hover:text-white hover:underline cursor-pointer transition-colors"
               >
                 {currentSong.artist}
               </p>
@@ -161,8 +150,10 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
 
             <button
               onClick={() => toggleLikeSong(currentSong)}
-              className={`p-1.5 rounded-full hover:scale-110 transition-transform ${
-                isLiked ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
+              className={`p-2 rounded-full hover:scale-110 transition-transform ${
+                isLiked
+                  ? 'text-brand-coral drop-shadow-[0_0_8px_rgba(255,59,36,0.5)]'
+                  : 'text-zinc-400 hover:text-white'
               }`}
               title={isLiked ? 'Guardada en Me Gusta' : 'Añadir a Me Gusta'}
             >
@@ -170,9 +161,10 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             </button>
           </div>
 
-          {/* Center: Ergonomic Transport Controls & Time */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center gap-3 sm:gap-5">
+          {/* Center: Precision Transport Controls & Balanced Scrubber */}
+          <div className="flex-1 max-w-lg flex flex-col items-center justify-center gap-1.5 px-3">
+            {/* Upper row: Transport buttons */}
+            <div className="flex items-center gap-4 sm:gap-6">
               {/* Shuffle */}
               <button
                 onClick={toggleShuffle}
@@ -185,7 +177,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                     : 'Activar True Shuffle'
                 }
               >
-                <Shuffle className="w-3.5 h-3.5" />
+                <Shuffle className="w-4 h-4" />
                 {isShuffle && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full shadow-[0_0_8px_#ff3b24]" />
                 )}
@@ -194,32 +186,32 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
               {/* Previous */}
               <button
                 onClick={prevTrack}
-                className="text-zinc-400 hover:text-white transition-colors p-1 hover:scale-110 active:scale-95"
+                className="text-zinc-300 hover:text-white transition-all p-1 hover:scale-110 active:scale-95"
                 title="Anterior (Flecha izquierda)"
               >
                 <SkipBack className="w-4 h-4 fill-current" />
               </button>
 
-              {/* Main Play / Pause Circle */}
+              {/* Main Play / Pause Circle with glowing gradient */}
               <button
                 onClick={togglePlay}
                 disabled={isLoadingSong}
-                className="w-11 h-11 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-lg shadow-brand-red/35 hover:scale-105 active:scale-95 transition-all"
+                className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-crimson via-brand-red to-brand-coral text-white flex items-center justify-center shadow-[0_4px_20px_rgba(200,25,0,0.4)] hover:shadow-[0_6px_25px_rgba(200,25,0,0.6)] hover:scale-108 active:scale-95 transition-all"
                 title={isPlaying ? 'Pausar (Espacio)' : 'Reproducir (Espacio)'}
               >
                 {isLoadingSong ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : isPlaying ? (
-                  <Pause className="w-4 h-4 fill-white" />
+                  <Pause className="w-5 h-5 fill-white" />
                 ) : (
-                  <Play className="w-4 h-4 fill-white ml-0.5" />
+                  <Play className="w-5 h-5 fill-white ml-0.5" />
                 )}
               </button>
 
               {/* Next */}
               <button
                 onClick={nextTrack}
-                className="text-zinc-400 hover:text-white transition-colors p-1 hover:scale-110 active:scale-95"
+                className="text-zinc-300 hover:text-white transition-all p-1 hover:scale-110 active:scale-95"
                 title="Siguiente (Flecha derecha)"
               >
                 <SkipForward className="w-4 h-4 fill-current" />
@@ -240,9 +232,9 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                 }`}
               >
                 {repeatMode === 'one' ? (
-                  <Repeat1 className="w-3.5 h-3.5" />
+                  <Repeat1 className="w-4 h-4" />
                 ) : (
-                  <Repeat className="w-3.5 h-3.5" />
+                  <Repeat className="w-4 h-4" />
                 )}
                 {repeatMode !== 'off' && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full" />
@@ -250,20 +242,44 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
               </button>
             </div>
 
-            {/* Time Indicators */}
-            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono mt-0.5">
-              <span>{formatTime(currentDisplayTime)}</span>
-              <span>/</span>
-              <span>{formatTime(duration)}</span>
+            {/* Lower row: Precision Scrubber Bar with flanking timestamps */}
+            <div className="w-full flex items-center gap-2.5 text-[11px] font-mono select-none">
+              <span className="w-8 text-right text-zinc-400 font-mono text-[10px]">
+                {formatTime(currentDisplayTime)}
+              </span>
+
+              {/* Interactive Scrub Track */}
+              <div className="group/track relative flex-1 h-1.5 hover:h-2 bg-white/10 rounded-full overflow-hidden cursor-pointer transition-all">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral rounded-full"
+                  style={{ width: `${progressPercent}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 100}
+                  step={0.5}
+                  value={currentDisplayTime}
+                  onChange={handleSliderChange}
+                  onMouseDown={handleSliderMouseDown}
+                  onMouseUp={handleSliderMouseUp}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="Avanzar / Retroceder"
+                />
+              </div>
+
+              <span className="w-8 text-left text-zinc-500 font-mono text-[10px]">
+                {formatTime(duration)}
+              </span>
             </div>
           </div>
 
-          {/* Right: Sound Tools & Volume */}
-          <div className="flex items-center justify-end gap-2.5 min-w-[200px]">
+          {/* Right: Sound Tools & Volume Console */}
+          <div className="flex items-center justify-end gap-2 min-w-[220px]">
             {/* Lyrics View Toggle */}
             <button
               onClick={onOpenLyrics}
-              className={`p-2 rounded-2xl transition-all ${
+              className={`p-2.5 rounded-2xl transition-all ${
                 isLyricsOpen
                   ? 'text-brand-coral bg-brand-red/20 border border-brand-red/30 shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -276,7 +292,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             {/* Queue Drawer Toggle */}
             <button
               onClick={onOpenQueue}
-              className={`relative p-2 rounded-2xl transition-all ${
+              className={`relative p-2.5 rounded-2xl transition-all ${
                 isQueueOpen
                   ? 'text-brand-coral bg-brand-red/20 border border-brand-red/30 shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -285,7 +301,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             >
               <ListMusic className="w-4 h-4" />
               {upcomingCount > 0 && (
-                <span className="absolute -top-1 -right-1 text-[9px] bg-gradient-to-r from-brand-crimson to-brand-red text-white font-bold px-1 rounded-full shadow-sm shadow-brand-red/30">
+                <span className="absolute -top-1 -right-1 text-[9px] bg-gradient-to-r from-brand-crimson to-brand-red text-white font-extrabold px-1.5 py-0.2 rounded-full border border-[#101119] shadow-sm">
                   {upcomingCount}
                 </span>
               )}
@@ -294,51 +310,42 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             {/* Equalizer & Audio Settings */}
             <button
               onClick={onOpenEqualizer}
-              className="p-2 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
               title="Ecualizador, velocidad y temporizador"
             >
               <Sliders className="w-4 h-4" />
             </button>
 
-            {/* Expandable Volume Slider */}
-            <div
-              onMouseEnter={() => setIsVolumeHovered(true)}
-              onMouseLeave={() => setIsVolumeHovered(false)}
-              className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.04] border border-white/[0.06] transition-all"
-            >
+            {/* Volume Console Pill */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all">
               <button
                 onClick={toggleMute}
-                className="p-1 text-zinc-400 hover:text-white transition-colors"
+                className="text-zinc-400 hover:text-white transition-colors"
                 title={isMuted ? 'Activar sonido (M)' : 'Silenciar (M)'}
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="w-3.5 h-3.5 text-brand-coral" />
+                  <VolumeX className="w-4 h-4 text-brand-coral" />
                 ) : volume < 50 ? (
-                  <Volume1 className="w-3.5 h-3.5" />
+                  <Volume1 className="w-4 h-4" />
                 ) : (
-                  <Volume2 className="w-3.5 h-3.5" />
+                  <Volume2 className="w-4 h-4" />
                 )}
               </button>
 
-              <div
-                className={`transition-all duration-300 overflow-hidden flex items-center ${
-                  isVolumeHovered ? 'w-20 opacity-100 pr-1.5' : 'w-0 opacity-0 pointer-events-none'
-                }`}
-              >
-                <div className="relative w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer">
-                  <div
-                    className="h-full bg-brand-coral transition-all"
-                    style={{ width: `${isMuted ? 0 : volume}%` }}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => setVolume(parseInt(e.target.value, 10))}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                </div>
+              <div className="relative w-18 sm:w-20 h-1 hover:h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer transition-all">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-red to-brand-coral transition-all"
+                  style={{ width: `${isMuted ? 0 : volume}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVolume(parseInt(e.target.value, 10))}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title={`Volumen: ${isMuted ? 0 : volume}%`}
+                />
               </div>
             </div>
           </div>
@@ -351,11 +358,11 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
       <div className="md:hidden">
         <div
           onClick={() => setIsMobileExpanded(true)}
-          className="fixed bottom-[72px] inset-x-3.5 h-[62px] bg-[#12131a]/95 backdrop-blur-2xl border border-white/[0.12] rounded-full z-40 flex items-center justify-between px-3.5 shadow-2xl cursor-pointer"
+          className="fixed bottom-[74px] inset-x-3.5 h-[64px] bg-[#101119]/95 backdrop-blur-2xl border border-white/[0.12] rounded-full z-40 flex items-center justify-between px-3.5 shadow-2xl cursor-pointer"
         >
           {/* Cover & Info */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0 shadow">
+            <div className="relative w-11 h-11 rounded-full overflow-hidden border border-white/20 flex-shrink-0 shadow ring-1 ring-black/70">
               <img
                 src={currentSong.coverUrl}
                 alt={currentSong.title}
@@ -367,6 +374,9 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                   isPlaying ? 'animate-spin-slow' : ''
                 }`}
               />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-2.5 h-2.5 rounded-full bg-black/90 border border-white/30" />
+              </div>
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-white truncate">{currentSong.title}</p>
@@ -378,7 +388,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
           <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => toggleLikeSong(currentSong)}
-              className={`p-1.5 rounded-full ${
+              className={`p-2 rounded-full ${
                 isLiked ? 'text-brand-coral' : 'text-zinc-400'
               }`}
             >

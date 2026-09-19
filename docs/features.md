@@ -125,12 +125,11 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - Al posar el cursor, se expande suavemente a 240px con efecto blur `backdrop-blur-2xl bg-[#121217]/85` sin desplazar el contenido ni provocar saltos de diseño (cero layout shift).
    - Libera más del 90% del ancho del viewport para la música.
 
-2. **Cápsula de Sonido Flotante (`FloatingPlayer.tsx`):**
-   - Sustituye la barra inferior fija de 96px por una píldora flotante centrada (`bottom-5`, `max-w-4xl`, `rounded-full`).
-   - Barra de progreso (scrubber) integrada en el borde perimétrico superior con hover responsivo.
-   - Vinilo en rotación continua sincronizado con el estado de reproducción (`animate-spin-slow`).
-   - Botón central de reproducción con gradiente escarlata-carmesí (`from-brand-crimson via-brand-red to-brand-coral`).
-   - Control de volumen expansible que se oculta inteligentemente para mantener el minimalismo.
+2. **Cápsula de Sonido Flotante de Estudio (`FloatingPlayer.tsx`):**
+   - Sustituye la barra inferior fija de 96px por una consola flotante aerodinámica (`bottom-5`, `max-w-5xl`, `rounded-full`, `h-[88px]`) con doble halo de iluminación ambiental escarlata y cristal líquido `#101119/90`.
+   - **Consola Central de Doble Cubierta:** Botonera superior de transporte con botón Play escarlata de 48px y scrubber de alta precisión integrado en la parte inferior flanqueado milimétricamente por los contadores de tiempo (`0:04` y `4:39`), sin cortes en el borde perimétrico ni textos apretados.
+   - **Vinilo Analógico Auténtico:** Disco en rotación continua sincronizado (`animate-spin-slow`) con orificio de eje central (*spindle hole*) y doble anillo exterior.
+   - **Píldora de Volumen Analógica:** Control de volumen en píldora de vidrio esmerilado permanentemente disponible y ultrasuave.
    - En móvil, cápsula flotante sobre la barra de navegación con acceso a la hoja inmersiva **Zen Listening Sheet**.
 
 3. **Tarjetas Minimalistas Aura (`SongCard.tsx`):**
