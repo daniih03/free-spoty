@@ -123,7 +123,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
                 onClick={() => setPlaybackRate(rate)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   playbackRate === rate
-                    ? 'bg-brand-green text-black font-bold'
+                    ? 'bg-brand-green text-white font-bold shadow-md'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >

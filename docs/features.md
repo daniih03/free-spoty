@@ -25,7 +25,7 @@ Este documento describe todas las características implementadas en **Free-Spoty
 - **Búsqueda Instantánea:** Al escribir en la barra superior o en la vista de búsqueda, se consultan metadatos mediante la API de iTunes en tiempo real con debounce y cancelación de peticiones obsoletas (`AbortController`).
 - **Tarjeta "Resultado principal" (Spotlight):**
   - Muestra el resultado más relevante con carátula en 600x600, título, nombre de artista interactivo y la etiqueta oficial `Canción`.
-  - **Botón de Play Spotify Siempre Visible:** Un botón verde circular (`#1ed760`) con el icono oficial de reproducción/pausa negro (`fill-black`), permanentemente visible en la esquina inferior derecha tanto en pantallas táctiles como en escritorio (sin depender de `hover`).
+  - **Botón de Play Destacado Siempre Visible:** Un botón circular rojo escarlata (`#c81900` / `#e02200`) con el icono de reproducción/pausa en blanco puro (`fill-white`), permanentemente visible en la esquina inferior derecha tanto en pantallas táctiles como en escritorio (sin depender de `hover`).
 - **Lista Top Canciones:** Los siguientes resultados se muestran en un formato de lista compacta con carátula, número de pista, botón de me gusta y duración en formato `mm:ss`.
 
 ---
@@ -93,3 +93,18 @@ A diferencia de los reproductores convencionales que repiten canciones o desorde
 - Conexión con los controladores del sistema operativo (iOS Dynamic Island, pantalla de bloqueo de Android, teclas multimedia de teclados Windows/Mac).
 - Metadatos sincronizados: título, artista, álbum y conjunto de carátulas en resoluciones 192x192 y 512x512.
 - Manejadores soportados: `play`, `pause`, `nexttrack`, `previoustrack`, `seekto`.
+
+---
+
+## 🎨 8. Identidad Visual y Sistema de Diseño de Marca
+
+La interfaz está construida siguiendo la paleta de colores y proporciones del logotipo oficial de la aplicación (`logo.png`):
+
+| Elemento | Color Hexadecimal | Uso en la Aplicación |
+| :--- | :--- | :--- |
+| **Fondo Mate Carbón** | `#1a1a1a` | Color de superficie de cards, sidebar, navbar y fondo general de la app |
+| **Rojo Carmesí Profundo** | `#a51500` | Barra de subrayado del logo, acentos secundarios y sombras sutiles |
+| **Rojo Escarlata Primario** | `#c81900` | Botones de acción principales (Play Spotlight, Verified Artist, Discografía) |
+| **Rojo Vibrante Hover** | `#e02200` | Efectos hover de botones interactivos y elementos activos |
+| **Blanco Puro** | `#ffffff` | Iconografía dentro de botones de acción, glifos del logo y tipografía titular |
+

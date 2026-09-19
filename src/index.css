@@ -86,5 +86,6 @@ input[type=range]::-webkit-slider-thumb {
 
 input[type=range]:hover::-webkit-slider-thumb {
   transform: scale(1.2);
-  background: #1ed760;
+  background: #c81900;
+  box-shadow: 0 0 10px rgba(200, 25, 0, 0.7);
 }

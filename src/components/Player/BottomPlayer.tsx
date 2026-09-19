@@ -162,7 +162,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             >
               <Shuffle className="w-4 h-4" />
               {isShuffle && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-green rounded-full shadow-[0_0_8px_#1ed760]" />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-green rounded-full shadow-[0_0_8px_#c81900]" />
               )}
             </button>
 
@@ -264,7 +264,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
           >
             <ListMusic className="w-4 h-4" />
             {upcomingCount > 0 && (
-              <span className="absolute -top-1 -right-1 text-[9px] bg-brand-green text-black font-bold px-1 rounded-full">
+              <span className="absolute -top-1 -right-1 text-[9px] bg-brand-green text-white font-bold px-1 rounded-full">
                 {upcomingCount}
               </span>
             )}

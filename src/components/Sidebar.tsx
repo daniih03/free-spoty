@@ -70,12 +70,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-green to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-            <Radio className="w-5 h-5 text-black" />
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#1a1a1a] flex items-center justify-center shadow-lg shadow-black/60 group-hover:scale-105 transition-transform border border-white/10">
+            <img src="./logo.png" alt="Free-Spoty" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-1">
-              Free<span className="text-brand-green font-normal">Spoty</span>
+              Free<span className="text-brand-red font-semibold">Spoty</span>
             </h1>
             <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
               Audio Limpio · Sin Anuncios
@@ -209,14 +209,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-white/5 space-y-2">
         <button
           onClick={onOpenImportExport}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-300 hover:text-white hover:bg-emerald-500/20 text-xs font-semibold transition-all shadow-sm"
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600/10 to-rose-600/10 border border-red-600/20 text-red-300 hover:text-white hover:bg-red-600/20 text-xs font-semibold transition-all shadow-sm"
         >
           <DownloadCloud className="w-4 h-4" />
           Importar Spotify / Backup
         </button>
 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-500 text-center pt-1">
-          <Sparkles className="w-3 h-3 text-brand-green" />
+          <Sparkles className="w-3 h-3 text-brand-red" />
           <span>True Shuffle · GitHub Pages Edition</span>
         </div>
       </div>
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <form
             onSubmit={handleCreatePlaylist}
-            className="w-full max-w-sm bg-[#181818] border border-white/10 rounded-2xl p-6 space-y-4 shadow-2xl"
+            className="w-full max-w-sm bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 space-y-4 shadow-2xl"
           >
             <h3 className="text-base font-bold text-white">Nueva Playlist</h3>
             <input
@@ -235,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               placeholder="Nombre de la playlist..."
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-green"
+              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-red"
             />
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 type="submit"
                 disabled={!newPlaylistName.trim()}
-                className="px-4 py-2 rounded-xl bg-brand-green text-black font-semibold text-xs hover:scale-105 transition-all disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-brand-red text-white font-semibold text-xs hover:scale-105 transition-all disabled:opacity-50 shadow-md shadow-brand-red/20"
               >
                 Crear
               </button>

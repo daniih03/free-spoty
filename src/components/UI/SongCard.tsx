@@ -67,13 +67,13 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
               e.stopPropagation();
               handleCardClick();
             }}
-            className="w-10 h-10 rounded-full bg-brand-green text-black flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
             title={isCurrent && isPlaying ? 'Pausar' : 'Reproducir'}
           >
             {isCurrent && isPlaying ? (
-              <Pause className="w-4 h-4 fill-current" />
+              <Pause className="w-4 h-4 fill-white" />
             ) : (
-              <Play className="w-4 h-4 fill-current ml-0.5" />
+              <Play className="w-4 h-4 fill-white ml-0.5" />
             )}
           </button>
         </div>
@@ -141,7 +141,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, contextQueue, onNaviga
                   }}
                   className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-white/90"
                 >
-                  <Disc3 className="w-3.5 h-3.5 text-[#1ed760]" /> Ver artista
+                  <Disc3 className="w-3.5 h-3.5 text-brand-red" /> Ver artista
                 </button>
               )}
 

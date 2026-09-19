@@ -104,10 +104,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
                 <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
               </div>
               <button
-                className="w-9 h-9 rounded-full bg-brand-green text-black flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg mr-2"
+                className="w-9 h-9 rounded-full bg-brand-green text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg mr-2"
                 title="Reproducir ahora"
               >
-                <Play className="w-4 h-4 fill-current ml-0.5" />
+                <Play className="w-4 h-4 fill-white ml-0.5" />
               </button>
             </div>
           ))}

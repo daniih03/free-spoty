@@ -177,13 +177,13 @@ export const SearchView: React.FC<SearchViewProps> = ({ query, onSearchChange, o
                             playSong(topResult, results);
                           }
                         }}
-                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#1ed760] text-black flex items-center justify-center shadow-2xl shadow-black/70 hover:scale-105 active:scale-95 transition-transform duration-200 z-10"
+                        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#c81900] hover:bg-[#e02200] text-white flex items-center justify-center shadow-2xl shadow-[#c81900]/40 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
                         title={currentSong?.id === topResult.id && isPlaying ? 'Pausar' : 'Reproducir'}
                       >
                         {currentSong?.id === topResult.id && isPlaying ? (
-                          <Pause className="w-6 h-6 fill-black text-black" />
+                          <Pause className="w-6 h-6 fill-white text-white" />
                         ) : (
-                          <Play className="w-6 h-6 fill-black text-black ml-0.5" />
+                          <Play className="w-6 h-6 fill-white text-white ml-0.5" />
                         )}
                       </button>
                     </div>

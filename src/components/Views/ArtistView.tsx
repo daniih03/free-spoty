@@ -80,7 +80,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="w-12 h-12 border-3 border-[#1ed760] border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-3 border-[#c81900] border-t-transparent rounded-full animate-spin" />
         <p className="text-sm font-medium text-zinc-400 animate-pulse">Cargando discografía de {artistName}...</p>
       </div>
     );
@@ -129,7 +129,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
         {/* Hero Content */}
         <div className="relative z-10 space-y-2 md:space-y-3">
           <div className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-white/90 drop-shadow-md">
-            <BadgeCheck className="w-5 h-5 text-[#3b82f6] fill-[#3b82f6]/20" />
+            <BadgeCheck className="w-5 h-5 text-[#c81900] fill-[#c81900]/20" />
             <span>Artista Verificado</span>
           </div>
 
@@ -157,13 +157,13 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
         <button
           onClick={handlePlayArtist}
           disabled={profile.topSongs.length === 0}
-          className="w-14 h-14 rounded-full bg-[#1ed760] text-black flex items-center justify-center shadow-2xl shadow-[#1ed760]/30 hover:scale-105 active:scale-95 transition-transform duration-200 disabled:opacity-50 cursor-pointer"
+          className="w-14 h-14 rounded-full bg-[#c81900] hover:bg-[#e02200] text-white flex items-center justify-center shadow-2xl shadow-[#c81900]/30 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 cursor-pointer"
           title={isCurrentArtistPlaying ? 'Pausar' : `Reproducir canciones populares de ${profile.name}`}
         >
           {isCurrentArtistPlaying ? (
-            <Pause className="w-6 h-6 fill-black text-black" />
+            <Pause className="w-6 h-6 fill-white text-white" />
           ) : (
-            <Play className="w-6 h-6 fill-black text-black ml-0.5" />
+            <Play className="w-6 h-6 fill-white text-white ml-0.5" />
           )}
         </button>
 
@@ -171,7 +171,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
           onClick={() => setIsFollowing((prev) => !prev)}
           className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all duration-200 ${
             isFollowing
-              ? 'border-[#1ed760] text-[#1ed760] bg-[#1ed760]/10 hover:bg-[#1ed760]/20'
+              ? 'border-[#c81900] text-[#c81900] bg-[#c81900]/10 hover:bg-[#c81900]/20'
               : 'border-white/30 hover:border-white text-white hover:scale-105'
           }`}
         >
@@ -194,7 +194,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                   key={song.id}
                   onClick={() => playSong(song, profile.topSongs)}
                   className={`group flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer ${
-                    isCurrent ? 'bg-white/15 text-[#1ed760]' : 'hover:bg-white/10 text-zinc-300'
+                    isCurrent ? 'bg-white/15 text-[#c81900]' : 'hover:bg-white/10 text-zinc-300'
                   }`}
                 >
                   {/* Left: Index / Play & Cover & Title */}
@@ -202,9 +202,9 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                     <div className="w-6 text-center text-sm font-semibold text-zinc-400 group-hover:hidden">
                       {isCurrent && isPlaying ? (
                         <div className="flex items-end justify-center gap-0.5 h-3.5">
-                          <span className="w-1 bg-[#1ed760] h-full animate-bounce" />
-                          <span className="w-1 bg-[#1ed760] h-2/3 animate-bounce [animation-delay:0.2s]" />
-                          <span className="w-1 bg-[#1ed760] h-4/5 animate-bounce [animation-delay:0.4s]" />
+                          <span className="w-1 bg-[#c81900] h-full animate-bounce" />
+                          <span className="w-1 bg-[#c81900] h-2/3 animate-bounce [animation-delay:0.2s]" />
+                          <span className="w-1 bg-[#c81900] h-4/5 animate-bounce [animation-delay:0.4s]" />
                         </div>
                       ) : (
                         index + 1
@@ -212,7 +212,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                     </div>
                     <div className="w-6 text-center hidden group-hover:block text-white">
                       {isCurrent && isPlaying ? (
-                        <Pause className="w-4 h-4 fill-current mx-auto" />
+                        <Pause className="w-4 h-4 fill-current mx-auto text-[#c81900]" />
                       ) : (
                         <Play className="w-4 h-4 fill-current mx-auto" />
                       )}
@@ -228,7 +228,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                     <div className="min-w-0 flex-1 pr-2">
                       <p
                         className={`text-sm font-semibold truncate ${
-                          isCurrent ? 'text-[#1ed760]' : 'text-white'
+                          isCurrent ? 'text-[#c81900]' : 'text-white'
                         }`}
                       >
                         {song.title}
@@ -245,7 +245,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                         toggleLikeSong(song);
                       }}
                       className={`p-1.5 rounded-full transition-colors ${
-                        isLiked ? 'text-[#1ed760]' : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
+                        isLiked ? 'text-[#c81900]' : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
                       }`}
                       title={isLiked ? 'Eliminar de favoritos' : 'Guardar en favoritos'}
                     >
@@ -331,14 +331,14 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute bottom-2 right-2 opacity-90 md:opacity-0 md:group-hover:opacity-100 translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 transition-all duration-200">
-                    <div className="w-10 h-10 rounded-full bg-[#1ed760] text-black flex items-center justify-center shadow-xl hover:scale-110 active:scale-95">
-                      <Play className="w-4 h-4 fill-black text-black ml-0.5" />
+                    <div className="w-10 h-10 rounded-full bg-[#c81900] hover:bg-[#e02200] text-white flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all">
+                      <Play className="w-4 h-4 fill-white text-white ml-0.5" />
                     </div>
                   </div>
                 </div>
 
                 {/* Info */}
-                <h4 className="text-sm font-semibold text-white truncate mb-1 group-hover:text-[#1ed760] transition-colors">
+                <h4 className="text-sm font-semibold text-white truncate mb-1 group-hover:text-[#c81900] transition-colors">
                   {album.title}
                 </h4>
                 <div className="flex items-center gap-1.5 text-xs text-zinc-400">
@@ -357,7 +357,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
       {/* 5. Album Tracks Modal / Bottom Sheet */}
       {selectedAlbum && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-6 animate-fadeIn">
-          <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#181818] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp">
+          <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#1a1a1a] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp">
             {/* Modal Header */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between gap-4 bg-white/[0.02]">
               <div className="flex items-center gap-4 min-w-0">
@@ -367,7 +367,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                   className="w-16 h-16 rounded-xl object-cover shadow-lg flex-shrink-0"
                 />
                 <div className="min-w-0">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#1ed760]">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#c81900]">
                     {selectedAlbum.type === 'single' ? 'Sencillo' : selectedAlbum.type === 'ep' ? 'EP' : 'Álbum Oficial'}
                   </span>
                   <h3 className="text-lg md:text-xl font-bold text-white truncate">{selectedAlbum.title}</h3>
@@ -390,7 +390,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-1 scrollbar-thin">
               {isLoadingAlbum ? (
                 <div className="py-16 text-center space-y-3">
-                  <div className="w-8 h-8 border-2 border-[#1ed760] border-t-transparent rounded-full animate-spin mx-auto" />
+                  <div className="w-8 h-8 border-2 border-[#c81900] border-t-transparent rounded-full animate-spin mx-auto" />
                   <p className="text-xs text-zinc-400">Cargando canciones del disco...</p>
                 </div>
               ) : albumTracks.length === 0 ? (
@@ -400,9 +400,9 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                   <div className="pb-3 mb-2 flex items-center justify-between">
                     <button
                       onClick={() => playSong(albumTracks[0], albumTracks)}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1ed760] text-black font-bold text-xs uppercase tracking-wider hover:scale-105 transition-transform"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#c81900] hover:bg-[#e02200] text-white font-bold text-xs uppercase tracking-wider hover:scale-105 transition-all shadow-lg shadow-[#c81900]/20"
                     >
-                      <Play className="w-4 h-4 fill-black" />
+                      <Play className="w-4 h-4 fill-white" />
                       Reproducir Disco Completo
                     </button>
                   </div>
@@ -416,7 +416,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                         key={track.id}
                         onClick={() => playSong(track, albumTracks)}
                         className={`group flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer ${
-                          isCurrent ? 'bg-white/15 text-[#1ed760]' : 'hover:bg-white/10 text-zinc-300'
+                          isCurrent ? 'bg-white/15 text-[#c81900]' : 'hover:bg-white/10 text-zinc-300'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -426,7 +426,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                           <div className="min-w-0 flex-1">
                             <p
                               className={`text-sm font-semibold truncate ${
-                                isCurrent ? 'text-[#1ed760]' : 'text-white'
+                                isCurrent ? 'text-[#c81900]' : 'text-white'
                               }`}
                             >
                               {track.title}
@@ -442,7 +442,7 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistName, onNavigateBa
                               toggleLikeSong(track);
                             }}
                             className={`p-1.5 rounded-full transition-colors ${
-                              isLiked ? 'text-[#1ed760]' : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
+                              isLiked ? 'text-[#c81900]' : 'text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100'
                             }`}
                           >
                             <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />

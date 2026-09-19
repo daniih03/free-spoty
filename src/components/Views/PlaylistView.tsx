@@ -107,13 +107,13 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
           <button
             onClick={handlePlayAll}
             disabled={playlist.songs.length === 0}
-            className="w-14 h-14 rounded-full bg-brand-green text-black flex items-center justify-center shadow-xl shadow-brand-green/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="w-14 h-14 rounded-full bg-brand-green text-white flex items-center justify-center shadow-xl shadow-brand-green/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             title={isPlaylistPlaying ? 'Pausar' : 'Reproducir playlist'}
           >
             {isPlaylistPlaying ? (
-              <Pause className="w-6 h-6 fill-current" />
+              <Pause className="w-6 h-6 fill-white" />
             ) : (
-              <Play className="w-6 h-6 fill-current ml-1" />
+              <Play className="w-6 h-6 fill-white ml-1" />
             )}
           </button>
 

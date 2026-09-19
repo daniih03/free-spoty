@@ -9,16 +9,20 @@ export default {
     extend: {
       colors: {
         brand: {
-          green: '#1ed760',
-          darkgreen: '#1db954',
-          accent: '#fa2d48', // Apple Music vibe accent
+          red: '#c81900',
+          darkred: '#a51500',
+          lightred: '#e02200',
+          crimson: '#a51500',
+          green: '#c81900',       // Maps existing brand-green to logo scarlet
+          darkgreen: '#a51500',   // Maps existing darkgreen to logo crimson
+          accent: '#c81900',
           purple: '#7928ca',
           cyan: '#00f2fe',
-          surface: '#121212',
-          surfaceHighlight: '#1f1f1f',
-          surfaceElevated: '#282828',
-          card: 'rgba(255, 255, 255, 0.05)',
-          cardHover: 'rgba(255, 255, 255, 0.1)',
+          surface: '#1a1a1a',     // Exact logo background
+          surfaceHighlight: '#242424',
+          surfaceElevated: '#2d2d2d',
+          card: 'rgba(255, 255, 255, 0.04)',
+          cardHover: 'rgba(255, 255, 255, 0.08)',
         }
       },
       fontFamily: {
