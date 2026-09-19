@@ -24,56 +24,56 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
   const quickPicks = FEATURED_PLAYLISTS.flatMap((p) => p.songs).slice(0, 6);
 
   return (
-    <div className="p-6 md:p-8 space-y-10 max-w-7xl mx-auto select-none">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-10 max-w-7xl mx-auto select-none">
       {/* 1. Header Greeting & Feature Banner */}
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 flex items-center gap-3">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 flex items-center gap-3">
           {getGreeting()}
-          <span className="text-brand-coral text-2xl animate-pulse">✦</span>
+          <span className="text-brand-coral text-xl sm:text-2xl animate-pulse">✦</span>
         </h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-xs sm:text-sm text-zinc-400">
           Tu música favorita sin anuncios, con audio limpio de radio y letras en tiempo real.
         </p>
 
         {/* Feature Highlights Banner */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-brand-red/15 via-brand-wine/10 to-transparent border border-brand-red/25 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-brand-red/20 text-brand-coral">
+        <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-brand-red/15 via-brand-wine/10 to-transparent border border-brand-red/25 backdrop-blur-md flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-brand-red/20 text-brand-coral shrink-0">
               <Radio className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-white">Audio Radio Edit</h4>
-              <p className="text-[11px] text-zinc-400">Sin silencios ni intros de videoclips</p>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-white truncate">Audio Radio Edit</h4>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate">Sin intros de videoclip</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 backdrop-blur-md flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 shrink-0">
               <Shuffle className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-white">True Shuffle Real</h4>
-              <p className="text-[11px] text-zinc-400">Aleatoriedad pura sin sesgos</p>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-white truncate">True Shuffle</h4>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate">Aleatoriedad pura</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 backdrop-blur-md flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-purple-500/20 text-purple-400 shrink-0">
               <Mic2 className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-white">Letras Sincronizadas</h4>
-              <p className="text-[11px] text-zinc-400">Estilo Apple Music con salto interactivo</p>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-white truncate">Letras Karaoke</h4>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate">Sincronizadas en vivo</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 backdrop-blur-md flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 backdrop-blur-md flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
               <Sliders className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-white">Ecualizador & Timer</h4>
-              <p className="text-[11px] text-zinc-400">Bass Boost y apagado automático</p>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-white truncate">Ecualizador</h4>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate">Bass Boost & Timer</p>
             </div>
           </div>
         </div>
@@ -81,21 +81,21 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
 
       {/* 2. Quick Picks Grid (6 items) */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
           <Flame className="w-5 h-5 text-brand-coral" />
           Escucha rápida recomendada
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
           {quickPicks.map((song: Song) => (
             <div
               key={song.id}
               onClick={() => playSong(song, quickPicks)}
-              className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.06] hover:border-brand-red/30 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-brand-red/5"
+              className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] active:bg-white/[0.12] border border-white/[0.06] hover:border-brand-red/30 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-brand-red/5 touch-manipulation"
             >
               <img
                 src={song.coverUrl}
                 alt={song.title}
-                className="w-14 h-14 rounded-lg object-cover flex-shrink-0 shadow-md"
+                className="w-13 h-13 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0 shadow-md"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate group-hover:text-brand-coral transition-colors">
@@ -104,10 +104,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectPlaylist }) => {
                 <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
               </div>
               <button
-                className="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg shadow-brand-red/30 mr-2 hover:from-brand-red hover:to-brand-coral"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 group-hover:scale-105 transition-all shadow-lg shadow-brand-red/30 mr-1 sm:mr-2 hover:from-brand-red hover:to-brand-coral shrink-0 touch-manipulation"
                 title="Reproducir ahora"
               >
-                <Play className="w-4 h-4 fill-white ml-0.5" />
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white ml-0.5" />
               </button>
             </div>
           ))}

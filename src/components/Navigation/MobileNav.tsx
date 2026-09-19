@@ -14,7 +14,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#0e0e11]/95 backdrop-blur-xl border-t border-white/10 z-30 flex items-center justify-around px-2 select-none pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 h-[calc(60px+env(safe-area-inset-bottom,0px))] bg-[#0e0e11]/95 backdrop-blur-xl border-t border-white/10 z-30 flex items-center justify-around px-2 select-none pb-[env(safe-area-inset-bottom,0px)] touch-manipulation">
       {tabs.map((tab) => {
         const isActive =
           currentView === tab.id ||
@@ -24,7 +24,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
           <button
             key={tab.id}
             onClick={() => onNavigate(tab.id)}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors active:scale-95 touch-manipulation ${
               isActive ? 'text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >

@@ -73,10 +73,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlist, onNavigate
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto select-none">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto select-none">
       {/* 1. Header Banner */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl">
-        <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/10">
+      <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 sm:gap-6 p-4 sm:p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl">
+        <div className="relative w-36 h-36 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/10">
           <img
             src={playlist.coverUrl}
             alt={playlist.name}

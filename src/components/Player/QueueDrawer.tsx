@@ -27,13 +27,13 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
   const upcomingSongs = queue.slice(queueIndex + 1);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-[#121212]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl flex flex-col transition-transform duration-300 animate-slideLeft">
+    <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-[#121212]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl flex flex-col transition-transform duration-300 animate-slideLeft touch-manipulation">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('queue')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors touch-manipulation active:scale-95 ${
               activeTab === 'queue'
                 ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-sm shadow-brand-red/20'
                 : 'text-zinc-400 hover:text-white bg-white/5'
@@ -45,7 +45,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors touch-manipulation active:scale-95 ${
               activeTab === 'history'
                 ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-sm shadow-brand-red/20'
                 : 'text-zinc-400 hover:text-white bg-white/5'
@@ -58,14 +58,14 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({ isOpen, onClose }) => 
 
         <button
           onClick={onClose}
-          className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors touch-manipulation active:scale-90"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] space-y-6 scrollbar-thin">
         {activeTab === 'queue' ? (
           <>
             {/* Now Playing section */}

@@ -116,7 +116,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto select-none">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto select-none">
       {/* Header & Status */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
@@ -192,17 +192,17 @@ export const SearchView: React.FC<SearchViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               {/* ================================================================= */}
               {/* 1. STUDIO STAGE: Widescreen Panoramic Showcase for Lead Track     */}
               {/* ================================================================= */}
               {topResult && (
-                <div className="relative rounded-3xl p-6 md:p-8 bg-gradient-to-r from-brand-burgundy/30 via-[#131420]/90 to-[#0e1017]/80 border border-white/[0.1] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-                  <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                <div className="relative rounded-3xl p-4 sm:p-6 md:p-8 bg-gradient-to-r from-brand-burgundy/30 via-[#131420]/90 to-[#0e1017]/80 border border-white/[0.1] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+                  <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-6 md:gap-8">
                     {/* Glowing Vinyl Disc Display */}
                     <div
                       onClick={() => playSong(topResult, results)}
-                      className="group/vinyl relative w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden cursor-pointer shadow-2xl flex-shrink-0 border-2 border-white/20 ring-4 ring-black/50 bg-zinc-900 transform-gpu"
+                      className="group/vinyl relative w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-full overflow-hidden cursor-pointer shadow-2xl flex-shrink-0 border-2 border-white/20 ring-4 ring-black/50 bg-zinc-900 transform-gpu"
                       title={
                         currentSong?.id === topResult.id && isPlaying
                           ? 'Pausar tema principal'

@@ -368,7 +368,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
       <div className="md:hidden">
         <div
           onClick={() => setIsMobileExpanded(true)}
-          className="fixed bottom-[74px] inset-x-3.5 h-[64px] bg-[#101119]/95 backdrop-blur-2xl border border-white/[0.12] rounded-full z-40 flex items-center justify-between px-3.5 shadow-2xl cursor-pointer"
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+10px)] inset-x-3.5 h-[64px] bg-[#101119]/95 backdrop-blur-2xl border border-white/[0.12] rounded-full z-40 flex items-center justify-between px-3.5 shadow-2xl cursor-pointer touch-manipulation active:scale-[0.99] transition-transform"
         >
           {/* Cover & Info */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
@@ -395,12 +395,13 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
           </div>
 
           {/* Quick Play/Pause Action */}
-          <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => toggleLikeSong(currentSong)}
-              className={`p-2 rounded-full ${
+              className={`p-2.5 rounded-full touch-manipulation active:scale-90 transition-transform ${
                 isLiked ? 'text-brand-coral' : 'text-zinc-400'
               }`}
+              title={isLiked ? 'Guardada en Me Gusta' : 'Añadir a Me Gusta'}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
             </button>
@@ -408,10 +409,10 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             <button
               onClick={togglePlay}
               disabled={isLoadingSong}
-              className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/35 active:scale-95 transition-transform"
+              className="w-11 h-11 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/35 active:scale-95 transition-transform touch-manipulation"
             >
               {isLoadingSong ? (
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isPlaying ? (
                 <Pause className="w-4 h-4 fill-white" />
               ) : (
@@ -431,31 +432,35 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
 
         {/* Mobile Zen Listening Sheet */}
         {isMobileExpanded && (
-          <div className="fixed inset-0 z-50 bg-[#090b10] flex flex-col justify-between p-6 overflow-y-auto animate-fadeIn select-none">
-            {/* Top Bar */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setIsMobileExpanded(false)}
-                className="p-2.5 rounded-full bg-white/10 text-zinc-300 hover:text-white"
-              >
-                <ChevronDown className="w-6 h-6" />
-              </button>
+          <div className="fixed inset-0 z-50 bg-[#090b10] flex flex-col justify-between pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] px-5 sm:px-6 overflow-y-auto animate-fadeIn select-none touch-manipulation">
+            {/* Top Drag Handle & Bar */}
+            <div>
+              <div className="w-12 h-1 rounded-full bg-white/25 mx-auto mb-2 shrink-0" />
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setIsMobileExpanded(false)}
+                  className="p-2.5 rounded-full bg-white/10 text-zinc-300 hover:text-white active:scale-90 transition-transform touch-manipulation"
+                  aria-label="Cerrar reproductor"
+                >
+                  <ChevronDown className="w-6 h-6" />
+                </button>
 
-              <div className="text-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-coral flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Aura Studio
-                </span>
-                <p className="text-xs font-semibold text-white truncate max-w-[200px]">
-                  {currentSong.album || 'Free-Spoty'}
-                </p>
+                <div className="text-center">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-coral flex items-center justify-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Aura Studio
+                  </span>
+                  <p className="text-xs font-semibold text-white truncate max-w-[200px]">
+                    {currentSong.album || 'Free-Spoty'}
+                  </p>
+                </div>
+
+                <div className="w-10" />
               </div>
-
-              <div className="w-10" />
             </div>
 
-            {/* Giant Centered Vinyl Artwork */}
-            <div className="my-auto py-6 flex flex-col items-center">
-              <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl border border-white/15 relative">
+            {/* Centered Vinyl Artwork */}
+            <div className="my-auto py-4 flex flex-col items-center shrink-0">
+              <div className="w-56 h-56 xs:w-64 xs:h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl border border-white/15 relative">
                 <img
                   src={currentSong.coverUrl}
                   alt={currentSong.title}
@@ -469,10 +474,10 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             </div>
 
             {/* Track Info & Controls */}
-            <div className="space-y-5">
+            <div className="space-y-4 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 pr-4">
-                  <h2 className="text-2xl font-black text-white truncate">
+                  <h2 className="text-xl sm:text-2xl font-black text-white truncate">
                     {currentSong.title}
                   </h2>
                   <p
@@ -480,7 +485,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                       setIsMobileExpanded(false);
                       onNavigateArtist?.(currentSong.artist);
                     }}
-                    className="text-sm font-medium text-zinc-400 truncate hover:text-white hover:underline cursor-pointer"
+                    className="text-sm font-medium text-zinc-400 truncate hover:text-white hover:underline cursor-pointer active:opacity-75"
                   >
                     {currentSong.artist}
                   </p>
@@ -489,7 +494,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openAddToPlaylistModal(currentSong)}
-                    className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white"
+                    className="p-2.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white active:scale-95 transition-transform touch-manipulation"
                     title="Añadir a playlist"
                   >
                     <ListPlus className="w-5 h-5" />
@@ -497,7 +502,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
 
                   <button
                     onClick={() => toggleLikeSong(currentSong)}
-                    className={`p-2.5 rounded-full bg-white/5 border border-white/10 ${
+                    className={`p-2.5 rounded-full bg-white/5 border border-white/10 active:scale-95 transition-transform touch-manipulation ${
                       isLiked ? 'text-brand-coral' : 'text-zinc-400'
                     }`}
                   >
@@ -508,7 +513,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
 
               {/* Scrubber */}
               <div className="space-y-1.5">
-                <div className="relative flex items-center cursor-pointer py-2">
+                <div className="relative flex items-center cursor-pointer py-2 touch-none">
                   <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral"
@@ -523,8 +528,10 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                     value={currentDisplayTime}
                     onChange={handleSliderChange}
                     onMouseDown={handleSliderMouseDown}
+                    onTouchStart={handleSliderMouseDown}
                     onMouseUp={handleSliderMouseUp}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-6"
+                    onTouchEnd={handleSliderMouseUp}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-8"
                   />
                 </div>
                 <div className="flex justify-between text-xs text-zinc-400 font-mono">
@@ -534,24 +541,25 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
               </div>
 
               {/* Main Controls */}
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-1">
                 <button
                   onClick={toggleShuffle}
-                  className={`p-2.5 transition-colors ${
+                  className={`p-3 transition-colors active:scale-90 touch-manipulation ${
                     isShuffle ? 'text-brand-coral' : 'text-zinc-400'
                   }`}
+                  aria-label="True Shuffle"
                 >
                   <Shuffle className="w-5 h-5" />
                 </button>
 
-                <button onClick={prevTrack} className="p-2 text-white hover:scale-110 active:scale-95">
+                <button onClick={prevTrack} className="p-3 text-white active:scale-90 transition-transform touch-manipulation">
                   <SkipBack className="w-7 h-7 fill-current" />
                 </button>
 
                 <button
                   onClick={togglePlay}
                   disabled={isLoadingSong}
-                  className="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center shadow-2xl shadow-brand-red/40 active:scale-95 transition-transform"
+                  className="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center shadow-2xl shadow-brand-red/40 active:scale-95 transition-transform touch-manipulation"
                 >
                   {isLoadingSong ? (
                     <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
@@ -562,15 +570,16 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                   )}
                 </button>
 
-                <button onClick={nextTrack} className="p-2 text-white hover:scale-110 active:scale-95">
+                <button onClick={nextTrack} className="p-3 text-white active:scale-90 transition-transform touch-manipulation">
                   <SkipForward className="w-7 h-7 fill-current" />
                 </button>
 
                 <button
                   onClick={cycleRepeatMode}
-                  className={`p-2.5 transition-colors ${
+                  className={`p-3 transition-colors active:scale-90 touch-manipulation ${
                     repeatMode !== 'off' ? 'text-brand-coral' : 'text-zinc-400'
                   }`}
+                  aria-label="Modo repetición"
                 >
                   {repeatMode === 'one' ? (
                     <Repeat1 className="w-5 h-5" />
@@ -587,7 +596,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                     setIsMobileExpanded(false);
                     onOpenLyrics();
                   }}
-                  className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 rounded-xl bg-white/5"
+                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 active:text-white px-3.5 py-2.5 rounded-xl bg-white/5 active:bg-white/10 touch-manipulation"
                 >
                   <Mic2 className="w-4 h-4 text-brand-coral" /> Letras
                 </button>
@@ -597,7 +606,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                     setIsMobileExpanded(false);
                     onOpenQueue();
                   }}
-                  className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 rounded-xl bg-white/5"
+                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 active:text-white px-3.5 py-2.5 rounded-xl bg-white/5 active:bg-white/10 touch-manipulation"
                 >
                   <ListMusic className="w-4 h-4 text-brand-coral" /> Cola
                 </button>
@@ -607,7 +616,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                     setIsMobileExpanded(false);
                     onOpenEqualizer();
                   }}
-                  className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-3 py-2 rounded-xl bg-white/5"
+                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 active:text-white px-3.5 py-2.5 rounded-xl bg-white/5 active:bg-white/10 touch-manipulation"
                 >
                   <Sliders className="w-4 h-4" /> Ajustes
                 </button>

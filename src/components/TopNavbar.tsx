@@ -33,13 +33,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <header className="h-16 px-6 flex items-center justify-between gap-4 z-10 select-none bg-transparent">
+    <header className="h-[calc(56px+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 z-10 select-none bg-transparent">
       {/* Navigation history arrows */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 md:gap-2">
         <button
           onClick={onGoBack}
           disabled={!canGoBack}
-          className="p-2 rounded-full bg-black/40 border border-white/5 hover:bg-black/60 text-zinc-300 disabled:opacity-30 disabled:hover:bg-black/40 transition-colors"
+          className="p-2 rounded-full bg-black/40 border border-white/5 hover:bg-black/60 text-zinc-300 disabled:opacity-30 disabled:hover:bg-black/40 active:scale-95 transition-all touch-manipulation"
           title="Atrás"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -55,14 +55,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {/* Global Search Bar with `/` shortcut */}
       <div className="flex-1 max-w-md relative">
-        <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           ref={searchInputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="¿Qué quieres escuchar hoy? (Canciones, artistas, álbumes...)"
-          className="w-full pl-10 pr-12 py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-coral/60 focus:ring-1 focus:ring-brand-coral/30 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner"
+          placeholder="Buscar canciones, artistas, álbumes..."
+          className="w-full pl-9 pr-8 sm:pr-12 py-2 rounded-full bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-brand-coral/60 focus:ring-1 focus:ring-brand-coral/30 text-xs text-white placeholder-zinc-400 outline-none transition-all shadow-inner"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[10px] text-zinc-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-md font-mono">
           <span>/</span>
@@ -70,7 +70,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       </div>
 
       {/* System Badges & Settings */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
 
         {/* True Shuffle Badge */}
         {isShuffle && (

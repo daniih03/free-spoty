@@ -168,7 +168,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden flex flex-col bg-black text-white select-none">
+    <div className="relative h-[100dvh] w-screen overflow-hidden flex flex-col bg-black text-white select-none">
       {/* Dynamic Ambient Background */}
       <AmbientBackground />
 
@@ -196,7 +196,7 @@ const AppContent: React.FC = () => {
           />
 
           {/* View Container with custom scroll & bottom padding for floating capsule & mobile nav */}
-          <div className="flex-1 overflow-y-auto pb-44 md:pb-32 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto pb-[calc(148px+env(safe-area-inset-bottom,0px))] md:pb-32 scrollbar-thin">
             {currentView === 'home' && (
               <HomeView onSelectPlaylist={(id) => navigateTo('playlist', id)} />
             )}

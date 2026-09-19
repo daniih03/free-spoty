@@ -93,13 +93,15 @@ export const AddToPlaylistModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xl animate-fade-in touch-manipulation"
       onClick={closeAddToPlaylistModal}
     >
       <div
-        className="relative w-full max-w-md bg-neutral-900/95 border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-black/90 backdrop-blur-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-neutral-900/95 border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl shadow-black/90 backdrop-blur-2xl max-h-[90dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:pb-7"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile drag handle */}
+        <div className="w-12 h-1 bg-white/25 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
         {/* Ambient Glow Accent */}
         <div className="absolute -top-24 -right-24 w-44 h-44 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-44 h-44 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />

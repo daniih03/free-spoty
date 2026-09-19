@@ -132,16 +132,16 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
       </div>
 
       {/* Top Header Bar */}
-      <div className="relative z-20 flex items-center justify-between px-6 md:px-10 py-5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-brand-coral shadow-lg">
+      <div className="relative z-20 flex items-center justify-between px-3.5 sm:px-6 md:px-10 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3.5 border-b border-white/[0.08]">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-brand-coral shadow-lg">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+            <h2 className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-zinc-400">
               Aura Studio Visor
             </h2>
-            <p className="text-[11px] text-zinc-500 font-medium">
+            <p className="text-[10px] sm:text-[11px] text-zinc-500 font-medium hidden xs:block">
               Audio HD Master • Reproducción a Pantalla Completa
             </p>
           </div>
@@ -151,33 +151,34 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
         <div className="flex items-center gap-1 p-1 bg-white/[0.06] border border-white/10 rounded-2xl backdrop-blur-xl shadow-lg">
           <button
             onClick={() => setShowLyrics(false)}
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all touch-manipulation active:scale-95 ${
               !showLyrics
                 ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/30'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Visor de Estudio
+            Visor
           </button>
           <button
             onClick={() => setShowLyrics(true)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all touch-manipulation active:scale-95 ${
               showLyrics
                 ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/30'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Mic2 className="w-3.5 h-3.5" />
-            <span>Ver Letra</span>
+            <span>Letra</span>
           </button>
         </div>
 
         {/* Close Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={onClose}
-            className="p-2.5 rounded-full bg-white/[0.06] hover:bg-white/15 border border-white/10 text-zinc-300 hover:text-white transition-all shadow-md hover:scale-105 active:scale-95"
+            className="p-2 sm:p-2.5 rounded-full bg-white/[0.06] hover:bg-white/15 border border-white/10 text-zinc-300 hover:text-white transition-all shadow-md active:scale-90 touch-manipulation"
             title="Cerrar pantalla completa (ESC)"
+            aria-label="Cerrar"
           >
             <X className="w-5 h-5" />
           </button>
@@ -185,12 +186,12 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
       </div>
 
       {/* Main Content Area: Centered Visor OR Split Visor + Lyrics */}
-      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 flex items-center justify-center">
+      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 md:p-10 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex items-center justify-center">
         {!showLyrics ? (
           /* ========================================================================= */
           /* MODE 1: GRAND CENTERED STUDIO PLAYER VISOR                                */
           /* ========================================================================= */
-          <div className="w-full max-w-2xl flex flex-col items-center justify-center text-center space-y-6 animate-fadeIn my-auto py-4">
+          <div className="w-full max-w-2xl flex flex-col items-center justify-center text-center space-y-5 sm:space-y-6 animate-fadeIn my-auto py-2 sm:py-4">
             {/* Grand Spinning Vinyl Record with authentic spindle hole & grooves */}
             <div className="relative group/vinyl flex items-center justify-center">
               {/* Outer atmospheric halo */}
@@ -198,7 +199,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
 
               <div
                 onClick={togglePlay}
-                className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-4 border-white/20 ring-4 ring-black/80 bg-zinc-950 cursor-pointer transform-gpu"
+                className="relative w-56 h-56 xs:w-64 xs:h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-4 border-white/20 ring-4 ring-black/80 bg-zinc-950 cursor-pointer transform-gpu"
                 title={isPlaying ? 'Pausar' : 'Reproducir'}
               >
                 <img
@@ -424,9 +425,46 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
           /* ========================================================================= */
           /* MODE 2: SPLIT SCREEN (VISOR ON LEFT + SYNCED LYRICS ON RIGHT)             */
           /* ========================================================================= */
-          <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center h-full animate-fadeIn">
-            {/* Left: Studio Visor (Scaled for Split Layout) */}
-            <div className="lg:col-span-5 flex flex-col items-center justify-center text-center space-y-4 p-4">
+          <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 items-center h-full animate-fadeIn">
+            {/* Mobile-Only Sleek Mini Player Bar (< lg) */}
+            <div className="lg:hidden w-full flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/[0.05] border border-white/10 shrink-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <img
+                  src={currentSong.coverUrl}
+                  alt={currentSong.title}
+                  className="w-10 h-10 rounded-xl object-cover shadow ring-1 ring-white/10 shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{currentSong.title}</p>
+                  <p className="text-[11px] text-zinc-400 truncate">{currentSong.artist}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => toggleLikeSong(currentSong)}
+                  className={`p-2 rounded-full touch-manipulation ${
+                    isLiked ? 'text-brand-coral' : 'text-zinc-400'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                </button>
+
+                <button
+                  onClick={togglePlay}
+                  className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red text-white flex items-center justify-center shadow-lg shadow-brand-red/35 active:scale-95 transition-transform touch-manipulation"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4 fill-white" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-white ml-0.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Left: Studio Visor (Desktop Only on lg+) */}
+            <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center text-center space-y-4 p-4">
               {/* Spinning Vinyl */}
               <div
                 onClick={togglePlay}
@@ -545,7 +583,7 @@ export const LyricsView: React.FC<LyricsViewProps> = ({
             {/* Right: Synchronized Karaoke Lyrics Stream */}
             <div
               ref={containerRef}
-              className="lg:col-span-7 h-[65vh] overflow-y-auto pr-4 space-y-6 scrollbar-none select-none text-left py-20"
+              className="w-full lg:col-span-7 h-[calc(100dvh-170px)] lg:h-[65vh] overflow-y-auto px-2 lg:pr-4 space-y-6 scrollbar-none select-none text-left py-10 lg:py-20"
               style={{ scrollBehavior: 'smooth' }}
             >
               {isLoadingLyrics ? (
