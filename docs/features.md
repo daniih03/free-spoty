@@ -144,7 +144,7 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - Filtro anti-verdes que previene la filtración de tonalidades verdosas al procesar carátulas externas.
 
 5. **Sonic Canvas en Búsqueda (`SearchView.tsx`):**
-   - **Studio Stage Panorámico:** Sustituye la división 5/7 de Spotify (tarjeta cuadrada a la izquierda + lista de 5 canciones a la derecha) por un escenario de estudio inmersivo de ancho completo con vinilo en rotación, métricas HD Master y consola de acción directa (Play, Cola, Favorito, Perfil de Artista).
+   - **Studio Stage Panorámico con Vinilo Circular:** Sustituye la división 5/7 de Spotify por un escenario de estudio inmersivo de ancho completo con un disco de vinilo en círculo perfecto (`rounded-full`) con orificio central y anillo exterior que gira fluidamente (`animate-spin-slow`) durante la reproducción, métricas HD Master y consola de acción directa (Play, Cola, Favorito, Perfil de Artista).
    - **Audio Stream de Doble Canal:** Las pistas coincidentes se despliegan en cápsulas horizontales de sonido ergonómicas con soundwaves en vivo, sin listas apretadas.
    - **Conmutador Stream / Galería:** El usuario puede alternar entre la vista de estudio (Stream) y la vista visual de vinilos (Galería).
    - **Portales de Frecuencia (Mood Portals):** Reemplazan las baldosas de colores de Spotify con iconos inclinados por elegantes portales ambientales de cristal obsidiana.
