@@ -76,7 +76,7 @@ export default function LibraryView({ onSelectPlaylist, onNavigateLiked, onNavig
           <div className="rounded-2xl border border-dashed border-paper/15 py-14 px-6 text-center">
             <p className="font-display text-2xl font-bold text-paper">Crea tu primera playlist</p>
             <p className="text-[14px] text-mute mt-2 max-w-sm mx-auto">
-              Guarda aquí tus canciones o importa una lista de Spotify pegando los títulos.
+              Guarda aquí tus canciones o importa una playlist de Spotify pegando su link.
             </p>
             <button
               onClick={() => setShowCreate(true)}

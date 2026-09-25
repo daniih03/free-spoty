@@ -3,10 +3,11 @@
 /**
  * Platino Audio Engine — proxy de audio sin anuncios.
  *
- *   GET /api/stream?id=VIDEO_ID   → audio (m4a/webm) con soporte HTTP Range
- *   GET /api/search?q=QUERY       → [{ videoId, title, duration }]
- *   GET /api/warm?id=VIDEO_ID     → pre-extrae la URL (la siguiente canción arranca al instante)
- *   GET /health                   → estado + versión de yt-dlp
+ *   GET /api/stream?id=VIDEO_ID       → audio (m4a/webm) con soporte HTTP Range
+ *   GET /api/search?q=QUERY           → [{ videoId, title, duration }]
+ *   GET /api/warm?id=VIDEO_ID         → pre-extrae la URL (la siguiente canción arranca al instante)
+ *   GET /api/spotify-playlist?id=ID   → { name, coverUrl, tracks } de una playlist pública de Spotify
+ *   GET /health                       → estado + versión de yt-dlp
  *
  * Seguridad: yt-dlp se invoca SIEMPRE con execFile/spawn y argumentos en array
  * (nunca a través de una shell) y los IDs se validan con /^[\w-]{11}$/.
@@ -304,6 +305,46 @@ app.get('/api/search', rateLimit({ windowMs: 60_000, max: 90 }), async (req, res
   } catch (err) {
     console.error('Search error:', err.message);
     res.status(502).json({ error: 'Search failed', results: [] });
+  }
+});
+
+// Importación de playlists de Spotify: lee el widget público (sin API key) y
+// extrae el JSON embebido (__NEXT_DATA__) con el listado de pistas.
+const SPOTIFY_PLAYLIST_ID_RE = /^[A-Za-z0-9]{22}$/;
+const spotifyPlaylistCache = new LruCache(200);
+
+app.get('/api/spotify-playlist', rateLimit({ windowMs: 60_000, max: 20 }), async (req, res) => {
+  const id = String(req.query.id || '');
+  if (!SPOTIFY_PLAYLIST_ID_RE.test(id)) return res.status(400).json({ error: 'Invalid id parameter' });
+
+  const cached = spotifyPlaylistCache.get(id);
+  if (cached) return res.json(cached);
+
+  try {
+    const upstream = await fetch(`https://open.spotify.com/embed/playlist/${id}`, {
+      headers: { 'User-Agent': UA },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!upstream.ok) throw new Error(`Spotify respondió ${upstream.status}`);
+    const html = await upstream.text();
+    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!match) throw new Error('No se encontraron datos de la playlist');
+    const data = JSON.parse(match[1]);
+    const entity = data?.props?.pageProps?.state?.data?.entity;
+    if (!entity || entity.type !== 'playlist') throw new Error('El enlace no es una playlist pública de Spotify');
+
+    const result = {
+      name: entity.name || 'Playlist importada',
+      coverUrl: entity.coverArt?.sources?.[0]?.url || '',
+      tracks: (entity.trackList || [])
+        .filter((t) => t && t.entityType === 'track')
+        .map((t) => ({ title: t.title, artist: t.subtitle, duration: Math.round((t.duration || 0) / 1000) })),
+    };
+    spotifyPlaylistCache.set(id, result, 15 * 60_000);
+    res.json(result);
+  } catch (err) {
+    console.error('Spotify playlist error:', err.message);
+    res.status(502).json({ error: err.message || 'No se pudo leer la playlist de Spotify' });
   }
 });
 

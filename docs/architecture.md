@@ -74,6 +74,7 @@ src/
 │   ├── artistService.ts        # Perfil de artista y discografía
 │   ├── lyricsService.ts        # Letras LRC + búsqueda binaria de línea activa
 │   ├── storageService.ts       # libraryStore + persistencia local + ajustes + backups
+│   ├── spotifyImportService.ts # Importar playlist de Spotify por link (widget público → backend propio o proxy CORS)
 │   ├── cloudStorageService.ts  # Escrituras Supabase serializadas + migración de invitado
 │   ├── supabaseClient.ts       # getSupabase() con import dinámico
 │   ├── config.ts               # URL de servidor propio, API Key, presets de EQ

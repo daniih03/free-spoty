@@ -7,6 +7,7 @@ import {
   addSongToPlaylist,
 } from '../../services/storageService';
 import { searchSongsMetadata } from '../../services/searchService';
+import { extractSpotifyPlaylistId, fetchSpotifyPlaylist } from '../../services/spotifyImportService';
 import { ui } from '../../state/ui';
 import { Sheet, Spinner, inputClass } from '../UI/Primitives';
 import type { Song } from '../../types/music';
@@ -39,33 +40,44 @@ export default function ImportExportModal() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async () => {
+    const spotifyId = extractSpotifyPlaylistId(tracklist);
     const lines = tracklist
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith('#') && !l.startsWith('http'));
-    if (!lines.length && !tracklist.includes('spotify.com')) return;
+    if (!spotifyId && !lines.length) return;
 
     setIsImporting(true);
-    setStatus('Analizando pistas...');
 
     let targetName = playlistName.trim() || 'Playlist Importada';
-    const url = tracklist.match(/https?:\/\/open\.spotify\.com\/playlist\/\S+/)?.[0];
-    if (url) {
+    let queries = lines;
+
+    if (spotifyId) {
+      setStatus('Leyendo la playlist de Spotify...');
       try {
-        const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-        if (res.ok) targetName = (await res.json()).title || targetName;
-      } catch {
-        /* oEmbed opcional */
+        const playlist = await fetchSpotifyPlaylist(spotifyId);
+        if (!playlist.tracks.length) throw new Error('La playlist está vacía o es privada');
+        if (!playlistName.trim() || playlistName.trim() === 'Mi Playlist Importada') {
+          targetName = playlist.name;
+        }
+        queries = playlist.tracks.map((t) => `${t.artist} ${t.title}`);
+      } catch (err: any) {
+        console.error('Error importando playlist de Spotify:', err);
+        const known = err?.message === 'La playlist está vacía o es privada' || err?.message?.startsWith('El enlace no es');
+        setStatus(known ? err.message : 'No se pudo leer la playlist de Spotify. Prueba de nuevo en unos segundos.');
+        setIsImporting(false);
+        return;
       }
     }
 
+    setStatus('Analizando pistas...');
     try {
       // Búsquedas en paralelo (4 a la vez) en lugar de una a una
       let done = 0;
-      setProgress({ done: 0, total: lines.length });
-      const found = await mapLimit(lines, 4, async (line) => {
+      setProgress({ done: 0, total: queries.length });
+      const found = await mapLimit(queries, 4, async (line) => {
         const songs = await searchSongsMetadata(line).catch(() => [] as Song[]);
-        setProgress({ done: ++done, total: lines.length });
+        setProgress({ done: ++done, total: queries.length });
         return songs[0];
       });
 
@@ -73,7 +85,7 @@ export default function ImportExportModal() {
       const matched = found.filter((s): s is Song => !!s);
       matched.forEach((s) => addSongToPlaylist(created.id, s));
 
-      setStatus(`¡Listo! ${matched.length} de ${lines.length} canciones añadidas a "${targetName}".`);
+      setStatus(`¡Listo! ${matched.length} de ${queries.length} canciones añadidas a "${targetName}".`);
       setTimeout(ui.closeImportExport, 1800);
     } catch {
       setStatus('Ocurrió un error al procesar la lista.');
@@ -143,13 +155,13 @@ export default function ImportExportModal() {
             </div>
             <div>
               <label className="text-xs font-medium text-paper/80 block mb-1">
-                Pega tu lista (una canción por línea, ej: "Artista - Canción"):
+                Pega el link de tu playlist de Spotify, o escribe canciones (una por línea, ej: "Artista - Canción"):
               </label>
               <textarea
                 rows={6}
                 value={tracklist}
                 onChange={(e) => setTracklist(e.target.value)}
-                placeholder={'The Weeknd - Blinding Lights\nDua Lipa - Houdini\nColdplay - Yellow\nBad Bunny - MONACO'}
+                placeholder={'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M\n\n...o bien:\nThe Weeknd - Blinding Lights\nDua Lipa - Houdini'}
                 className={`${inputClass} text-xs resize-none font-mono`}
               />
             </div>
