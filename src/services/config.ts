@@ -64,7 +64,7 @@ function isAcceptableServerUrl(raw: string): boolean {
 }
 
 /**
- * Conecta un servidor desde un enlace `…/free-spoty/?server=https://…`
+ * Conecta un servidor desde un enlace `…/platino/?server=https://…`
  * (el que imprime server/start-windows.ps1, también como QR para el móvil).
  */
 export function consumeServerLinkParam() {

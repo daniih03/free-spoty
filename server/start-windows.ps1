@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-  Arranca el Free-Spoty Audio Engine en Windows (0 anuncios).
+  Arranca el Platino Audio Engine en Windows (0 anuncios).
 
 .DESCRIPTION
   - Instala dependencias de Node si faltan.
@@ -20,7 +20,7 @@ param(
   [switch]$Tunnel,
   [switch]$Background,
   [int]$Port = 3000,
-  [string]$AppUrl = 'https://daniih03.github.io/free-spoty/'
+  [string]$AppUrl = 'https://daniih03.github.io/platino/'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -142,7 +142,7 @@ try {
   Start-Sleep -Seconds 2
   $local = "http://localhost:$Port"
   Write-Host ''
-  Write-Host '  Free-Spoty Audio Engine activo (0 anuncios)' -ForegroundColor Red
+  Write-Host '  Platino Audio Engine activo (0 anuncios)' -ForegroundColor Red
   Write-Host "  En este PC: $($AppUrl)?server=$local" -ForegroundColor White
 
   if ($Tunnel) {

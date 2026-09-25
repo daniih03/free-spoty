@@ -1,7 +1,7 @@
 {
-  "name": "free-spoty-server",
+  "name": "platino-server",
   "version": "1.0.0",
-  "description": "High-performance ad-free audio streaming proxy for Free-Spoty",
+  "description": "High-performance ad-free audio streaming proxy for Platino",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

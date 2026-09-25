@@ -192,7 +192,7 @@ export function saveCustomPlaylist(name: string, description?: string): Playlist
   const playlist: Playlist = {
     id: generateUUID(),
     name,
-    description: description || 'Playlist personalizada en Free-Spoty',
+    description: description || 'Playlist personalizada en Platino',
     coverUrl: DEFAULT_PLAYLIST_COVER,
     songs: [],
     isCustom: true,

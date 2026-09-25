@@ -55,7 +55,7 @@ export interface EqGains {
   treble: number;
 }
 
-const CONTAINER_ID = 'free-spoty-yt-player';
+const CONTAINER_ID = 'platino-yt-player';
 
 /** Trazas del motor: activar con localStorage.free_spoty_debug = '1'. */
 const DEBUG = (() => {

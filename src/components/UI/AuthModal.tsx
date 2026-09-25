@@ -70,7 +70,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
           <UserIcon className="w-6 h-6" />
         </div>
         <h3 className="font-display text-2xl font-bold tracking-tight text-paper">
-          {mode === 'login' ? 'Bienvenido a Free-Spoty' : 'Crea tu cuenta gratis'}
+          {mode === 'login' ? 'Bienvenido a Platino' : 'Crea tu cuenta gratis'}
         </h3>
         <p className="text-xs sm:text-sm text-mute mt-1">
           Guarda tus favoritas y playlists en la nube para escucharlas en cualquier lugar.
@@ -145,7 +145,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
           {isLoading ? (
             <Spinner className="w-4 h-4 border-2 border-white" />
           ) : mode === 'login' ? (
-            'Entrar a Free-Spoty'
+            'Entrar a Platino'
           ) : (
             'Crear mi cuenta gratis'
           )}

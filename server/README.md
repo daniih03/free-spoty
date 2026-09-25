@@ -1,4 +1,4 @@
-# 🎧 Free-Spoty Audio Engine (Backend Proxy)
+# 🎧 Platino Audio Engine (Backend Proxy)
 
 Microservicio opcional que transmite el audio de YouTube como `<audio>` HTML5 nativo, con **0 anuncios**, y además activa el ecualizador real de la app.
 
@@ -34,8 +34,8 @@ Instala y actualiza todo, arranca el servidor y muestra el enlace + QR para cone
 
 ```bash
 cd server
-docker build -t free-spoty-audio .
-docker run -d --restart unless-stopped -p 3000:3000 --name free-spoty-audio free-spoty-audio
+docker build -t platino-audio .
+docker run -d --restart unless-stopped -p 3000:3000 --name platino-audio platino-audio
 curl http://localhost:3000/health
 ```
 
@@ -51,6 +51,6 @@ npm install
 npm start
 ```
 
-## 🔗 Conexión con Free-Spoty
+## 🔗 Conexión con Platino
 
 Pega la URL pública (HTTPS) en **Ajustes & Ecualizador → Servidor de audio**, o compílala en la variable `VITE_STREAM_API_URL`. Si el servidor no responde en 3,5 s, la app vuelve automáticamente al reproductor de YouTube.

@@ -159,7 +159,7 @@ function updateMediaSession(song: Song) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
       artist: song.artist,
-      album: song.album || 'Free-Spoty',
+      album: song.album || 'Platino',
       artwork: [
         { src: artwork(song.coverUrl, 192), sizes: '192x192', type: 'image/jpeg' },
         { src: artwork(song.coverUrl, 512), sizes: '512x512', type: 'image/jpeg' },

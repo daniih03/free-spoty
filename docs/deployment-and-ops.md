@@ -1,13 +1,13 @@
 # 🚀 Despliegue y Operaciones (CI/CD)
 
-Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sistema de actualización en caliente y backend opcional.
+Compilación y despliegue automático de **Platino** en **GitHub Pages**, sistema de actualización en caliente y backend opcional.
 
 ---
 
 ## 🌐 Enlaces de Producción
 
-- **App en vivo:** [https://daniih03.github.io/free-spoty/](https://daniih03.github.io/free-spoty/)
-- **Repositorio:** `https://github.com/daniih03/free-spoty`
+- **App en vivo:** [https://daniih03.github.io/platino/](https://daniih03.github.io/platino/)
+- **Repositorio:** `https://github.com/daniih03/platino`
 - **Rama de despliegue:** `main`
 
 ---
@@ -53,7 +53,7 @@ Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sis
    git commit -m "tipo: descripción clara del cambio"
    git push origin main
    ```
-5. **Verificar:** sondear `https://daniih03.github.io/free-spoty/version.json` hasta ver la nueva marca.
+5. **Verificar:** sondear `https://daniih03.github.io/platino/version.json` hasta ver la nueva marca.
 
 ---
 
@@ -63,16 +63,16 @@ Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sis
 ```powershell
 powershell -ExecutionPolicy Bypass -File server\setup-windows.ps1
 ```
-Instala Tailscale e inicia sesión, desactiva su DNS interno en el PC (lección 17), publica el servidor con **Tailscale Funnel** en una dirección HTTPS **fija** (`https://<pc>.<tailnet>.ts.net`), registra la tarea programada "Free-Spoty Audio Engine" (arranque al iniciar sesión, en segundo plano, reinicio si cae, yt-dlp actualizado a diario; logs en `serverin\server*.log`) y muestra el enlace + QR para conectar cada dispositivo una sola vez. Deshacer: `setup-windows.ps1 -Uninstall`.
+Instala Tailscale e inicia sesión, desactiva su DNS interno en el PC (lección 17), publica el servidor con **Tailscale Funnel** en una dirección HTTPS **fija** (`https://<pc>.<tailnet>.ts.net`), registra la tarea programada "Platino Audio Engine" (arranque al iniciar sesión, en segundo plano, reinicio si cae, yt-dlp actualizado a diario; logs en `serverin\server*.log`) y muestra el enlace + QR para conectar cada dispositivo una sola vez. Deshacer: `setup-windows.ps1 -Uninstall`.
 
-**Estado actual de la instalación:** dirección fija `https://daniel.tail9bdd7f.ts.net`, enlace de conexión `https://daniih03.github.io/free-spoty/?server=https://daniel.tail9bdd7f.ts.net`.
+**Estado actual de la instalación:** dirección fija `https://daniel.tail9bdd7f.ts.net`, enlace de conexión `https://daniih03.github.io/platino/?server=https://daniel.tail9bdd7f.ts.net`.
 
 **Arranque manual (alternativa):**
 ```powershell
 powershell -ExecutionPolicy Bypass -File server\start-windows.ps1          # solo este PC
 powershell -ExecutionPolicy Bypass -File server\start-windows.ps1 -Tunnel  # + móvil/fuera de casa
 ```
-El script instala dependencias, crea un venv con yt-dlp (o descarga `yt-dlp.exe` si no hay Python), lo actualiza cada 3 días, arranca el servidor y con `-Tunnel` abre un túnel HTTPS gratuito de Cloudflare mostrando el enlace `…/free-spoty/?server=…` y un **QR** para el móvil. La URL del túnel cambia en cada arranque (para una fija: Tailscale Funnel o un túnel con nombre de Cloudflare).
+El script instala dependencias, crea un venv con yt-dlp (o descarga `yt-dlp.exe` si no hay Python), lo actualiza cada 3 días, arranca el servidor y con `-Tunnel` abre un túnel HTTPS gratuito de Cloudflare mostrando el enlace `…/platino/?server=…` y un **QR** para el móvil. La URL del túnel cambia en cada arranque (para una fija: Tailscale Funnel o un túnel con nombre de Cloudflare).
 
 Para verificar los IDs de las playlists destacadas: `cd server && node scripts/verify-featured.js [--write]`.
 
@@ -80,7 +80,7 @@ Para verificar los IDs de las playlists destacadas: `cd server && node scripts/v
 Proxy de audio sin anuncios con `yt-dlp` (ver `server/README.md`): streaming con `Range`, búsqueda cacheada, validación estricta de IDs y ejecución sin shell. Debe alojarse en un servicio **sin cold start**; las URLs `onrender.com` se descartan en el cliente.
 
 ```bash
-cd server && docker build -t free-spoty-audio . && docker run -d -p 3000:3000 free-spoty-audio
+cd server && docker build -t platino-audio . && docker run -d -p 3000:3000 platino-audio
 ```
 
 Resultados de prueba local (yt-dlp 2026.08.19): primera petición de stream ~1-3 s (extracción), siguientes ~0,12 s (URL en caché hasta su `expire`), búsqueda repetida ~2 ms.

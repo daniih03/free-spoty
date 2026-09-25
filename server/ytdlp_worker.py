@@ -1,5 +1,5 @@
 """
-Worker persistente de yt-dlp para el Free-Spoty Audio Engine.
+Worker persistente de yt-dlp para el Platino Audio Engine.
 
 Mantiene yt-dlp cargado en memoria y atiende peticiones por stdin/stdout
 (una línea JSON por petición), evitando el arranque de Python + imports en

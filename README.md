@@ -1,18 +1,18 @@
-# 🎵 Free-Spoty
+# 🎵 Platino
 
 Una alternativa web fluida, profesional y gratuita a **Spotify** y **Apple Music**, lista para ejecutarse directamente desde **GitHub Pages** sin servidores de pago ni anuncios intrusivos.
 
-![Free-Spoty Preview](https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80)
+![Platino Preview](https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80)
 
 ---
 
-## 🚀 ¿Por qué Free-Spoty? (Problemas resueltos de Spotify y Apple Music)
+## 🚀 ¿Por qué Platino? (Problemas resueltos de Spotify y Apple Music)
 
-Free-Spoty fue creado para solucionar las mayores frustraciones que tienen los usuarios de las plataformas de streaming actuales:
+Platino fue creado para solucionar las mayores frustraciones que tienen los usuarios de las plataformas de streaming actuales:
 
 1. **🎧 Audio Master de YouTube Music (Topic / Studio Master)**:
    - El gran problema de escuchar música en YouTube tradicional son los videoclips con 2 minutos de introducción dramática, diálogos de actores, ruidos de sirenas o silencios.
-   - **Prioridad inteligente**: Free-Spoty busca y reproduce directamente la **pista oficial de YouTube Music** (Topic Channel subido por discográficas), idéntica a la que se escucha en Spotify/Apple Music con audio master de estudio.
+   - **Prioridad inteligente**: Platino busca y reproduce directamente la **pista oficial de YouTube Music** (Topic Channel subido por discográficas), idéntica a la que se escucha en Spotify/Apple Music con audio master de estudio.
    - El resolver ordena los candidatos por **duración oficial** (iTunes) para evitar intros, "Extended Edits" o bucles, y si un vídeo falla prueba automáticamente la siguiente alternativa.
 
 2. **🚫 Cero Anuncios y Saltos Ilimitados**:
@@ -21,7 +21,7 @@ Free-Spoty fue creado para solucionar las mayores frustraciones que tienen los u
 
 3. **🔀 True Shuffle (Aleatoriedad Real sin Sesgo)**:
    - Spotify repite constantemente las mismas 10-15 canciones debido a su algoritmo de sesgo de reproducción.
-   - Free-Spoty implementa el algoritmo matemático **Fisher-Yates**, garantizando una distribución 100% equiprobable y sin repeticiones en tu cola.
+   - Platino implementa el algoritmo matemático **Fisher-Yates**, garantizando una distribución 100% equiprobable y sin repeticiones en tu cola.
 
 4. **🎤 Letras Sincronizadas Estilo Apple Music (Gratis)**:
    - Letras karaoke en tiempo real potenciadas por **LRCLIB**.
@@ -73,12 +73,12 @@ Para activarlo en tu repositorio:
 1. Haz push de tus cambios a la rama `main` o `master`:
    ```bash
    git add .
-   git commit -m "feat: Free-Spoty initial release"
+   git commit -m "feat: Platino initial release"
    git push origin main
    ```
 2. En GitHub, entra en tu repositorio ➔ **Settings** ➔ **Pages**.
 3. En **Build and deployment** > **Source**, selecciona **GitHub Actions**.
-4. ¡Listo! Tu web estará disponible en `https://<tu-usuario>.github.io/free-spoty/`.
+4. ¡Listo! Tu web estará disponible en `https://<tu-usuario>.github.io/platino/`.
 
 ---
 
@@ -99,4 +99,4 @@ npm run build
 
 ## ⚖️ Licencia & Privacidad
 
-Free-Spoty utiliza la API oficial de YouTube Iframe para la reproducción de contenido multimedia y la API abierta de LRCLIB para las letras. No almacena datos privados en servidores externos; todas las preferencias y listas se guardan localmente en el navegador del usuario (`localStorage`).
+Platino utiliza la API oficial de YouTube Iframe para la reproducción de contenido multimedia y la API abierta de LRCLIB para las letras. No almacena datos privados en servidores externos; todas las preferencias y listas se guardan localmente en el navegador del usuario (`localStorage`).

@@ -1,4 +1,4 @@
-name: Deploy Free-Spoty to GitHub Pages
+name: Deploy Platino to GitHub Pages
 
 on:
   push:

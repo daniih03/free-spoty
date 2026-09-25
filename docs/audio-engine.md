@@ -80,7 +80,7 @@ A los 3 s de cargar, si el iframe sigue en `BUFFERING / UNSTARTED / PAUSED`, se 
 ### 7. Modo 0 anuncios (servidor propio + `<audio>` nativo)
 Los anuncios solo pueden venir del reproductor de YouTube. La única forma de garantizar **cero anuncios** es no usarlo: el audio lo sirve el servidor propio (`server/`, yt-dlp) y se reproduce en un `<audio>` HTML5.
 
-- **Conexión:** Ajustes → Servidor de audio, o abriendo `…/free-spoty/?server=URL` (lo imprime `server/start-windows.ps1`, también como QR). `src/serverLink.ts` lee el parámetro *antes* de que arranque el motor.
+- **Conexión:** Ajustes → Servidor de audio, o abriendo `…/platino/?server=URL` (lo imprime `server/start-windows.ps1`, también como QR). `src/serverLink.ts` lee el parámetro *antes* de que arranque el motor.
 - **Servidor disponible** (`services/serverStatus.ts → activeBackend()`): **el iframe de YouTube ni siquiera se carga** (≈1 MB menos de JS). Si un vídeo concreto falla, el motor emite `EngineErrors.STREAM_FAILED (9001)` y el reproductor prueba otro candidato / re-resuelve / salta: nunca YouTube mientras el servidor responda. Timeout de arranque: 15 s.
 - **Servidor caído (PC apagado)** con "Usar YouTube si el servidor no responde" activado (por defecto): se marca caído, se usa el iframe de YouTube (puede haber anuncios) y se re-comprueba `/health` cada 30 s y al volver a la app; en cuanto responde, vuelve al servidor. Con la opción desactivada se emite `SERVER_DOWN (9002)` y la cápsula muestra "Servidor de audio sin conexión".
 - **iOS:** `unlockAudio()` reproduce 10 ms de silencio en el `<audio>` dentro del gesto del usuario, porque el `src` real llega tras la resolución asíncrona. Los eventos del silencio se ignoran (`src` `data:`).

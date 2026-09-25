@@ -282,7 +282,7 @@ export default function EqualizerModal() {
             </button>
           </div>
           <p className="text-[11px] text-faint">
-            No es obligatoria: por defecto Free-Spoty busca de forma libre e instantánea sin configuración.
+            No es obligatoria: por defecto Platino busca de forma libre e instantánea sin configuración.
           </p>
         </div>
       </div>

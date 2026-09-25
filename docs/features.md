@@ -1,6 +1,6 @@
-# 📱 Catálogo de Funcionalidades de Free-Spoty
+# 📱 Catálogo de Funcionalidades de Platino
 
-Este documento describe todas las características implementadas en **Free-Spoty**, su diseño inspirado en Spotify y los detalles de interacción.
+Este documento describe todas las características implementadas en **Platino**, su diseño inspirado en Spotify y los detalles de interacción.
 
 ---
 
@@ -138,7 +138,7 @@ La interfaz está construida con una paleta cromática sofisticada basada exclus
 
 ## 🔮 9. Rediseño Minimalista Studio (Aura UI vs Spotify)
 
-Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spoty implementa una arquitectura visual **espaciosa, ergonómica y futurista**:
+Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Platino implementa una arquitectura visual **espaciosa, ergonómica y futurista**:
 
 1. **SmartDock Flotante (`SmartDock.tsx`):**
    - Sustituye a la columna lateral fija de 280px por un rail suspendido en 3D (`left-4`, `w-[68px]`).
@@ -227,7 +227,7 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - Bonus del audio nativo: reproducción en segundo plano y pantalla bloqueada más fiable en móvil, y ecualizador real.
 
 15. **Rediseño visual v3 "Laca hi-fi" (sept. 2026):**
-   - **Sistema de color** (`tailwind.config.js`): `ink #110B0C` (fondo), `lacquer #1B1213` / `raised #251819` (superficies), `paper #F4ECE7` (texto), `mute #A8958F` / `faint #6E5C57` (secundarios), `brand.red #C81900` (acción, el rojo del logo), `brand.coral #FF5A3C` (estados activos) y `brass #C9A56B` **solo** para la etiqueta y el eje de los vinilos. Grano de laca casi imperceptible sobre toda la app (`body::after`).
+   - **Sistema de color** (`tailwind.config.js`): `ink #110B0C` (fondo), `lacquer #1B1213` / `raised #251819` (superficies), `paper #F4ECE7` (texto), `mute #A8958F` / `faint #6E5C57` (secundarios), `brand.red #C81900` (acción, el rojo del logo), `brand.coral #FF5A3C` (estados activos) y `brass #C9A56B` **solo** para la etiqueta y el eje de los vinilos. Grano de platino casi imperceptible sobre toda la app (`body::after`).
    - **Tipografía:** *Bricolage Grotesque* (titulares, escala `display-xl/lg/md`) + *Geist* (interfaz, cifras tabulares para tiempos). Sin etiquetas en mayúsculas ni tipografía monoespaciada.
    - **Elemento firma: el vinilo real** (`Record` y `Sleeve` en `UI/Primitives.tsx`, estilos `.record*` y `.sleeve*` en `index.css`): disco con surcos, brillo fijo que no gira, carátula como etiqueta y eje de latón. La carátula es la funda: al sonar, el disco **sale de la funda y gira** (cápsula, cabecera de playlist, resultado principal); al pasar el cursor por una playlist o álbum el disco asoma (`.sleeve-peek`); en las tarjetas que suenan aparece un vinilo girando en la esquina.
    - **Movimiento:** una única coreografía de entrada (saludo de Inicio, `.stagger`), transición suave entre vistas (`animate-view`), ecualizador animado, corazón con rebote, portada que "respira" en la Zen Sheet. Todo respeta `prefers-reduced-motion`.

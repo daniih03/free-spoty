@@ -1,6 +1,6 @@
 # 🛡️ Lecciones Aprendidas, Trampas Comunes y Solución de Problemas
 
-Este documento es el **registro histórico de problemas críticos resueltos** en **Free-Spoty**. Léelo atentamente antes de tocar el motor de audio o la capa de datos. Cada una de estas soluciones costó horas de diagnóstico y representa una decisión de diseño fundamental.
+Este documento es el **registro histórico de problemas críticos resueltos** en **Platino**. Léelo atentamente antes de tocar el motor de audio o la capa de datos. Cada una de estas soluciones costó horas de diagnóstico y representa una decisión de diseño fundamental.
 
 ---
 
@@ -160,7 +160,7 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
 
 ## 19. La tarea programada moría sola (0xC000013A)
 
-- **Síntoma:** la tarea "Free-Spoty Audio Engine" pasaba a *Ready* con `LastTaskResult = 0xC000013A` (cierre de consola); el servidor seguía vivo pero huérfano, sin el bucle que lo reinicia.
+- **Síntoma:** la tarea "Platino Audio Engine" pasaba a *Ready* con `LastTaskResult = 0xC000013A` (cierre de consola); el servidor seguía vivo pero huérfano, sin el bucle que lo reinicia.
 - **Causa:** con Windows Terminal como consola por defecto (Windows 11), un `powershell -WindowStyle Hidden` lanzado por el Programador de tareas recibe un evento de cierre de consola y muere al instante o al rato.
 - **Solución** (`setup-windows.ps1`):
   - La acción es `conhost.exe --headless powershell.exe … -Background`: consola sin ventana, sin pasar por Windows Terminal. El servidor (`node`) comparte esa consola (`-NoNewWindow`).

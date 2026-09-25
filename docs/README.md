@@ -1,6 +1,6 @@
-# 🧠 Free-Spoty — Segundo Cerebro & Documentación de Contexto
+# 🧠 Platino — Segundo Cerebro & Documentación de Contexto
 
-Bienvenido al sistema de documentación y memoria viva de **Free-Spoty**. Esta carpeta `docs/` sirve como **Segundo Cerebro** del proyecto, diseñado para que cualquier desarrollador o asistente de IA comprenda de inmediato la arquitectura, el contexto histórico, las decisiones de diseño, los algoritmos de resolución y las lecciones aprendidas durante el desarrollo.
+Bienvenido al sistema de documentación y memoria viva de **Platino**. Esta carpeta `docs/` sirve como **Segundo Cerebro** del proyecto, diseñado para que cualquier desarrollador o asistente de IA comprenda de inmediato la arquitectura, el contexto histórico, las decisiones de diseño, los algoritmos de resolución y las lecciones aprendidas durante el desarrollo.
 
 ---
 
@@ -26,7 +26,7 @@ Bienvenido al sistema de documentación y memoria viva de **Free-Spoty**. Esta c
   - **Fuente de Metadatos:** iTunes Search API (CORS abierto, carátulas a cualquier tamaño) y Deezer API vía JSONP (retratos 1000x1000 y fans).
   - **Fuente de Audio:** YouTube IFrame API por defecto, o `<audio>` nativo desde el servidor propio opcional (`server/`), con un resolver de vídeo con caché persistente y carrera de instancias Piped/Invidious.
   - **Letras Sincronizadas:** LRCLIB API con interpolación milimétrica en vivo.
-  - **Despliegue:** GitHub Pages con GitHub Actions (`main` branch) en `https://daniih03.github.io/free-spoty/`.
+  - **Despliegue:** GitHub Pages con GitHub Actions (`main` branch) en `https://daniih03.github.io/platino/`.
 
 ---
 

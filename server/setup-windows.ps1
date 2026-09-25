@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-  Configuración única de Free-Spoty 0 anuncios en Windows.
+  Configuración única de Platino 0 anuncios en Windows.
 
 .DESCRIPTION
   1. Instala Tailscale (si falta) e inicia sesión (se abre el navegador).
@@ -18,13 +18,13 @@
 #>
 param(
   [int]$Port = 3000,
-  [string]$AppUrl = 'https://daniih03.github.io/free-spoty/',
+  [string]$AppUrl = 'https://daniih03.github.io/platino/',
   [switch]$Uninstall
 )
 
 $ErrorActionPreference = 'Stop'
 $ServerDir = $PSScriptRoot
-$TaskName = 'Free-Spoty Audio Engine'
+$TaskName = 'Platino Audio Engine'
 $Ts = 'C:\Program Files\Tailscale\tailscale.exe'
 
 function Step($Text) { Write-Host "`n▶ $Text" -ForegroundColor Red }
@@ -89,7 +89,7 @@ $trigger = @(
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
   -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
-  -Description 'Servidor de audio sin anuncios para Free-Spoty' -Force | Out-Null
+  -Description 'Servidor de audio sin anuncios para Platino' -Force | Out-Null
 Start-ScheduledTask -TaskName $TaskName
 
 Write-Host 'Arrancando el servidor (la primera vez instala yt-dlp, puede tardar un minuto)...'

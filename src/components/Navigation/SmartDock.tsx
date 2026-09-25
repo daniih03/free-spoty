@@ -51,10 +51,10 @@ export const SmartDock: React.FC<SmartDockProps> = ({ route, onNavigate }) => {
           <button
             onClick={() => onNavigate('home')}
             className="flex items-center gap-3 h-12 px-1.5 rounded-xl text-left shrink-0"
-            aria-label="Free-Spoty, inicio"
+            aria-label="Platino, inicio"
           >
-            <img src="./logo.png" alt="" width={36} height={36} className="w-9 h-9 object-contain shrink-0" />
-            <span className={`font-display text-[19px] font-bold tracking-tight text-paper ${label}`}>Free-Spoty</span>
+            <img src="./logo.svg" alt="" width={36} height={36} className="w-9 h-9 object-contain shrink-0" />
+            <span className={`font-display text-[19px] font-bold tracking-tight text-paper ${label}`}>Platino</span>
           </button>
 
           <nav className="mt-4 space-y-1 shrink-0">

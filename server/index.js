@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Free-Spoty Audio Engine — proxy de audio sin anuncios.
+ * Platino Audio Engine — proxy de audio sin anuncios.
  *
  *   GET /api/stream?id=VIDEO_ID   → audio (m4a/webm) con soporte HTTP Range
  *   GET /api/search?q=QUERY       → [{ videoId, title, duration }]
@@ -264,12 +264,12 @@ app.get('/health', (_req, res) => {
 });
 
 app.get('/', (_req, res) => {
-  res.type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Free-Spoty Audio Engine</title>
+  res.type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Platino Audio Engine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font-family:system-ui,sans-serif;background:#090b10;color:#fff;padding:2rem}
 .card{max-width:520px;margin:2rem auto;background:#15151c;border:1px solid rgba(255,255,255,.1);border-radius:1rem;padding:2rem}
 h1{color:#ff3b24;margin-top:0}code{background:rgba(255,255,255,.08);padding:.2rem .5rem;border-radius:4px}</style></head>
-<body><div class="card"><h1>🎧 Free-Spoty Audio Engine</h1>
+<body><div class="card"><h1>🎧 Platino Audio Engine</h1>
 <p>Proxy de audio activo, transmitiendo con <strong>0 anuncios</strong>.</p>
 <p>Streaming: <code>/api/stream?id=VIDEO_ID</code><br>Búsqueda: <code>/api/search?q=...</code></p></div></body></html>`);
 });
@@ -394,7 +394,7 @@ app.get('/api/stream', async (req, res) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`Free-Spoty audio engine escuchando en :${PORT}`);
+  console.log(`Platino audio engine escuchando en :${PORT}`);
 });
 
 for (const signal of ['SIGTERM', 'SIGINT']) {

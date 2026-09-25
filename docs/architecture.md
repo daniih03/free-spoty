@@ -1,6 +1,6 @@
-# 🏗️ Arquitectura de Free-Spoty
+# 🏗️ Arquitectura de Platino
 
-Este documento describe la arquitectura de **Free-Spoty** tras el overhaul de rendimiento (v2): capas, gestión de estado con stores de suscripción selectiva, enrutado por hash y flujo de datos.
+Este documento describe la arquitectura de **Platino** tras el overhaul de rendimiento (v2): capas, gestión de estado con stores de suscripción selectiva, enrutado por hash y flujo de datos.
 
 ---
 
