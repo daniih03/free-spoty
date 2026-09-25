@@ -8,7 +8,8 @@ import { fetchJson } from '../lib/net';
  * embebible (`open.spotify.com/embed/playlist/<id>`) es público y contiene el
  * listado completo de pistas en un JSON incrustado (`__NEXT_DATA__`). Esa
  * página no envía cabeceras CORS, así que se pide primero al servidor propio
- * (sin problema de CORS) y, si no está activo, a un proxy CORS público.
+ * (sin problema de CORS) y, si no está activo, al lector de Jina AI
+ * (`r.jina.ai`, refleja el origen en `Access-Control-Allow-Origin`).
  */
 
 export interface SpotifyImportTrack {
@@ -54,8 +55,9 @@ function parseEmbedHtml(html: string): SpotifyImportResult {
 
 async function fetchViaCorsProxy(playlistId: string): Promise<SpotifyImportResult> {
   const embedUrl = `https://open.spotify.com/embed/playlist/${playlistId}`;
-  const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(embedUrl)}`, {
-    signal: AbortSignal.timeout(12000),
+  const res = await fetch(`https://r.jina.ai/${embedUrl}`, {
+    headers: { 'X-Return-Format': 'html' },
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return parseEmbedHtml(await res.text());
