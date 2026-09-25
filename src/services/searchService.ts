@@ -1,6 +1,7 @@
 import type { Song } from '../types/music';
 import { FEATURED_PLAYLISTS } from './exploreData';
-import { getCustomApiKey, getCustomBackendUrl } from './config';
+import { getCustomApiKey } from './config';
+import { activeBackend } from './serverStatus';
 import { itunesTrackToSong } from './itunes';
 import { fetchJson, raceFirst, TtlCache, dedupe, safeStorage } from '../lib/net';
 import { cleanTitle, songKey } from '../lib/format';
@@ -114,7 +115,7 @@ async function fromInvidious(base: string, q: string): Promise<Candidate[]> {
  * paralela entre todas las instancias públicas (gana la primera que responda).
  */
 async function searchCandidates(q: string): Promise<Candidate[]> {
-  const backend = getCustomBackendUrl();
+  const backend = activeBackend();
   if (backend) {
     try {
       return await fromBackend(backend, q);
@@ -261,7 +262,7 @@ export function prefetchSong(song: Song | undefined) {
   if (!song) return;
   const known = peekResolved(song);
   const ready = known ? Promise.resolve(known) : resolveInternal(song);
-  const backend = getCustomBackendUrl();
+  const backend = activeBackend();
   ready
     .then((s) => {
       if (backend && s.youtubeId) {

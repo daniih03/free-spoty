@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Play, Pause, Sparkles, Plus, ListPlus, Disc3, Radio } from 'lucide-react';
 import { searchSongsMetadata, prefetchSong } from '../../services/searchService';
-import { getCustomBackendUrl } from '../../services/config';
+import { activeBackend } from '../../services/serverStatus';
 import { usePlayer, playerActions, useIsSongPlaying } from '../../state/player';
 import { ui } from '../../state/ui';
 import { formatTime } from '../../lib/format';
@@ -131,7 +131,7 @@ export default function SearchView({ query, onSearchChange, onNavigateArtist }: 
         setResultsFor(trimmed);
         setIsSearching(false);
         // El resultado principal es el clic más probable: se precarga en el servidor propio
-        if (getCustomBackendUrl()) prefetchSong(songs[0]);
+        if (activeBackend()) prefetchSong(songs[0]);
       } catch {
         if (!controller.signal.aborted) setIsSearching(false);
       }

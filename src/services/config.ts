@@ -4,7 +4,7 @@
 
 const BACKEND_URL_KEY = 'free_spoty_backend_url';
 const YT_API_KEY = 'free_spoty_yt_api_key';
-const STRICT_ADFREE_KEY = 'free_spoty_strict_adfree';
+const OFFLINE_FALLBACK_KEY = 'free_spoty_offline_fallback';
 
 function read(key: string): string {
   try {
@@ -39,16 +39,17 @@ export function setCustomBackendUrl(url: string) {
 }
 
 /**
- * Modo 0 anuncios estricto (por defecto activado): con servidor propio nunca se
- * recurre al reproductor de YouTube, que es la única fuente posible de anuncios.
- * Si el servidor no puede servir una canción, se prueba otro vídeo o se salta.
+ * Respaldo con YouTube cuando el servidor no responde (PC apagado). Activado
+ * por defecto: la música nunca se para. Mientras el servidor responde se usa
+ * siempre y nunca YouTube (0 anuncios); si un vídeo concreto falla en el
+ * servidor se prueba otro vídeo, no YouTube.
  */
-export function isStrictAdFree(): boolean {
-  return read(STRICT_ADFREE_KEY) !== '0';
+export function isOfflineFallbackEnabled(): boolean {
+  return read(OFFLINE_FALLBACK_KEY) !== '0';
 }
 
-export function setStrictAdFree(strict: boolean) {
-  write(STRICT_ADFREE_KEY, strict ? '' : '0');
+export function setOfflineFallback(enabled: boolean) {
+  write(OFFLINE_FALLBACK_KEY, enabled ? '' : '0');
 }
 
 function isAcceptableServerUrl(raw: string): boolean {

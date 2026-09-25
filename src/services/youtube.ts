@@ -1,4 +1,4 @@
-import { getCustomBackendUrl, isStrictAdFree } from './config';
+import { activeBackend, markServerDown, onServerStateChange } from './serverStatus';
 
 declare global {
   interface Window {
@@ -66,17 +66,16 @@ const DEBUG = (() => {
   }
 })();
 const debug = (...args: unknown[]) => DEBUG && console.info('[AudioEngine]', ...args);
-const STREAM_FALLBACK_MS = 3500; // modo flexible: pasar a YouTube pronto
-const STREAM_STRICT_MS = 15000; // modo estricto: la 1ª extracción de yt-dlp puede tardar
+const STREAM_START_MS = 15000; // la 1ª extracción de yt-dlp puede tardar unos segundos
 const WATCHDOG_MS = 3000;
 
 /**
  * Motor de audio híbrido:
- *  1. Servidor propio configurado → <audio> HTML5 nativo (0 anuncios).
- *     - Modo estricto (por defecto): nunca se usa YouTube; si un stream falla
- *       se emite un error para que el reproductor pruebe otro vídeo.
- *     - Modo flexible: si no arranca en 3,5 s se pasa al iframe.
- *  2. Sin servidor → YouTube IFrame API (cargada solo cuando hace falta).
+ *  1. Servidor propio disponible → <audio> HTML5 nativo (0 anuncios). Si un
+ *     vídeo falla se emite un error para que el reproductor pruebe otro; nunca
+ *     se recurre a YouTube mientras el servidor responda.
+ *  2. Sin servidor, o servidor caído con respaldo activado → YouTube IFrame API
+ *     (cargada solo cuando hace falta).
  *
  * Reglas heredadas (ver docs/troubleshooting-and-lessons.md):
  *  - El contenedor del iframe es visible para el navegador (opacity 1) pero
@@ -110,12 +109,11 @@ class AudioEngine {
   constructor() {
     if (typeof window === 'undefined') return;
     this.initHtmlAudio();
-    // El iframe (≈1 MB de JS de YouTube) solo se carga si puede llegar a usarse
-    if (!this.strictServerMode()) this.initIframeApi();
-  }
-
-  private strictServerMode(): boolean {
-    return !!getCustomBackendUrl() && isStrictAdFree();
+    // El iframe (≈1 MB de JS de YouTube) solo se carga cuando hace falta
+    if (!activeBackend()) this.initIframeApi();
+    onServerStateChange((up) => {
+      if (!up && !this.player && !activeBackend()) this.initIframeApi();
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -280,24 +278,34 @@ class AudioEngine {
     }, WATCHDOG_MS);
   }
 
-  /** Stream del servidor fallido: modo estricto → error recuperable; flexible → iframe. */
+  /**
+   * Stream del servidor fallido. ¿Falla el vídeo o el servidor entero?
+   *  - Vídeo → error recuperable: el reproductor prueba otro vídeo (nunca YouTube).
+   *  - Servidor caído → YouTube de respaldo (si está activado) o aviso.
+   */
   private handleStreamFailure(reason: string) {
     this.clearStreamTimer();
-    if (!this.strictServerMode()) {
-      console.warn(`[AudioEngine] ${reason} → iframe de YouTube`);
-      this.fallbackToIframe();
-      return;
-    }
-    const backend = getCustomBackendUrl();
+    const backend = activeBackend();
     this.audio?.pause();
-    console.warn(`[AudioEngine] ${reason} (modo 0 anuncios: sin YouTube)`);
-    // ¿Falla el vídeo o el servidor entero?
-    fetch(`${backend}/health`, { signal: AbortSignal.timeout(3000) })
-      .then((r) => (r.ok ? EngineErrors.STREAM_FAILED : EngineErrors.SERVER_DOWN))
-      .catch(() => EngineErrors.SERVER_DOWN)
-      .then((code) => {
-        if (this.usingHtmlAudio) this.errorListeners.forEach((fn) => fn(code));
-      });
+    console.warn(`[AudioEngine] ${reason}`);
+    const health = backend
+      ? fetch(`${backend}/health`, { signal: AbortSignal.timeout(3000) }).then((r) => r.ok, () => false)
+      : Promise.resolve(false);
+    health.then((serverUp) => {
+      if (!this.usingHtmlAudio) return;
+      if (serverUp) {
+        this.errorListeners.forEach((fn) => fn(EngineErrors.STREAM_FAILED));
+        return;
+      }
+      markServerDown();
+      if (activeBackend()) {
+        // Respaldo desactivado: no se usa YouTube
+        this.errorListeners.forEach((fn) => fn(EngineErrors.SERVER_DOWN));
+      } else {
+        console.warn('[AudioEngine] Servidor no disponible → YouTube de respaldo');
+        this.fallbackToIframe();
+      }
+    });
   }
 
   private fallbackToIframe() {
@@ -319,7 +327,7 @@ class AudioEngine {
     this.clearStreamTimer();
     this.clearWatchdog();
 
-    const backend = getCustomBackendUrl();
+    const backend = activeBackend();
     if (backend && this.audio) {
       this.usingHtmlAudio = true;
       this.call('pauseVideo');
@@ -337,7 +345,7 @@ class AudioEngine {
         if (this.usingHtmlAudio && audio.paused && audio.currentTime <= startSeconds) {
           this.handleStreamFailure('stream sin arrancar a tiempo');
         }
-      }, this.strictServerMode() ? STREAM_STRICT_MS : STREAM_FALLBACK_MS);
+      }, STREAM_START_MS);
 
       if (autoplay) {
         audio.play().catch((err: DOMException) => {
@@ -367,7 +375,7 @@ class AudioEngine {
   /** Llamar de forma síncrona dentro del gesto del usuario (Safari). */
   public unlockAudio() {
     if (this.audioCtx?.state === 'suspended') this.audioCtx.resume().catch(() => {});
-    if (getCustomBackendUrl()) {
+    if (activeBackend()) {
       // iOS/Safari: un <audio> solo puede sonar sin gesto si ya sonó con uno.
       // El src real llega tras la resolución asíncrona, así que se "estrena"
       // aquí con un silencio, síncronamente dentro del toque del usuario.
@@ -379,7 +387,7 @@ class AudioEngine {
           .catch(() => {});
       }
     }
-    if (!this.player && !this.strictServerMode()) this.initIframeApi();
+    if (!this.player && !activeBackend()) this.initIframeApi();
   }
 
   public play() {

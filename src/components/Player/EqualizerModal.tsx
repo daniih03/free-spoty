@@ -8,8 +8,8 @@ import {
   setCustomApiKey,
   getCustomBackendUrl,
   setCustomBackendUrl,
-  isStrictAdFree,
-  setStrictAdFree,
+  isOfflineFallbackEnabled,
+  setOfflineFallback,
 } from '../../services/config';
 import { getSettings, updateSettings } from '../../services/storageService';
 import { youtubeService } from '../../services/youtube';
@@ -74,7 +74,7 @@ export default function EqualizerModal() {
   const [backendInput, setBackendInput] = useState(getCustomBackendUrl);
   const [saved, setSaved] = useState<'key' | 'backend' | null>(null);
   const [backendUrl, setBackendUrl] = useState(getCustomBackendUrl);
-  const [strict, setStrict] = useState(isStrictAdFree);
+  const [fallback, setFallback] = useState(isOfflineFallbackEnabled);
   const health = useServerHealth(backendUrl);
   const hasBackend = !!backendUrl;
 
@@ -230,17 +230,18 @@ export default function EqualizerModal() {
             <label className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 cursor-pointer">
               <input
                 type="checkbox"
-                checked={strict}
+                checked={fallback}
                 onChange={(e) => {
-                  setStrict(e.target.checked);
-                  setStrictAdFree(e.target.checked);
+                  setFallback(e.target.checked);
+                  setOfflineFallback(e.target.checked);
                 }}
                 className="mt-0.5 accent-[#c81900] w-4 h-4 shrink-0"
               />
               <span className="text-[11px] text-zinc-300 leading-relaxed">
-                <strong className="text-white">Modo 0 anuncios estricto.</strong> Nunca usa el reproductor de YouTube
-                (la única fuente posible de anuncios). Si el servidor no puede servir una canción, se prueba otro vídeo
-                o se salta. Desactívalo para usar YouTube como respaldo.
+                <strong className="text-white">Usar YouTube si el servidor no responde.</strong> Con el servidor
+                encendido la música nunca pasa por YouTube (0 anuncios). Si el PC está apagado, suena por YouTube (puede
+                haber anuncios) y vuelve al servidor en cuanto responda. Desactívalo para no oír nunca anuncios aunque la
+                música se pare.
               </span>
             </label>
           ) : (

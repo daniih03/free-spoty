@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import type { Song } from '../types/music';
 import { prefetchSong } from '../services/searchService';
-import { getCustomBackendUrl } from '../services/config';
+import { activeBackend } from '../services/serverStatus';
 
 /**
  * Precarga por intención: al posar el cursor 250 ms o al tocar una tarjeta,
@@ -18,13 +18,13 @@ export function usePrefetchIntent(song: Song) {
     };
     return {
       onPointerEnter: (e: React.PointerEvent) => {
-        if (e.pointerType !== 'mouse' || !getCustomBackendUrl()) return;
+        if (e.pointerType !== 'mouse' || !activeBackend()) return;
         clear();
         timer.current = setTimeout(() => prefetchSong(song), 250);
       },
       onPointerLeave: clear,
       onPointerDown: () => {
-        if (getCustomBackendUrl()) prefetchSong(song);
+        if (activeBackend()) prefetchSong(song);
       },
     };
   }, [song]);

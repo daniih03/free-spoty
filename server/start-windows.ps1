@@ -1,13 +1,16 @@
-<#
+﻿<#
 .SYNOPSIS
   Arranca el Free-Spoty Audio Engine en Windows (0 anuncios).
 
 .DESCRIPTION
   - Instala dependencias de Node si faltan.
-  - Descarga yt-dlp.exe en server\bin y lo actualiza si tiene más de 3 días.
+  - Instala yt-dlp (venv privado con workers rápidos si hay Python; si no,
+    yt-dlp.exe) en server\bin y lo mantiene actualizado.
   - Arranca el servidor en http://localhost:<Port>.
-  - Con -Tunnel abre un túnel HTTPS gratuito de Cloudflare (sin cuenta) y
-    muestra un enlace + código QR para conectar el móvil.
+  - -Tunnel: túnel HTTPS temporal de Cloudflare (sin cuenta) con enlace + QR.
+  - -Background: modo servicio para el arranque automático (lo usa
+    setup-windows.ps1): sin salida por pantalla, logs en server\bin\*.log,
+    reinicio si el servidor se cae y actualización diaria de yt-dlp.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File server\start-windows.ps1
@@ -15,6 +18,7 @@
 #>
 param(
   [switch]$Tunnel,
+  [switch]$Background,
   [int]$Port = 3000,
   [string]$AppUrl = 'https://daniih03.github.io/free-spoty/'
 )
@@ -22,9 +26,16 @@ param(
 $ErrorActionPreference = 'Stop'
 $ServerDir = $PSScriptRoot
 $BinDir = Join-Path $ServerDir 'bin'
-$YtDlp = Join-Path $BinDir 'yt-dlp.exe'
+$YtDlpExe = Join-Path $BinDir 'yt-dlp.exe'
 $Cloudflared = Join-Path $BinDir 'cloudflared.exe'
+$Venv = Join-Path $BinDir 'venv'
+$VenvPython = Join-Path $Venv 'Scripts\python.exe'
+$Stamp = Join-Path $BinDir '.ytdlp-updated'
 New-Item -ItemType Directory -Force $BinDir | Out-Null
+
+function Say($Text, $Color = 'DarkGray') {
+  if (-not $Background) { Write-Host $Text -ForegroundColor $Color }
+}
 
 # PowerShell 5.1 convierte cualquier salida de stderr de un ejecutable en error
 # fatal con ErrorActionPreference=Stop: se ejecuta en modo Continue y se juzga
@@ -37,58 +48,94 @@ function Invoke-Native([scriptblock]$Command, [string]$What) {
 }
 
 function Get-Binary($Url, $Path) {
-  Write-Host "Descargando $(Split-Path $Path -Leaf)..." -ForegroundColor DarkGray
+  Say "Descargando $(Split-Path $Path -Leaf)..."
   Invoke-WebRequest -Uri $Url -OutFile $Path -UseBasicParsing
+}
+
+# yt-dlp: YouTube cambia a menudo, mantenerlo al día es clave.
+# Con Python → venv privado + workers persistentes (extracción ~3x más rápida).
+function Update-YtDlp([int]$MaxAgeDays = 3) {
+  $stale = -not (Test-Path $Stamp) -or (Get-Item $Stamp).LastWriteTime -lt (Get-Date).AddDays(-$MaxAgeDays)
+  $python = Get-Command python -ErrorAction SilentlyContinue |
+    Where-Object { $_.Source -notmatch 'WindowsApps' } | Select-Object -First 1
+
+  if ($python) {
+    if (-not (Test-Path $VenvPython)) {
+      Say 'Creando entorno de yt-dlp...'
+      Invoke-Native { & $python.Source -m venv $Venv } 'python -m venv'
+      $stale = $true
+    }
+    if ($stale) {
+      Say 'Instalando/actualizando yt-dlp...'
+      Invoke-Native { & $VenvPython -m pip install -q -U --disable-pip-version-check yt-dlp } 'pip install yt-dlp'
+      New-Item -ItemType File -Force $Stamp | Out-Null
+    }
+    $env:YTDLP_PYTHON = $VenvPython
+    $env:YTDLP_PATH = Join-Path $Venv 'Scripts\yt-dlp.exe'
+  } else {
+    if (-not (Test-Path $YtDlpExe)) {
+      Get-Binary 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' $YtDlpExe
+    } elseif ($stale) {
+      Say 'Actualizando yt-dlp...'
+      Invoke-Native { & $YtDlpExe -U } 'yt-dlp -U'
+    }
+    New-Item -ItemType File -Force $Stamp | Out-Null
+    $env:YTDLP_PATH = $YtDlpExe
+  }
+}
+
+function Start-Server {
+  $opts = @{ FilePath = 'node'; ArgumentList = 'index.js'; WorkingDirectory = $ServerDir; PassThru = $true }
+  if ($Background) {
+    $opts.WindowStyle = 'Hidden'
+    $opts.RedirectStandardOutput = Join-Path $BinDir 'server.log'
+    $opts.RedirectStandardError = Join-Path $BinDir 'server.err.log'
+  } else {
+    $opts.NoNewWindow = $true
+  }
+  Start-Process @opts
 }
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   throw 'Node.js no está instalado (https://nodejs.org).'
 }
-
 if (-not (Test-Path (Join-Path $ServerDir 'node_modules'))) {
-  Write-Host 'Instalando dependencias del servidor...' -ForegroundColor DarkGray
+  Say 'Instalando dependencias del servidor...'
   Push-Location $ServerDir
   Invoke-Native { npm install --omit=dev --no-audit --no-fund } 'npm install'
   Pop-Location
 }
 
-# yt-dlp: YouTube cambia a menudo, mantenerlo al día es clave.
-# Con Python → venv privado + workers persistentes (extracción ~3x más rápida).
-# Sin Python → yt-dlp.exe autónomo.
-$Venv = Join-Path $BinDir 'venv'
-$VenvPython = Join-Path $Venv 'Scripts\python.exe'
-$Stamp = Join-Path $BinDir '.ytdlp-updated'
-$Stale = -not (Test-Path $Stamp) -or (Get-Item $Stamp).LastWriteTime -lt (Get-Date).AddDays(-3)
-$SystemPython = Get-Command python -ErrorAction SilentlyContinue |
-  Where-Object { $_.Source -notmatch 'WindowsApps' } | Select-Object -First 1
+$env:PORT = "$Port"
 
-if ($SystemPython) {
-  if (-not (Test-Path $VenvPython)) {
-    Write-Host 'Creando entorno de yt-dlp...' -ForegroundColor DarkGray
-    Invoke-Native { & $SystemPython.Source -m venv $Venv } 'python -m venv'
-    $Stale = $true
+# ---------------------------------------------------------------------------
+# Modo servicio (arranque automático)
+# ---------------------------------------------------------------------------
+if ($Background) {
+  # Un solo servicio a la vez
+  $busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+  if ($busy) { exit 0 }
+
+  while ($true) {
+    try { Update-YtDlp -MaxAgeDays 1 } catch { Add-Content (Join-Path $BinDir 'server.err.log') "[$(Get-Date)] $_" }
+    $server = Start-Server
+    # Reinicio diario (para aplicar actualizaciones de yt-dlp) o si el servidor cae
+    $server | Wait-Process -Timeout 86400 -ErrorAction SilentlyContinue
+    if (-not $server.HasExited) {
+      Stop-Process -Id $server.Id -Force
+      Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" |
+        Where-Object { $_.CommandLine -match 'ytdlp_worker' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    }
+    Start-Sleep -Seconds 5
   }
-  if ($Stale) {
-    Write-Host 'Instalando/actualizando yt-dlp...' -ForegroundColor DarkGray
-    Invoke-Native { & $VenvPython -m pip install -q -U --disable-pip-version-check yt-dlp } 'pip install yt-dlp'
-    New-Item -ItemType File -Force $Stamp | Out-Null
-  }
-  $env:YTDLP_PYTHON = $VenvPython
-  $env:YTDLP_PATH = Join-Path $Venv 'Scripts\yt-dlp.exe'
-} else {
-  if (-not (Test-Path $YtDlp)) {
-    Get-Binary 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' $YtDlp
-  } elseif ($Stale) {
-    Write-Host 'Actualizando yt-dlp...' -ForegroundColor DarkGray
-    Invoke-Native { & $YtDlp -U } 'yt-dlp -U'
-  }
-  New-Item -ItemType File -Force $Stamp | Out-Null
-  $env:YTDLP_PATH = $YtDlp
 }
 
-$env:PORT = "$Port"
-$server = Start-Process node -ArgumentList 'index.js' -WorkingDirectory $ServerDir -NoNewWindow -PassThru
-
+# ---------------------------------------------------------------------------
+# Modo interactivo
+# ---------------------------------------------------------------------------
+Update-YtDlp
+$server = Start-Server
 $tunnelProc = $null
 try {
   Start-Sleep -Seconds 2
@@ -118,7 +165,7 @@ try {
     if ($publicUrl) {
       $link = "$($AppUrl)?server=$publicUrl"
       Write-Host "  En el móvil / fuera de casa: $link" -ForegroundColor White
-      Write-Host '  (la URL del túnel cambia en cada arranque; vuelve a abrir el enlace o escanea el QR)' -ForegroundColor DarkGray
+      Write-Host '  (la URL del túnel cambia en cada arranque; para una fija usa setup-windows.ps1)' -ForegroundColor DarkGray
       Push-Location $ServerDir
       node -e "require('qrcode-terminal').generate(process.argv[1], { small: true })" $link
       Pop-Location

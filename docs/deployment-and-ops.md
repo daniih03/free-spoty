@@ -59,7 +59,13 @@ Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sis
 
 ## 🎧 Backend de audio 0 anuncios (`server/`)
 
-**En Windows (recomendado: IP doméstica, YouTube no la bloquea):**
+**Configuración definitiva (una sola vez) en Windows:**
+```powershell
+powershell -ExecutionPolicy Bypass -File server\setup-windows.ps1
+```
+Instala Tailscale e inicia sesión, publica el servidor con **Tailscale Funnel** en una dirección HTTPS **fija** (`https://<pc>.<tailnet>.ts.net`), registra la tarea programada "Free-Spoty Audio Engine" (arranque al iniciar sesión, en segundo plano, reinicio si cae, yt-dlp actualizado a diario; logs en `serverin\server*.log`) y muestra el enlace + QR para conectar cada dispositivo una sola vez. Deshacer: `setup-windows.ps1 -Uninstall`.
+
+**Arranque manual (alternativa):**
 ```powershell
 powershell -ExecutionPolicy Bypass -File server\start-windows.ps1          # solo este PC
 powershell -ExecutionPolicy Bypass -File server\start-windows.ps1 -Tunnel  # + móvil/fuera de casa
