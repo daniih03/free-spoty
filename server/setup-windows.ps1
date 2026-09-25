@@ -76,10 +76,16 @@ Clear-DnsClientCache
 
 # 2. Arranque automático + servidor -------------------------------------------
 Step 'Arranque automático con Windows'
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ServerDir\start-windows.ps1`" -Background -Port $Port"
-$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+# conhost --headless: consola sin ventana. Con Windows Terminal como consola por
+# defecto, un PowerShell "oculto" lanzado por el Programador recibe un cierre de
+# consola (0xC000013A) y muere; así no pasa.
+$action = New-ScheduledTaskAction -Execute 'conhost.exe' `
+  -Argument "--headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$ServerDir\start-windows.ps1`" -Background -Port $Port"
+# Al iniciar sesión + cada 5 min como autocuración (si el bucle vive, se ignora: IgnoreNew)
+$trigger = @(
+  (New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME),
+  (New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5))
+)$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew `
   -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
   -Description 'Servidor de audio sin anuncios para Free-Spoty' -Force | Out-Null

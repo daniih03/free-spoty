@@ -87,7 +87,8 @@ function Update-YtDlp([int]$MaxAgeDays = 3) {
 function Start-Server {
   $opts = @{ FilePath = 'node'; ArgumentList = 'index.js'; WorkingDirectory = $ServerDir; PassThru = $true }
   if ($Background) {
-    $opts.WindowStyle = 'Hidden'
+    # Comparte la consola sin ventana (conhost --headless) del bucle de servicio
+    $opts.NoNewWindow = $true
     $opts.RedirectStandardOutput = Join-Path $BinDir 'server.log'
     $opts.RedirectStandardError = Join-Path $BinDir 'server.err.log'
   } else {

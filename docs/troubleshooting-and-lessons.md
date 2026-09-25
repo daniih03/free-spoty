@@ -155,3 +155,15 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
 
 - Mientras se resolvía la nueva canción (2-5 s sin caché), el motor seguía reproduciendo la anterior y el tick de progreso mostraba su tiempo.
 - `startTrack()` ahora silencia el motor (`setVolume(0)`, sin pausar para no disparar eventos `PAUSED`) y el tick se ignora (`switchingTrack`) hasta `loadIntoEngine()`, que restaura el volumen. Si la canción nueva no se encuentra, la anterior se detiene.
+
+---
+
+## 19. La tarea programada moría sola (0xC000013A)
+
+- **Síntoma:** la tarea "Free-Spoty Audio Engine" pasaba a *Ready* con `LastTaskResult = 0xC000013A` (cierre de consola); el servidor seguía vivo pero huérfano, sin el bucle que lo reinicia.
+- **Causa:** con Windows Terminal como consola por defecto (Windows 11), un `powershell -WindowStyle Hidden` lanzado por el Programador de tareas recibe un evento de cierre de consola y muere al instante o al rato.
+- **Solución** (`setup-windows.ps1`):
+  - La acción es `conhost.exe --headless powershell.exe … -Background`: consola sin ventana, sin pasar por Windows Terminal. El servidor (`node`) comparte esa consola (`-NoNewWindow`).
+  - Segundo disparador cada 5 min con `MultipleInstances IgnoreNew`: si el bucle muere por cualquier motivo, vuelve en ≤ 5 min.
+  - Si al arrancar el puerto ya está ocupado (servidor huérfano o lanzado a mano), el bucle espera a que se libere en lugar de salir, y entonces toma el relevo.
+- **Verificado:** matar el servidor → el bucle lo levanta en 8 s y sigue vigilando.
