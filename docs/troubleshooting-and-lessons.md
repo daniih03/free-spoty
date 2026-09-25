@@ -8,7 +8,8 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
 
 - **Síntoma:** Canciones de grandes artistas (por ejemplo Myke Towers, Dua Lipa, Bad Bunny) se quedaban en silencio o emitían el error 150/101 al intentar reproducirse.
 - **Causa:** En la configuración del reproductor `new window.YT.Player()` se utilizaba `host: 'https://www.youtube-nocookie.com'`. Las grandes discográficas (Warner Music, Sony Music, UMG) configuran sus licencias de YouTube para restringir explícitamente la inserción en dominios nocookie.
-- **Regla:** **NUNCA volver a añadir `host: 'https://www.youtube-nocookie.com'`**. El reproductor debe usar el host estándar de YouTube (`https://www.youtube.com/iframe_api`) con `origin: window.location.origin`.
+- **Regla original:** no usar `host: 'https://www.youtube-nocookie.com'`; usar el host estándar con `origin: window.location.origin`.
+- **⚠️ Estado actual:** el commit `9fca205` volvió a activar `youtube-nocookie.com` para reducir anuncios en móvil. La recuperación automática (candidatos Topic/lyrics + re-resolución, ver `audio-engine.md`) mitiga los errores 150. Si reaparecen fallos masivos en artistas de grandes discográficas, esta es la primera sospecha.
 
 ---
 
@@ -53,11 +54,61 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
      }}
      ```
-  3. Si un video falla en tiempo de ejecución, el manejador de errores de `PlayerContext` debe contar con la re-resolución dinámica automática hacia Invidious.
+  3. Si un video falla en tiempo de ejecución, `handleEngineError` (`state/player.ts`) prueba candidatos y re-resuelve en vivo. Usar `<Cover>` (`UI/Primitives.tsx`) o `onImageError` (`lib/images.ts`) garantiza el fallback.
 
 ---
 
 ## 6. Prioridad de Búsqueda de Candidatos de Video
 
 - **Lección:** Buscar `${artista} ${título} audio` suele devolver canales secundarios no oficiales o videos con baja tasa de éxito de inserción.
-- **Solución:** La consulta primaria siempre debe ser `${cleanArtist} ${cleanTitle}` directo. YouTube e Invidious posicionan los videos oficiales y videoclips verificados en los primeros 2 resultados en más del 98% de los casos.
+- **Solución histórica:** la consulta primaria era `${cleanArtist} ${cleanTitle}` directo.
+- **Estado actual (v2):** ambas consultas se lanzan en paralelo; `audio` se prioriza (sin intros ni pre-roll, commit `9fca205`) y la directa aporta respaldos. El **ranking por duración** frente a la duración oficial de iTunes descarta canales secundarios, "Extended Edit" o bucles, que era el problema original de la consulta `audio`.
+
+---
+
+## 7. Instancias públicas sin CORS (Piped / Invidious)
+
+- **Síntoma:** búsquedas de vídeo que tardaban o fallaban sin motivo aparente.
+- **Causa:** `yewtu.be` e `invidious.nerdvpn.de` responden a `curl` pero **no envían `Access-Control-Allow-Origin`**: desde el navegador fallan siempre. Varias instancias Piped históricas (`pipedapi.kavin.rocks`) devuelven 502.
+- **Regla:** antes de añadir una instancia, verificar CORS desde un origen real:
+  ```bash
+  curl -s -o /dev/null -D - -H "Origin: https://daniih03.github.io" "https://INSTANCIA/search?q=test&filter=videos" | grep -i access-control
+  ```
+  Verificadas (sept. 2026): `api.piped.private.coffee`, `pipedapi.ducks.party`, `invidious.f5.si` (esta última intermitente).
+
+---
+
+## 8. Deezer no admite CORS → JSONP, y perfiles impostores
+
+- **Síntoma:** el retrato 1000x1000 de Deezer y el número de fans nunca aparecían; siempre se usaba la carátula de iTunes.
+- **Causa:** `api.deezer.com` no envía cabeceras CORS; el `fetch` fallaba en silencio.
+- **Solución:** `fetchJsonp()` (`lib/net.ts`) con `output=jsonp&callback=…`.
+- **Trampa adicional:** buscar "Bad Bunny" con `limit=1` devolvía una fan-page con 7 fans. Se piden 10 resultados y se elige la coincidencia exacta de nombre con más fans.
+
+---
+
+## 9. `transform` de animaciones vs. `translate` de Tailwind
+
+- **Síntoma:** la cápsula flotante de escritorio aparecía desplazada a la derecha.
+- **Causa:** `-translate-x-1/2` y la animación `fadeIn` (`transform: scale()`) compiten por la misma propiedad `transform`; con `animation-fill-mode` la animación gana y se pierde el centrado.
+- **Regla:** nunca combinar `animate-*` que use `transform` con `translate-*`/`scale-*` en el **mismo** elemento. Animar un hijo interno o centrar con flex (`inset-x-0 flex justify-center`).
+
+---
+
+## 10. Las canciones destacadas sobrescriben la caché de resolución
+
+- `getResolveCache()` carga la caché persistente y después impone los IDs verificados de `exploreData.ts`. Es intencionado (los IDs destacados están verificados), pero hay que tenerlo en cuenta al depurar: para probar la recuperación ante errores, usar una canción **no destacada**.
+
+---
+
+## 11. Supabase: no llamar al cliente dentro de `onAuthStateChange`
+
+- Hacer `await supabase.from(...)` dentro del callback de `onAuthStateChange` puede bloquear el cliente (bloqueo interno del SDK). `AuthContext` difiere esas llamadas con `setTimeout(…, 0)` y sincroniza una sola vez por usuario (antes se sincronizaba dos veces: en `getSession` y en el evento inicial).
+- Los `song_id` de la nube son IDs internos (`itunes_…`), **no** IDs de YouTube: al leer de Supabase, `youtubeId` debe ser `''` para que el resolver actúe (antes se asignaba `song_id` y provocaba un error de YouTube en cada reproducción desde favoritos).
+
+---
+
+## 12. Seguridad del backend: nunca interpolar en una shell
+
+- `server/index.js` construía `` exec(`yt-dlp … "https://www.youtube.com/watch?v=${videoId}"`) `` con el `id` de la query sin validar: **inyección de comandos** (y `/api/debug` igual).
+- **Regla:** `execFile`/`spawn` con argumentos en array, `--` antes de la URL y validación `/^[\w-]{11}$/`. El endpoint de depuración se eliminó.

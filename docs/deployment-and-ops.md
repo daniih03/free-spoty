@@ -1,74 +1,68 @@
 # 🚀 Despliegue y Operaciones (CI/CD)
 
-Este documento detalla el flujo de integración continua, compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, así como el sistema de actualización en caliente para usuarios activos.
+Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sistema de actualización en caliente y backend opcional.
 
 ---
 
 ## 🌐 Enlaces de Producción
 
-- **URL de la Aplicación en Vivo:** [https://daniih03.github.io/free-spoty/](https://daniih03.github.io/free-spoty/)
-- **Repositorio de GitHub:** `https://github.com/daniih03/free-spoty`
-- **Rama de Despliegue:** `main`
+- **App en vivo:** [https://daniih03.github.io/free-spoty/](https://daniih03.github.io/free-spoty/)
+- **Repositorio:** `https://github.com/daniih03/free-spoty`
+- **Rama de despliegue:** `main`
 
 ---
 
 ## ⚙️ Flujo de CI/CD (GitHub Actions)
 
-El archivo `.github/workflows/deploy.yml` orquesta la compilación y publicación automática:
+`.github/workflows/deploy.yml`:
 
-1. **Disparador:** Cualquier `git push` a la rama `main` activa el workflow.
-2. **Entorno de Compilación:** `ubuntu-latest` con Node.js v20.
-3. **Comando de Compilación:** `npm run build` (`tsc && vite build`).
-4. **Destino de Salida:** `./dist`.
-5. **Publicación:** Mediante las acciones oficiales `actions/upload-pages-artifact@v3` y `actions/deploy-pages@v4`.
-6. **Tiempo Estimado de Despliegue:** ~35-45 segundos desde el push.
-
----
-
-## 🔄 Sistema de Actualización en Caliente (`version.json`)
-
-Para evitar que los usuarios mantengan en memoria versiones desactualizadas con código o cachés obsoletas, la aplicación cuenta con un mecanismo de detección de nuevas versiones:
-
-1. **Archivo de Control (`public/version.json`):**
-   ```json
-   {
-     "version": 1789813707403
-   }
-   ```
-2. **Detección en el Cliente (`src/components/Layout/Header.tsx`):**
-   - Cada 60 segundos (y al montar la aplicación), el cliente realiza una petición `fetch('/free-spoty/version.json?t=' + Date.now())` con cabecera `cache: 'no-store'`.
-   - Si la versión remota es mayor a la versión con la que se compiló el bundle, la aplicación avisa o recarga automáticamente los activos para aplicar los cambios sin intervención manual del usuario.
+1. **Disparador:** `git push` a `main`.
+2. **Entorno:** `ubuntu-latest`, Node.js 20, `npm ci`.
+3. **Compilación:** `npm run build` (`tsc && vite build`).
+4. **Salida:** `./dist` → `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4`.
+5. **Duración:** ~35-45 s desde el push.
 
 ---
 
-## 📋 Checklist Obligatorio para Nuevos Despliegues
+## 🔄 Actualización en caliente (`version.json`)
 
-Antes de dar por concluida cualquier modificación en el código:
+1. **Marca única por build (automática):** `vite.config.ts` genera `BUILD_VERSION = Date.now()` y:
+   - la escribe en `public/version.json` (plugin `version-generator`, solo en `build`);
+   - la inyecta en el bundle como `__APP_VERSION__`.
+   Ya **no hace falta** editar `version.json` a mano.
+2. **Detección (`hooks/useVersionCheck.ts`):** al montar, cada 60 s y al volver a la pestaña se descarga `./version.json?_t=…` con `cache: 'no-store'`. Si difiere de `__APP_VERSION__`, hay despliegue nuevo.
+3. **Aplicación sin cortar la música:** si no suena nada, recarga al instante; si está sonando, aparece el aviso "Nueva versión lista · se aplicará al pausar" y la recarga ocurre en la siguiente pausa/fin de cola. La sesión (canción, cola y posición) se guarda antes y se restaura tras recargar.
 
-1. **Verificar Compilación TypeScript y Vite:**
+---
+
+## 📋 Checklist para nuevos despliegues
+
+1. **Compilar sin errores:**
    ```powershell
    npm run build
    ```
-   *Debe terminar con 0 errores (`✓ built in ...`).*
-
-2. **Actualizar la Marca de Tiempo en `public/version.json`:**
-   Obtener el timestamp actual con Node:
-   ```javascript
-   node -e "console.log(Date.now())"
-   ```
-   Escribir el valor resultante en `public/version.json`.
-
-3. **Recompilar para Inyectar la Nueva Versión en `dist`:**
+2. **Probar la build localmente** (opcional pero recomendado):
    ```powershell
-   npm run build
+   npx vite preview --port 4173
    ```
-
-4. **Hacer Commit y Push a `main`:**
+   Con `localStorage.free_spoty_debug = '1'` se ven las trazas del motor de audio.
+3. **Actualizar `docs/`** con cualquier cambio de arquitectura, diseño o comportamiento.
+4. **Commit y push a `main`:**
    ```powershell
    git add -A
    git commit -m "tipo: descripción clara del cambio"
    git push origin main
    ```
+5. **Verificar:** sondear `https://daniih03.github.io/free-spoty/version.json` hasta ver la nueva marca.
 
-5. **Verificar Despliegue en GitHub Pages:**
-   Realizar sondeo a `https://daniih03.github.io/free-spoty/version.json` hasta que devuelva la nueva versión.
+---
+
+## 🎧 Backend opcional (`server/`)
+
+Proxy de audio sin anuncios con `yt-dlp` (ver `server/README.md`): streaming con `Range`, búsqueda cacheada, validación estricta de IDs y ejecución sin shell. Debe alojarse en un servicio **sin cold start**; las URLs `onrender.com` se descartan en el cliente.
+
+```bash
+cd server && docker build -t free-spoty-audio . && docker run -d -p 3000:3000 free-spoty-audio
+```
+
+Resultados de prueba local (yt-dlp 2026.08.19): primera petición de stream ~1-3 s (extracción), siguientes ~0,12 s (URL en caché hasta su `expire`), búsqueda repetida ~2 ms.

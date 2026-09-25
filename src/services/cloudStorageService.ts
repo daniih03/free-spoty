@@ -1,7 +1,33 @@
-import { supabase } from './supabaseClient';
-import { Song, Playlist } from '../types/music';
+import { getSupabase } from './supabaseClient';
+import type { Song, Playlist } from '../types/music';
+import { DEFAULT_PLAYLIST_COVER } from '../lib/images';
 
-// Helper to ensure valid UUID format for PostgreSQL UUID column
+/**
+ * Sincronización con Supabase (PostgreSQL + RLS).
+ *
+ * - El usuario activo se inyecta desde AuthContext (`setCloudUser`), evitando
+ *   una llamada de red `auth.getUser()` en cada operación.
+ * - Las escrituras se serializan en una cola: "crear playlist" siempre llega
+ *   antes que "añadir canción" a esa playlist (evita violaciones de FK).
+ */
+
+let cloudUserId: string | null = null;
+let queue: Promise<unknown> = Promise.resolve();
+
+export function setCloudUser(userId: string | null) {
+  cloudUserId = userId;
+}
+
+export function isCloudActive(): boolean {
+  return cloudUserId !== null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidUUID(id: string): boolean {
+  return UUID_RE.test(id);
+}
+
 export function generateUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -13,265 +39,199 @@ export function generateUUID(): string {
   });
 }
 
-function ensureValidUUID(id: string): string {
-  // Regex test for standard UUID format
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(id)) {
-    return id;
-  }
-  return generateUUID();
+/** Encola una escritura en la nube (no-op para invitados). Nunca lanza. */
+function enqueue(label: string, op: (userId: string) => Promise<{ error: unknown } | void>) {
+  const userId = cloudUserId;
+  if (!userId) return;
+  queue = queue
+    .then(async () => {
+      const result = await op(userId);
+      if (result && result.error) console.error(`[Cloud] ${label}:`, result.error);
+    })
+    .catch((err) => console.error(`[Cloud] ${label}:`, err));
 }
 
-/**
- * Fetch liked songs from Supabase Cloud for current user
- */
-export async function fetchCloudLikedSongs(): Promise<Song[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('liked_songs')
-    .select('song_id, title, artist, album, cover_url, duration, created_at')
-    .order('created_at', { ascending: false });
-
-  if (error || !data) {
-    console.error('Error fetching cloud liked songs:', error);
-    return [];
-  }
-
-  return data.map((row) => ({
-    id: row.song_id,
-    title: row.title,
-    artist: row.artist,
-    album: row.album || undefined,
-    coverUrl: row.cover_url,
-    duration: row.duration || 0,
-    youtubeId: row.song_id,
-    currentVersion: 'radio' as const,
-  }));
-}
-
-/**
- * Sync add liked song to Supabase
- */
-export async function syncCloudAddLikedSong(song: Song): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabase.from('liked_songs').upsert(
-    {
-      user_id: user.id,
-      song_id: song.id,
-      title: song.title,
-      artist: song.artist,
-      album: song.album || null,
-      cover_url: song.coverUrl,
-      duration: song.duration || 0,
-    },
-    { onConflict: 'user_id, song_id' }
-  );
-
-  if (error) {
-    console.error('Error syncing liked song to cloud:', error);
-  }
-}
-
-/**
- * Sync remove liked song from Supabase
- */
-export async function syncCloudRemoveLikedSong(songId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabase
-    .from('liked_songs')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('song_id', songId);
-
-  if (error) {
-    console.error('Error removing liked song from cloud:', error);
-  }
-}
-
-/**
- * Fetch custom playlists and their songs from Supabase
- */
-export async function fetchCloudPlaylists(): Promise<Playlist[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: playlistsData, error: plError } = await supabase
-    .from('playlists')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  if (plError || !playlistsData) {
-    console.error('Error fetching cloud playlists:', plError);
-    return [];
-  }
-
-  const { data: songsData, error: songsError } = await supabase
-    .from('playlist_songs')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  if (songsError) {
-    console.error('Error fetching cloud playlist songs:', songsError);
-  }
-
-  const songsMap: Record<string, Song[]> = {};
-  (songsData || []).forEach((row) => {
-    if (!songsMap[row.playlist_id]) {
-      songsMap[row.playlist_id] = [];
-    }
-    songsMap[row.playlist_id].push({
-      id: row.song_id,
-      title: row.title,
-      artist: row.artist,
-      album: row.album || undefined,
-      coverUrl: row.cover_url,
-      duration: row.duration || 0,
-      youtubeId: row.song_id,
-      currentVersion: 'radio' as const,
-    });
-  });
-
-  return playlistsData.map((pl) => ({
-    id: pl.id,
-    name: pl.name,
-    description: pl.description || 'Playlist de Free-Spoty',
-    coverUrl: pl.cover_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
-    songs: songsMap[pl.id] || [],
-    isCustom: true,
-    createdAt: new Date(pl.created_at).getTime(),
-  }));
-}
-
-/**
- * Sync create playlist to Supabase
- */
-export async function syncCloudCreatePlaylist(playlist: Playlist): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const validId = ensureValidUUID(playlist.id);
-
-  const { error } = await supabase.from('playlists').upsert({
-    id: validId,
-    user_id: user.id,
-    name: playlist.name,
-    description: playlist.description || null,
-    cover_url: playlist.coverUrl || null,
-  });
-
-  if (error) {
-    console.error('Error syncing create playlist to cloud:', error);
-  }
-}
-
-/**
- * Sync delete playlist from Supabase
- */
-export async function syncCloudDeletePlaylist(playlistId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabase
-    .from('playlists')
-    .delete()
-    .eq('id', playlistId)
-    .eq('user_id', user.id);
-
-  if (error) {
-    console.error('Error deleting playlist from cloud:', error);
-  }
-}
-
-/**
- * Sync add song to playlist in Supabase
- */
-export async function syncCloudAddSongToPlaylist(playlistId: string, song: Song): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabase.from('playlist_songs').insert({
-    playlist_id: playlistId,
-    user_id: user.id,
+function songRow(userId: string, song: Song) {
+  return {
+    user_id: userId,
     song_id: song.id,
     title: song.title,
     artist: song.artist,
     album: song.album || null,
     cover_url: song.coverUrl,
     duration: song.duration || 0,
+  };
+}
+
+function rowToSong(row: any): Song {
+  return {
+    id: row.song_id,
+    title: row.title,
+    artist: row.artist,
+    album: row.album || undefined,
+    coverUrl: row.cover_url,
+    duration: row.duration || 0,
+    // El ID de vídeo se resuelve al reproducir; song_id NO es un ID de YouTube.
+    youtubeId: '',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Escrituras (fire-and-forget, serializadas)
+// ---------------------------------------------------------------------------
+
+export function cloudAddLikedSong(song: Song) {
+  enqueue('like', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('liked_songs').upsert(songRow(uid, song), { onConflict: 'user_id, song_id' });
   });
+}
 
-  if (error) {
-    console.error('Error syncing song to playlist in cloud:', error);
+export function cloudRemoveLikedSong(songId: string) {
+  enqueue('unlike', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('liked_songs').delete().eq('user_id', uid).eq('song_id', songId);
+  });
+}
+
+export function cloudCreatePlaylist(playlist: Playlist) {
+  enqueue('create playlist', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('playlists').upsert({
+      id: playlist.id,
+      user_id: uid,
+      name: playlist.name,
+      description: playlist.description || null,
+      cover_url: playlist.coverUrl || null,
+    });
+  });
+}
+
+export function cloudUpdatePlaylistCover(playlistId: string, coverUrl: string) {
+  enqueue('update cover', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('playlists').update({ cover_url: coverUrl }).eq('id', playlistId).eq('user_id', uid);
+  });
+}
+
+export function cloudDeletePlaylist(playlistId: string) {
+  enqueue('delete playlist', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('playlists').delete().eq('id', playlistId).eq('user_id', uid);
+  });
+}
+
+export function cloudAddSongToPlaylist(playlistId: string, song: Song) {
+  enqueue('add to playlist', async (uid) => {
+    const sb = await getSupabase();
+    return sb.from('playlist_songs').insert({ ...songRow(uid, song), playlist_id: playlistId });
+  });
+}
+
+export function cloudRemoveSongFromPlaylist(playlistId: string, songId: string) {
+  enqueue('remove from playlist', async (uid) => {
+    const sb = await getSupabase();
+    return sb
+      .from('playlist_songs')
+      .delete()
+      .eq('playlist_id', playlistId)
+      .eq('song_id', songId)
+      .eq('user_id', uid);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Lectura + migración de invitado al iniciar sesión
+// ---------------------------------------------------------------------------
+
+async function fetchCloudLibrary(userId: string): Promise<{ likedSongs: Song[]; playlists: Playlist[] }> {
+  const sb = await getSupabase();
+  const [likes, pls, plSongs] = await Promise.all([
+    sb
+      .from('liked_songs')
+      .select('song_id, title, artist, album, cover_url, duration, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    sb.from('playlists').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+    sb.from('playlist_songs').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+  ]);
+
+  if (likes.error) throw likes.error;
+  if (pls.error) throw pls.error;
+  if (plSongs.error) console.error('[Cloud] playlist_songs:', plSongs.error);
+
+  const songsByPlaylist = new Map<string, Song[]>();
+  for (const row of plSongs.data || []) {
+    const list = songsByPlaylist.get(row.playlist_id) || [];
+    if (!list.some((s) => s.id === row.song_id)) list.push(rowToSong(row));
+    songsByPlaylist.set(row.playlist_id, list);
   }
+
+  return {
+    likedSongs: (likes.data || []).map(rowToSong),
+    playlists: (pls.data || []).map((pl) => ({
+      id: pl.id,
+      name: pl.name,
+      description: pl.description || undefined,
+      coverUrl: pl.cover_url || DEFAULT_PLAYLIST_COVER,
+      songs: songsByPlaylist.get(pl.id) || [],
+      isCustom: true,
+      createdAt: new Date(pl.created_at).getTime(),
+    })),
+  };
 }
 
 /**
- * Sync remove song from playlist in Supabase
+ * Sube lo que el invitado tenía en local y devuelve la biblioteca unificada.
+ * Todo en lotes (1 petición por tabla) en lugar de N peticiones secuenciales.
  */
-export async function syncCloudRemoveSongFromPlaylist(playlistId: string, songId: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+export async function syncOnLogin(
+  localLiked: Song[],
+  localPlaylists: Playlist[]
+): Promise<{ likedSongs: Song[]; playlists: Playlist[] } | null> {
+  const userId = cloudUserId;
+  if (!userId) return null;
+  await queue; // deja terminar escrituras pendientes
 
-  const { error } = await supabase
-    .from('playlist_songs')
-    .delete()
-    .eq('playlist_id', playlistId)
-    .eq('song_id', songId)
-    .eq('user_id', user.id);
+  const cloud = await fetchCloudLibrary(userId);
+  const sb = await getSupabase();
 
-  if (error) {
-    console.error('Error removing song from playlist in cloud:', error);
-  }
-}
+  const cloudLikeIds = new Set(cloud.likedSongs.map((s) => s.id));
+  const newLikes = localLiked.filter((s) => !cloudLikeIds.has(s.id));
 
-/**
- * Smart migration & sync when user authenticates
- * Uploads any existing guest data from localStorage to Supabase, then fetches cloud data
- */
-export async function syncOnLogin(localLikedSongs: Song[], localPlaylists: Playlist[]): Promise<{
-  likedSongs: Song[];
-  playlists: Playlist[];
-}> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { likedSongs: localLikedSongs, playlists: localPlaylists };
+  const cloudIds = new Set(cloud.playlists.map((p) => p.id));
+  const cloudNames = new Set(cloud.playlists.map((p) => p.name.trim().toLowerCase()));
+  const newPlaylists = localPlaylists.filter(
+    (p) => !cloudIds.has(p.id) && !cloudNames.has(p.name.trim().toLowerCase())
+  );
 
-  // 1. Fetch cloud data first
-  const cloudLikes = await fetchCloudLikedSongs();
-  const cloudPlaylists = await fetchCloudPlaylists();
+  if (newLikes.length === 0 && newPlaylists.length === 0) return cloud;
 
-  // 2. Upload any local liked songs not in cloud yet
-  const cloudLikeIds = new Set(cloudLikes.map((s) => s.id));
-  const newLikesToUpload = localLikedSongs.filter((s) => !cloudLikeIds.has(s.id));
-
-  for (const song of newLikesToUpload) {
-    await syncCloudAddLikedSong(song);
+  if (newLikes.length > 0) {
+    const { error } = await sb
+      .from('liked_songs')
+      .upsert(newLikes.map((s) => songRow(userId, s)), { onConflict: 'user_id, song_id' });
+    if (error) console.error('[Cloud] batch likes:', error);
   }
 
-  // 3. Upload any local playlists not in cloud yet
-  const cloudPlaylistNames = new Set(cloudPlaylists.map((p) => p.name.toLowerCase().trim()));
-  const newPlaylistsToUpload = localPlaylists.filter((p) => !cloudPlaylistNames.has(p.name.toLowerCase().trim()));
+  if (newPlaylists.length > 0) {
+    const { error } = await sb.from('playlists').upsert(
+      newPlaylists.map((p) => ({
+        id: p.id,
+        user_id: userId,
+        name: p.name,
+        description: p.description || null,
+        cover_url: p.coverUrl || null,
+      }))
+    );
+    if (error) console.error('[Cloud] batch playlists:', error);
 
-  for (const pl of newPlaylistsToUpload) {
-    const validId = ensureValidUUID(pl.id);
-    const updatedPl = { ...pl, id: validId };
-    await syncCloudCreatePlaylist(updatedPl);
-    for (const song of updatedPl.songs) {
-      await syncCloudAddSongToPlaylist(validId, song);
+    const rows = newPlaylists.flatMap((p) => p.songs.map((s) => ({ ...songRow(userId, s), playlist_id: p.id })));
+    if (rows.length > 0) {
+      const { error: songsError } = await sb.from('playlist_songs').insert(rows);
+      if (songsError) console.error('[Cloud] batch playlist songs:', songsError);
     }
   }
 
-  // 4. Fetch final unified state from cloud
-  const finalLikes = await fetchCloudLikedSongs();
-  const finalPlaylists = await fetchCloudPlaylists();
-
-  return {
-    likedSongs: finalLikes.length > 0 ? finalLikes : localLikedSongs,
-    playlists: finalPlaylists.length > 0 ? finalPlaylists : localPlaylists,
-  };
+  return fetchCloudLibrary(userId);
 }

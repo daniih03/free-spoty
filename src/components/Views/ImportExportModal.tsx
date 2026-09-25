@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { Download, Upload, Copy, Check, Sparkles, FileJson } from 'lucide-react';
 import {
   exportAllUserData,
   importUserData,
@@ -6,237 +7,195 @@ import {
   addSongToPlaylist,
 } from '../../services/storageService';
 import { searchSongsMetadata } from '../../services/searchService';
-import {
-  X,
-  Download,
-  Upload,
-  Copy,
-  Check,
-  Music,
-  ExternalLink,
-  Sparkles,
-} from 'lucide-react';
+import { ui } from '../../state/ui';
+import { Sheet, Spinner, inputClass } from '../UI/Primitives';
+import type { Song } from '../../types/music';
 
-interface ImportExportModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+/** Ejecuta `fn` sobre `items` con concurrencia limitada, preservando el orden. */
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
-export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
+export default function ImportExportModal() {
   const [activeTab, setActiveTab] = useState<'spotify' | 'backup'>('spotify');
-  const [spotifyInput, setSpotifyInput] = useState('');
+  const [tracklist, setTracklist] = useState('');
   const [playlistName, setPlaylistName] = useState('Mi Playlist Importada');
-  const [isImportingSpotify, setIsImportingSpotify] = useState(false);
-  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   const [copied, setCopied] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  if (!isOpen) return null;
+  const handleImport = async () => {
+    const lines = tracklist
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#') && !l.startsWith('http'));
+    if (!lines.length && !tracklist.includes('spotify.com')) return;
 
-  // Handle Spotify / Text Tracklist import
-  const handleImportSpotify = async () => {
-    if (!spotifyInput.trim()) return;
-    setIsImportingSpotify(true);
-    setImportStatus('Analizando pistas...');
+    setIsImporting(true);
+    setStatus('Analizando pistas...');
+
+    let targetName = playlistName.trim() || 'Playlist Importada';
+    const url = tracklist.match(/https?:\/\/open\.spotify\.com\/playlist\/\S+/)?.[0];
+    if (url) {
+      try {
+        const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+        if (res.ok) targetName = (await res.json()).title || targetName;
+      } catch {
+        /* oEmbed opcional */
+      }
+    }
 
     try {
-      const lines = spotifyInput
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l && !l.startsWith('#') && !l.startsWith('http'));
-
-      // If user pasted a Spotify URL, attempt to fetch oembed title or parse
-      let targetName = playlistName.trim() || 'Playlist Importada';
-      if (spotifyInput.includes('spotify.com/playlist/')) {
-        try {
-          const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyInput.trim())}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.title) targetName = data.title;
-          }
-        } catch {
-          // ignore
-        }
-      }
+      // Búsquedas en paralelo (4 a la vez) en lugar de una a una
+      let done = 0;
+      setProgress({ done: 0, total: lines.length });
+      const found = await mapLimit(lines, 4, async (line) => {
+        const songs = await searchSongsMetadata(line).catch(() => [] as Song[]);
+        setProgress({ done: ++done, total: lines.length });
+        return songs[0];
+      });
 
       const created = saveCustomPlaylist(targetName);
-      let count = 0;
+      const matched = found.filter((s): s is Song => !!s);
+      matched.forEach((s) => addSongToPlaylist(created.id, s));
 
-      // Search and add songs
-      for (const line of lines) {
-        setImportStatus(`Buscando: ${line.slice(0, 30)}...`);
-        const found = await searchSongsMetadata(line);
-        if (found && found.length > 0) {
-          addSongToPlaylist(created.id, found[0]);
-          count++;
-        }
-      }
-
-      setImportStatus(`¡Listo! Se añadieron ${count} canciones a "${targetName}".`);
-      setTimeout(() => {
-        setIsImportingSpotify(false);
-        onClose();
-      }, 1500);
-    } catch (e) {
-      setImportStatus('Ocurrió un error al procesar la lista.');
-      setIsImportingSpotify(false);
+      setStatus(`¡Listo! ${matched.length} de ${lines.length} canciones añadidas a "${targetName}".`);
+      setTimeout(ui.closeImportExport, 1800);
+    } catch {
+      setStatus('Ocurrió un error al procesar la lista.');
+    } finally {
+      setIsImporting(false);
+      setProgress(null);
     }
   };
 
-  // Export JSON Backup
-  const handleDownloadBackup = () => {
-    const data = exportAllUserData();
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+  const handleDownload = () => {
+    const blob = new Blob([exportAllUserData()], { type: 'application/json' });
+    const href = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = href;
     a.download = `free-spoty-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
   };
 
-  const handleCopyBackup = () => {
-    const data = exportAllUserData();
-    navigator.clipboard.writeText(data);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleRestoreJson = () => {
-    if (!jsonInput.trim()) return;
-    const ok = importUserData(jsonInput.trim());
-    if (ok) {
-      setBackupStatus('¡Copia de seguridad restaurada con éxito!');
-      setTimeout(() => {
-        setBackupStatus(null);
-        onClose();
-      }, 1200);
-    } else {
-      setBackupStatus('Error: Formato JSON no válido.');
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(exportAllUserData());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setBackupStatus('No se pudo copiar al portapapeles.');
     }
   };
 
+  const restore = (json: string) => {
+    if (importUserData(json)) {
+      setBackupStatus('¡Copia de seguridad restaurada! (combinada con tu biblioteca actual)');
+      setTimeout(ui.closeImportExport, 1400);
+    } else {
+      setBackupStatus('Error: el formato JSON no es válido.');
+    }
+  };
+
+  const tab = (active: boolean) =>
+    `flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+      active ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/20' : 'text-zinc-400 hover:text-white'
+    }`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-[#181818] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-6 text-white overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-brand-red/20 text-brand-coral border border-brand-red/30">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold">Importar & Copias de Seguridad</h2>
-              <p className="text-xs text-zinc-400">Migra tus canciones favoritas libremente</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Tabs */}
+    <Sheet
+      onClose={ui.closeImportExport}
+      maxWidth="max-w-lg"
+      icon={<Sparkles className="w-5 h-5" />}
+      title="Importar & copias de seguridad"
+      subtitle="Migra tus canciones favoritas libremente"
+    >
+      <div className="space-y-5">
         <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
-          <button
-            onClick={() => setActiveTab('spotify')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'spotify'
-                ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/20'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Importar desde Spotify / Lista
+          <button onClick={() => setActiveTab('spotify')} className={tab(activeTab === 'spotify')}>
+            Importar desde Spotify / lista
           </button>
-          <button
-            onClick={() => setActiveTab('backup')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'backup'
-                ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/20'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Copia de Seguridad JSON
+          <button onClick={() => setActiveTab('backup')} className={tab(activeTab === 'backup')}>
+            Copia de seguridad
           </button>
         </div>
 
-        {/* Tab 1: Spotify / Text Importer */}
-        {activeTab === 'spotify' && (
+        {activeTab === 'spotify' ? (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-zinc-300 block mb-1">
-                Nombre de la nueva playlist
-              </label>
-              <input
-                type="text"
-                value={playlistName}
-                onChange={(e) => setPlaylistName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
-              />
+              <label className="text-xs font-medium text-zinc-300 block mb-1">Nombre de la nueva playlist</label>
+              <input value={playlistName} onChange={(e) => setPlaylistName(e.target.value)} className={`${inputClass} text-xs`} />
             </div>
-
             <div>
               <label className="text-xs font-medium text-zinc-300 block mb-1">
-                Pega tu lista de canciones (un tema por línea, ej: "Artista - Canción"):
+                Pega tu lista (una canción por línea, ej: "Artista - Canción"):
               </label>
               <textarea
-                rows={5}
-                value={spotifyInput}
-                onChange={(e) => setSpotifyInput(e.target.value)}
-                placeholder="Ejemplo:
-The Weeknd - Blinding Lights
-Dua Lipa - Houdini
-Coldplay - Yellow
-Bad Bunny - MONACO"
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral resize-none font-mono"
+                rows={6}
+                value={tracklist}
+                onChange={(e) => setTracklist(e.target.value)}
+                placeholder={'The Weeknd - Blinding Lights\nDua Lipa - Houdini\nColdplay - Yellow\nBad Bunny - MONACO'}
+                className={`${inputClass} text-xs resize-none font-mono`}
               />
             </div>
 
-            {importStatus && (
-              <p className="text-xs text-brand-coral font-medium animate-pulse">{importStatus}</p>
+            {progress && (
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-crimson to-brand-coral transition-all"
+                  style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }}
+                />
+              </div>
             )}
+            {status && <p className="text-xs text-brand-coral font-medium">{progress ? `Emparejando ${progress.done}/${progress.total}...` : status}</p>}
 
             <button
-              onClick={handleImportSpotify}
-              disabled={isImportingSpotify || !spotifyInput.trim()}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-semibold text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand-red/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              onClick={handleImport}
+              disabled={isImporting || !tracklist.trim()}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-semibold text-xs active:scale-95 transition-all shadow-lg shadow-brand-red/25 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isImportingSpotify ? (
+              {isImporting ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <Spinner className="w-3.5 h-3.5 border-2 border-white" />
                   Importando y emparejando audio...
                 </>
               ) : (
-                'Comenzar Importación'
+                'Comenzar importación'
               )}
             </button>
           </div>
-        )}
-
-        {/* Tab 2: JSON Backup */}
-        {activeTab === 'backup' && (
+        ) : (
           <div className="space-y-4">
             <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
               <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
                 <Download className="w-3.5 h-3.5 text-brand-coral" />
                 Exportar mis datos
               </h4>
-              <p className="text-[11px] text-zinc-400">
-                Guarda una copia completa de tus listas, me gusta e historial para no perder nada.
-              </p>
+              <p className="text-[11px] text-zinc-400">Copia completa de tus listas, favoritos, historial y ajustes.</p>
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={handleDownloadBackup}
+                  onClick={handleDownload}
                   className="flex-1 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <Download className="w-3 h-3" /> Descargar archivo .json
+                  <Download className="w-3 h-3" /> Descargar .json
                 </button>
                 <button
-                  onClick={handleCopyBackup}
+                  onClick={handleCopy}
                   className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {copied ? <Check className="w-3 h-3 text-brand-coral" /> : <Copy className="w-3 h-3" />}
@@ -247,30 +206,45 @@ Bad Bunny - MONACO"
 
             <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
               <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                <Upload className="w-3.5 h-3.5 text-brand-rose" />
                 Restaurar copia de seguridad
               </h4>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-2 rounded-lg border border-dashed border-white/20 hover:border-brand-coral/60 text-xs text-zinc-300 hover:text-white flex items-center justify-center gap-2 transition-colors"
+              >
+                <FileJson className="w-3.5 h-3.5" /> Elegir archivo .json
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) restore(await file.text());
+                  e.target.value = '';
+                }}
+              />
               <textarea
                 rows={3}
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
-                placeholder="Pega el contenido JSON de tu copia de seguridad aquí..."
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral resize-none font-mono"
+                placeholder="…o pega aquí el contenido JSON"
+                className={`${inputClass} text-xs resize-none font-mono`}
               />
-              {backupStatus && (
-                <p className="text-xs text-cyan-400 font-medium">{backupStatus}</p>
-              )}
+              {backupStatus && <p className="text-xs text-brand-rose font-medium">{backupStatus}</p>}
               <button
-                onClick={handleRestoreJson}
+                onClick={() => restore(jsonInput.trim())}
                 disabled={!jsonInput.trim()}
-                className="w-full py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition-colors disabled:opacity-40"
+                className="w-full py-2 rounded-lg bg-brand-red/20 hover:bg-brand-red/30 text-brand-coral border border-brand-red/30 text-xs font-semibold transition-colors disabled:opacity-40"
               >
-                Restaurar Backup
+                Restaurar backup
               </button>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </Sheet>
   );
-};
+}

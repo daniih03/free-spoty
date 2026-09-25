@@ -1,323 +1,271 @@
-import { Song, VersionType, SongVersions } from '../types/music';
+import type { Song } from '../types/music';
 import { FEATURED_PLAYLISTS } from './exploreData';
-import { getCustomBackendUrl } from './youtube';
+import { getCustomApiKey, getCustomBackendUrl } from './config';
+import { itunesTrackToSong } from './itunes';
+import { fetchJson, raceFirst, TtlCache, dedupe, safeStorage } from '../lib/net';
+import { cleanTitle, songKey } from '../lib/format';
 
-// User optional YouTube API Key saved in localStorage
-const YT_API_KEY_STORAGE = 'free_spoty_yt_api_key';
+// ===========================================================================
+// 1. Búsqueda de metadatos (iTunes Search API)
+// ===========================================================================
 
-export function getCustomApiKey(): string {
-  return localStorage.getItem(YT_API_KEY_STORAGE) || '';
-}
-
-export function setCustomApiKey(key: string) {
-  if (key) {
-    localStorage.setItem(YT_API_KEY_STORAGE, key.trim());
-  } else {
-    localStorage.removeItem(YT_API_KEY_STORAGE);
-  }
-}
-
-// In-memory cache for resolved songs to ensure instant playback
-const songCache = new Map<string, Song>();
-
-// Pre-fill cache with featured songs
-FEATURED_PLAYLISTS.forEach(playlist => {
-  playlist.songs.forEach(song => {
-    songCache.set(song.id, song);
-    songCache.set(`${song.title.toLowerCase()}-${song.artist.toLowerCase()}`, song);
-  });
-});
-
-// Verified high-availability Piped API instances with open CORS and zero rate limits
-let activePipedInstances: string[] = [
-  'https://api.piped.private.coffee',
-  'https://pipedapi.ducks.party',
-];
-
-// Verified Invidious instances for secondary fallback
-let activeInvidiousInstances: string[] = [
-  'yewtu.be',
-  'invidious.nerdvpn.de',
-];
-
-// Helper to fetch candidates from a single Piped instance with strict timeout
-async function fetchCandidatesFromPiped(endpoint: string, query: string, timeoutMs = 3500): Promise<string[]> {
-  const url = `${endpoint}/search?q=${encodeURIComponent(query)}&filter=videos`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-  if (!res.ok) throw new Error(`Piped ${endpoint} returned status ${res.status}`);
-  const data = await res.json();
-  const candidates: string[] = [];
-  if (Array.isArray(data.items)) {
-    for (const item of data.items) {
-      if (item?.url && item.url.includes('/watch?v=')) {
-        const id = item.url.replace('/watch?v=', '').split('&')[0];
-        if (id && !candidates.includes(id)) {
-          candidates.push(id);
-        }
-      }
-    }
-  }
-  if (candidates.length === 0) throw new Error(`No video items on ${endpoint}`);
-  return candidates;
-}
-
-// Resilient first-success promise race helper
-async function raceFirstSuccessful<T>(promises: Promise<T>[]): Promise<T> {
-  if (typeof Promise.any === 'function') {
-    return Promise.any(promises);
-  }
-  return new Promise<T>((resolve, reject) => {
-    const errors: any[] = [];
-    let rejectedCount = 0;
-    if (promises.length === 0) return reject(new Error('No promises provided'));
-    promises.forEach((p) => {
-      p.then(resolve).catch((err) => {
-        errors.push(err);
-        rejectedCount++;
-        if (rejectedCount === promises.length) {
-          reject(new Error('All candidate instances failed'));
-        }
-      });
-    });
-  });
-}
+const FEATURED_SONGS: Song[] = FEATURED_PLAYLISTS.flatMap((p) => p.songs);
+const searchCache = new TtlCache<Song[]>(5 * 60_000, 50);
 
 /**
- * Searches songs using the iTunes Search API (fast, rich metadata, 600x600 artwork, CORS-free).
+ * Búsqueda rápida con metadatos ricos (carátulas 600x600, duración exacta).
+ * Resultados cacheados 5 min: volver a una búsqueda anterior es instantáneo.
  */
 export async function searchSongsMetadata(query: string, signal?: AbortSignal): Promise<Song[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
+  const q = trimmed.toLowerCase();
 
-  // Check if query matches any featured songs first
-  const localMatches = FEATURED_PLAYLISTS.flatMap(p => p.songs).filter(s =>
-    s.title.toLowerCase().includes(trimmed.toLowerCase()) ||
-    s.artist.toLowerCase().includes(trimmed.toLowerCase())
+  const cached = searchCache.get(q);
+  if (cached) return cached;
+
+  const localMatches = FEATURED_SONGS.filter(
+    (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
   );
 
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(trimmed)}&entity=song&limit=25`;
-    const res = await fetch(url, { signal });
-    if (!res.ok) throw new Error('iTunes search failed');
+    const data = await fetchJson(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(trimmed)}&entity=song&limit=30`,
+      { timeoutMs: 6000, signal }
+    );
 
-    const data = await res.json();
-    const itunesSongs: Song[] = (data.results || []).map((item: any) => {
-      // Upscale artwork from 100x100 to 600x600 for sharp display
-      const artwork = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-        : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
-
-      const songId = `itunes_${item.trackId}`;
-      const cacheKey = `${item.trackName.toLowerCase()}-${item.artistName.toLowerCase()}`;
-      const cached = songCache.get(cacheKey);
-
-      if (cached) {
-        return {
-          ...cached,
-          coverUrl: artwork || cached.coverUrl,
-        };
-      }
-
-      const song: Song = {
-        id: songId,
-        title: item.trackName,
-        artist: item.artistName,
-        album: item.collectionName,
-        duration: Math.round(item.trackTimeMillis / 1000),
-        coverUrl: artwork,
-        youtubeId: '', // Resolved instantly on first play
-        currentVersion: 'radio',
-        availableVersions: {},
-        hasSyncedLyrics: true,
-      };
-
-      return song;
-    });
-
-    // Merge without duplicates
+    const seen = new Set(localMatches.map((s) => songKey(s.title, s.artist)));
     const combined = [...localMatches];
-    const seen = new Set(combined.map(s => `${s.title.toLowerCase()}-${s.artist.toLowerCase()}`));
-
-    for (const s of itunesSongs) {
-      const key = `${s.title.toLowerCase()}-${s.artist.toLowerCase()}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        combined.push(s);
-      }
+    for (const item of data.results || []) {
+      if (!item.trackId || !item.trackName) continue;
+      const song = itunesTrackToSong(item);
+      const key = songKey(song.title, song.artist);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      combined.push(song);
     }
 
+    searchCache.set(q, combined);
     return combined;
   } catch (err: any) {
-    if (err.name === 'AbortError') return [];
-    console.warn('Metadata search fallback to local:', err);
+    if (err?.name === 'AbortError' || signal?.aborted) throw err;
+    console.warn('Búsqueda de metadatos: fallback local', err);
     return localMatches;
   }
 }
 
-/**
- * Fast search to find multiple YouTube video candidates for playback robustness.
- */
-export async function searchYoutubeVideoCandidates(query: string): Promise<string[]> {
-  const candidates: string[] = [];
+// ===========================================================================
+// 2. Resolución de audio (Canción → IDs de vídeo de YouTube)
+// ===========================================================================
 
-  // 1. If backend URL is set, try backend search endpoint first
-  const backendUrl = getCustomBackendUrl();
-  if (backendUrl) {
+interface Candidate {
+  id: string;
+  duration?: number; // segundos, si la fuente lo aporta
+}
+
+// Instancias verificadas con CORS abierto (Access-Control-Allow-Origin: *).
+// Una instancia sin CORS falla siempre en el navegador: verificar antes de añadir.
+const PIPED_INSTANCES = ['https://api.piped.private.coffee', 'https://pipedapi.ducks.party'];
+const INVIDIOUS_INSTANCES = ['https://invidious.f5.si'];
+const VIDEO_ID_RE = /^[\w-]{11}$/;
+
+function nonEmpty(list: Candidate[], source: string): Candidate[] {
+  const valid = list.filter((c) => VIDEO_ID_RE.test(c.id));
+  if (valid.length === 0) throw new Error(`Sin resultados en ${source}`);
+  return valid;
+}
+
+async function fromBackend(base: string, q: string): Promise<Candidate[]> {
+  const data = await fetchJson(`${base}/api/search?q=${encodeURIComponent(q)}`, { timeoutMs: 3500 });
+  return nonEmpty(
+    (data.results || []).map((r: any) => ({ id: r.videoId, duration: r.duration })),
+    'backend'
+  );
+}
+
+async function fromYouTubeApi(key: string, q: string): Promise<Candidate[]> {
+  const data = await fetchJson(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=6&type=video&videoEmbeddable=true&q=${encodeURIComponent(q)}&key=${key}`,
+    { timeoutMs: 3500 }
+  );
+  return nonEmpty((data.items || []).map((i: any) => ({ id: i?.id?.videoId })), 'YouTube API');
+}
+
+async function fromPiped(base: string, q: string): Promise<Candidate[]> {
+  const data = await fetchJson(`${base}/search?q=${encodeURIComponent(q)}&filter=videos`, { timeoutMs: 3500 });
+  return nonEmpty(
+    (data.items || [])
+      .filter((i: any) => typeof i?.url === 'string' && i.url.includes('/watch?v='))
+      .map((i: any) => ({ id: i.url.split('v=')[1].split('&')[0], duration: i.duration })),
+    base
+  );
+}
+
+async function fromInvidious(base: string, q: string): Promise<Candidate[]> {
+  const data = await fetchJson(`${base}/api/v1/search?q=${encodeURIComponent(q)}&type=video`, { timeoutMs: 3500 });
+  return nonEmpty(
+    (Array.isArray(data) ? data : []).slice(0, 8).map((i: any) => ({ id: i.videoId, duration: i.lengthSeconds })),
+    base
+  );
+}
+
+/**
+ * Busca candidatos de vídeo. Prioridad: servidor propio → API Key → carrera
+ * paralela entre todas las instancias públicas (gana la primera que responda).
+ */
+async function searchCandidates(q: string): Promise<Candidate[]> {
+  const backend = getCustomBackendUrl();
+  if (backend) {
     try {
-      const res = await fetch(`${backendUrl}/api/search?q=${encodeURIComponent(query)}`, {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.results)) {
-          for (const item of data.results) {
-            if (item?.videoId && !candidates.includes(item.videoId)) {
-              candidates.push(item.videoId);
-            }
-          }
-          if (candidates.length > 0) return candidates;
-        }
-      }
-    } catch {}
+      return await fromBackend(backend, q);
+    } catch {
+      /* continúa con fuentes públicas */
+    }
   }
 
-  // 2. YouTube API Key (if user configured)
   const apiKey = getCustomApiKey();
   if (apiKey) {
     try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(query)}&type=video&key=${apiKey}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        for (const item of (data.items || [])) {
-          const id = item?.id?.videoId;
-          if (id && !candidates.includes(id)) candidates.push(id);
-        }
-        if (candidates.length > 0) return candidates;
-      }
+      return await fromYouTubeApi(apiKey, q);
     } catch (e) {
-      console.warn('YouTube API query failed:', e);
+      console.warn('YouTube API falló:', e);
     }
   }
 
-  // 3. Primary Engine: Race active high-availability Piped instances in parallel
   try {
-    const pipedResults = await raceFirstSuccessful(
-      activePipedInstances.map((ep) => fetchCandidatesFromPiped(ep, query, 3500))
-    );
-    if (pipedResults && pipedResults.length > 0) {
-      return pipedResults;
-    }
+    return await raceFirst([
+      ...PIPED_INSTANCES.map((b) => fromPiped(b, q)),
+      ...INVIDIOUS_INSTANCES.map((b) => fromInvidious(b, q)),
+    ]);
   } catch {
-    // Proceed to fallback
+    return [];
   }
+}
 
-  // 4. Secondary Fallback: Query Invidious instances
-  for (const domain of activeInvidiousInstances) {
-    try {
-      const url = `https://${domain}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          for (const item of data.slice(0, 5)) {
-            if (item?.videoId && !candidates.includes(item.videoId)) {
-              candidates.push(item.videoId);
-            }
-          }
-          if (candidates.length > 0) return candidates;
-        }
+/**
+ * Ordena candidatos: respeta el orden de la búsqueda (pista de audio primero)
+ * pero penaliza vídeos cuya duración no cuadra con la oficial de iTunes
+ * (videoclips con intros largas, bucles de 1 hora, versiones en vivo…).
+ */
+function rankCandidates(candidates: Candidate[], targetDuration: number): string[] {
+  const unique = new Map<string, Candidate>();
+  for (const c of candidates) if (!unique.has(c.id)) unique.set(c.id, c);
+
+  return [...unique.values()]
+    .map((c, index) => {
+      let penalty = 0;
+      if (targetDuration > 0 && c.duration && c.duration > 0) {
+        const diff = Math.abs(c.duration - targetDuration);
+        penalty = diff <= 10 ? 0 : diff <= 30 ? 2 : 12;
       }
-    } catch {
-      // Continue to next instance
+      return { id: c.id, score: index + penalty };
+    })
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 6)
+    .map((c) => c.id);
+}
+
+// ---------------------------------------------------------------------------
+// Caché persistente de resoluciones (sobrevive a recargas: 2ª reproducción = 0 ms)
+// ---------------------------------------------------------------------------
+
+const RESOLVE_CACHE_KEY = 'free_spoty_resolve_cache';
+const RESOLVE_TTL = 7 * 24 * 3600_000;
+const RESOLVE_MAX = 400;
+
+type ResolveEntry = { ids: string[]; t: number };
+let resolveCache: Map<string, ResolveEntry> | null = null;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+function getResolveCache(): Map<string, ResolveEntry> {
+  if (!resolveCache) {
+    const now = Date.now();
+    const raw = safeStorage.get<Record<string, ResolveEntry>>(RESOLVE_CACHE_KEY, {});
+    resolveCache = new Map(Object.entries(raw).filter(([, e]) => now - e.t < RESOLVE_TTL && e.ids?.length));
+    // Canciones destacadas con IDs verificados
+    for (const s of FEATURED_SONGS) {
+      if (!s.youtubeId) continue;
+      const ids = s.candidateVideoIds?.length ? s.candidateVideoIds : [s.youtubeId];
+      resolveCache.set(songKey(s.title, s.artist), { ids, t: now });
     }
   }
-
-  return candidates;
+  return resolveCache;
 }
 
-/**
- * Resolves the primary audio track from YouTube Music (Topic / Master Audio)
- * and starts playback in milliseconds with zero delay.
- */
-export async function resolveSongWithVersions(song: Song): Promise<Song> {
-  const cacheKey = `${song.title.toLowerCase()}-${song.artist.toLowerCase()}`;
-  const existing = songCache.get(cacheKey) || songCache.get(song.id);
+function persistResolveCache() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    const entries = [...getResolveCache().entries()].slice(-RESOLVE_MAX);
+    safeStorage.set(RESOLVE_CACHE_KEY, Object.fromEntries(entries));
+  }, 1000);
+}
 
-  if (existing && existing.youtubeId) {
-    return existing;
-  }
-
-  // Clean title: remove any parentheses and brackets like (Remix), [feat. ...], (Remastered)
-  const cleanTitle = song.title
-    .replace(/\(.*?\)/g, '')
-    .replace(/\[.*?\]/g, '')
-    .replace(/feat\..*$/i, '')
-    .trim();
-  const cleanArtist = song.artist.trim();
-
-  // 1. Primary: Studio Audio Track (Clean, instant 0:00 start, ad-free on mobile)
-  let candidates = await searchYoutubeVideoCandidates(`${cleanArtist} ${cleanTitle} audio`);
-
-  // 2. High-precision fallback: direct artist & title
-  if (candidates.length === 0) {
-    candidates = await searchYoutubeVideoCandidates(`${cleanArtist} ${cleanTitle}`);
-  }
-
-  const primaryId = candidates[0] || '';
-  const versions: SongVersions = {
-    radio: primaryId || undefined,
-    lyrics: candidates[1] || primaryId || undefined,
-    original: candidates[2] || primaryId || undefined,
-  };
-
-  const updatedSong: Song = {
+function withIds(song: Song, ids: string[]): Song {
+  return {
     ...song,
-    youtubeId: primaryId,
-    candidateVideoIds: candidates,
+    youtubeId: ids[0] || '',
+    candidateVideoIds: ids,
     currentVersion: 'radio',
-    availableVersions: versions,
   };
-
-  if (primaryId) {
-    songCache.set(song.id, updatedSong);
-    songCache.set(cacheKey, updatedSong);
-  }
-
-  return updatedSong;
 }
 
-/**
- * Switch a song to a specific version on demand (e.g. 'radio', 'lyrics', 'original')
- */
-export async function switchSongVersion(song: Song, targetVersion: VersionType): Promise<Song> {
-  let targetId = song.availableVersions?.[targetVersion];
+const resolveInternal = dedupe(
+  (song: Song) => songKey(song.title, song.artist),
+  async (song: Song): Promise<Song> => {
+    const key = songKey(song.title, song.artist);
+    const title = cleanTitle(song.title);
+    const artist = song.artist.trim();
 
-  if (!targetId) {
-    const cleanTitle = song.title.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
-    const cleanArtist = song.artist.trim();
+    // Ambas consultas en paralelo: la pista de audio de estudio (sin intros ni
+    // anuncios pre-roll) se prioriza; la búsqueda directa aporta alternativas.
+    // No se espera a la más lenta: si "audio" ya tiene resultados, la directa
+    // solo dispone de un margen corto para sumar candidatos de respaldo.
+    const directPromise = searchCandidates(`${artist} ${title}`);
+    const audio = await searchCandidates(`${artist} ${title} audio`);
+    const direct = audio.length
+      ? await Promise.race([directPromise, new Promise<Candidate[]>((r) => setTimeout(() => r([]), 150))])
+      : await directPromise;
+    const ids = rankCandidates([...audio, ...direct], song.duration);
 
-    let query = '';
-    if (targetVersion === 'radio') query = `${cleanArtist} ${cleanTitle} audio`;
-    else if (targetVersion === 'lyrics') query = `${cleanArtist} ${cleanTitle} lyrics`;
-    else query = `${cleanArtist} ${cleanTitle} video oficial`;
-
-    const candidates = await searchYoutubeVideoCandidates(query);
-    targetId = candidates[0] || song.youtubeId;
+    if (ids.length > 0) {
+      getResolveCache().set(key, { ids, t: Date.now() });
+      persistResolveCache();
+    }
+    return withIds(song, ids);
   }
+);
 
-  const updated: Song = {
-    ...song,
-    youtubeId: targetId,
-    currentVersion: targetVersion,
-    availableVersions: {
-      ...song.availableVersions,
-      [targetVersion]: targetId,
-    },
-  };
-
-  if (targetId) {
-    songCache.set(song.id, updated);
+/** Devuelve la canción con `youtubeId` y candidatos (caché → red). */
+export async function resolveSongWithVersions(song: Song, { force = false } = {}): Promise<Song> {
+  if (!force) {
+    const cached = getResolveCache().get(songKey(song.title, song.artist));
+    if (cached) return withIds(song, cached.ids);
   }
-  return updated;
+  return resolveInternal(song);
+}
+
+/** Resolución síncrona si ya está en caché (permite arrancar en el mismo gesto del usuario). */
+export function peekResolved(song: Song): Song | null {
+  if (song.youtubeId) return song;
+  const cached = getResolveCache().get(songKey(song.title, song.artist));
+  return cached ? withIds(song, cached.ids) : null;
+}
+
+/** Precarga en segundo plano (siguiente canción de la cola). */
+export function prefetchSong(song: Song | undefined) {
+  if (!song || song.youtubeId || peekResolved(song)) return;
+  resolveInternal(song).catch(() => {});
+}
+
+/** Descarta un ID que ha fallado para que no vuelva a elegirse primero. */
+export function markVideoFailed(song: Song, videoId: string) {
+  const cache = getResolveCache();
+  const key = songKey(song.title, song.artist);
+  const entry = cache.get(key);
+  if (!entry) return;
+  const ids = entry.ids.filter((id) => id !== videoId);
+  if (ids.length) cache.set(key, { ids, t: entry.t });
+  else cache.delete(key);
+  persistResolveCache();
 }

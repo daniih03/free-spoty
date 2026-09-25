@@ -1,111 +1,101 @@
 # 🔊 El Motor de Audio: Reproducción Continua y Confiable
 
-El motor de audio de **Free-Spoty** está diseñado para resolver uno de los mayores desafíos en reproductores web basados en YouTube: **reproducir cualquier pista en milisegundos con un solo toque, sin interrupciones, sin anuncios y sorteando las restricciones de los navegadores móviles y las discográficas.**
+Objetivo: **reproducir cualquier pista con un solo toque, sin cortes, sin anuncios y sorteando las restricciones de navegadores móviles y discográficas.**
 
-Este documento desglosa cada componente técnico del motor ubicado en `src/services/youtube.ts`, `src/services/searchService.ts` y `src/context/PlayerContext.tsx`.
+Piezas: `src/services/youtube.ts` (motor), `src/services/searchService.ts` (resolver) y `src/state/player.ts` (orquestación).
 
 ---
 
-## ⚡ El Ciclo de Reproducción (1-Tap Playback)
+## ⚡ Ciclo de reproducción (1-Tap Playback)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Usuario
-    participant UI as Componente (SongCard / PlayButton)
-    participant PC as PlayerContext.tsx
-    participant YTS as youtube.ts
-    participant API as searchService (Invidious / iTunes)
-    participant YT as YouTube Iframe Engine
+    participant UI as SongCard / TrackRow
+    participant PS as state/player.ts
+    participant RS as searchService (resolver)
+    participant EN as youtube.ts (motor)
 
-    User->>UI: Clic en Play (Gesto del usuario)
-    UI->>PC: playSong(song, queue)
-    PC->>YTS: unlockAudio() [Precalentamiento inmediato]
-    
-    alt Song no tiene youtubeId
-        PC->>API: resolveSongWithVersions(song)
-        API-->>PC: Devuelve Song con candidateVideoIds [id1, id2, id3]
+    User->>UI: Clic en Play
+    UI->>PS: playerActions.playSong(song, cola)
+    PS->>EN: unlockAudio() [síncrono, dentro del gesto]
+    PS->>PS: token = ++playToken · cápsula visible al instante (0 ms)
+    alt Canción en caché persistente / destacada
+        PS->>EN: loadVideo(id) [síncrono, mismo gesto]
+    else Sin resolver
+        PS->>RS: resolveSongWithVersions(song)
+        RS-->>PS: candidateVideoIds (ordenados)
+        PS->>PS: ¿token sigue vigente? si no → descartar
+        PS->>EN: loadVideo(id)
     end
-
-    PC->>PC: isStartingTrackRef = true (Protección activa)
-    PC->>YTS: loadVideo(primaryId, 0, autoplay=true)
-    YTS->>YT: loadVideoById({ videoId, startSeconds: 0 })
-    
-    Note over YT,PC: YouTube transita por estado PAUSED (2) al cargar
-    YT-->>PC: onStateChange(2 - PAUSED)
-    alt isStartingTrackRef es true
-        PC->>YTS: play() [Ignora la pausa y fuerza arranque]
-    end
-
-    YT-->>PC: onStateChange(1 - PLAYING)
-    PC->>PC: isStartingTrackRef = false, isPlaying = true
+    EN-->>PS: PAUSED espurio → isStarting → play()
+    EN-->>PS: PLAYING → isPlaying, duración real
+    PS->>RS: prefetchSong(siguiente de la cola)
 ```
 
 ---
 
-## 🛡️ Componentes Clave del Motor
+## 🛡️ Componentes clave
 
-### 1. Protección contra Pausas Espurias (`isStartingTrackRef`)
-- **Problema Detectado:** Al invocar `player.loadVideoById()`, la API interna de YouTube pasa brevemente por el estado `2` (`PAUSED`) o `-1` (`UNSTARTED`) mientras inicializa el búfer. Si el oyente de eventos actualiza `isPlaying = false`, el botón de la interfaz cambia a pausa antes de empezar a sonar y la canción se cancela.
-- **Solución:** 
-  - Al iniciar una pista en `executePlaySong`, se activa `isStartingTrackRef.current = true` con un temporizador de seguridad de 5 segundos.
-  - En `onStateChange`: si el estado recibido es `2` (`PAUSED`) mientras `isStartingTrackRef` está activo, se ignora el apagado de la reproducción y se invoca `youtubeService.play()`.
-  - Cuando el reproductor emite `1` (`PLAYING`), la protección se desactiva y la interfaz confirma el estado de reproducción.
+### 1. Token de reproducción (anti-carreras)
+Cada `startTrack()` incrementa `playToken`. Si el usuario pulsa otra canción mientras la primera se resolvía, la resolución lenta se descarta al volver (`if (token !== playToken) return`). Antes podía sonar la canción anterior al terminar su búsqueda.
 
-### 2. Visibilidad e Integración DOM (`opacity: 1`, `z-index: -9999`)
-- **Problema de Políticas de Navegador:** Navegadores móviles (iOS Safari, Android Chrome) y scripts anti-bot de YouTube auditan la visibilidad del contenedor (`IntersectionObserver`). Un iframe con `opacity: 0.001`, `display: none` o `visibility: hidden` es catalogado como elemento invisible de fondo, bloqueando el autoplay o pausando el flujo.
-- **Implementación:**
-  ```typescript
-  container.style.position = 'fixed';
-  container.style.bottom = '0px';
-  container.style.right = '0px';
-  container.style.width = '200px';
-  container.style.height = '120px';
-  container.style.opacity = '1';          // Cumple con la política de visibilidad
-  container.style.pointerEvents = 'none';  // No bloquea clics del usuario
-  container.style.zIndex = '-9999';        // Físicamente oculto tras la app (#09090b)
-  ```
+### 2. Protección contra pausas espurias (`isStarting`)
+Al llamar a `loadVideoById()`, YouTube emite `PAUSED (2)` mientras inicializa el búfer. Durante 5 s tras cargar (4 s tras un `play()`), un `PAUSED` se ignora y se re-lanza `play()`. `PLAYING (1)` desactiva la protección. *(Lección nº3.)*
 
-### 3. Resolución Dinámica Libre de Anuncios (`candidateVideoIds`)
-Para evitar los anuncios de video comerciales que las discográficas imponen en los videoclips oficiales (VEVO) en dispositivos móviles, `searchService.ts` obtiene una lista jerarquizada orientada a audio limpio:
-1. **Pista de Audio de Estudio (`${artista} ${título} audio`):** Comienza directamente en el segundo 0:00 sin introducciones de videoclip ni cortes de diálogo, y carece de campañas de anuncios pre-roll en embebidos móviles.
-2. **Lanzamiento Oficial Topic (`${artista} ${título} Topic`):** Pistas de audio oficiales generadas automáticamente por YouTube Music / distribuidores digitales (Sound Recording).
-3. **Letras Oficiales / Lyric Videos (`${artista} ${título} lyrics`):** Videos con letra sincronizada sin anuncios de inserción forzados.
-4. **Videoclip Oficial (Solo como último recurso):** `${artista} ${título}` se utiliza únicamente si no se encuentra ninguna versión de audio previa.
-
-Adicionalmente, el reproductor opera bajo `host: 'https://www.youtube-nocookie.com'`, bloqueando cookies publicitarias de seguimiento y reduciendo la carga de anuncios de subasta programática.
-
-### 4. Recuperación Automática ante Errores (`unbindError`)
-Si YouTube devuelve un código de error (150, 101, 100):
-```typescript
-const unbindError = youtubeService.onError((code) => {
-  const song = stateRef.current.currentSong;
-  if (song) {
-    // 1. Probar siguiente candidato de la lista
-    const currentId = song.youtubeId;
-    const candidates = song.candidateVideoIds || [];
-    const currentIndex = candidates.indexOf(currentId);
-    if (currentIndex >= 0 && currentIndex < candidates.length - 1) {
-      const nextId = candidates[currentIndex + 1];
-      song.youtubeId = nextId;
-      isStartingTrackRef.current = true;
-      youtubeService.loadVideo(nextId, 0, true);
-      return;
-    }
-    // 2. Probar versión alternativa (lyrics/original)
-    // 3. Re-resolución dinámica en vivo con Invidious
-  }
-});
+### 3. Visibilidad del iframe
+```ts
+position: fixed; width: 200px; height: 120px;
+opacity: 1;            // visible para las políticas de autoplay
+pointer-events: none;  // no intercepta clics
+z-index: -9999;        // físicamente detrás de la app
 ```
+Nunca `opacity ≈ 0`, `display: none` ni 0×0 (lección nº2).
 
-### 5. Watchdog de Reproducción Stalled
-En `loadVideo()`, se inicia un temporizador de vigilancia a los 3 segundos:
-- Si el reproductor permanece en estado `3` (buffering), `-1` (unstarted) o `2` (paused), el watchdog ejecuta un re-kick (`player.playVideo()`) para forzar el flujo de audio.
+### 4. Resolver de vídeo (`searchService.ts`)
+1. **Caché persistente** (`localStorage: free_spoty_resolve_cache`, 7 días, 400 entradas). Las canciones destacadas siempre usan sus IDs verificados de `exploreData.ts`. Si la canción está en caché, se carga **síncronamente dentro del gesto del usuario**.
+2. **Deduplicación**: dos peticiones simultáneas de la misma canción comparten una sola resolución.
+3. **Consultas en paralelo**: `artista título audio` (prioritaria: pista de estudio sin intros ni pre-roll) y `artista título` (respaldo). No se espera a la más lenta: si "audio" ya devolvió resultados, la directa solo tiene 150 ms de margen para sumar candidatos.
+4. **Fuentes** (primera que responde gana):
+   - Servidor propio (`/api/search`) si está configurado.
+   - YouTube Data API si el usuario pegó su API Key (`videoEmbeddable=true`).
+   - Carrera `raceFirst` entre instancias públicas con **CORS verificado**: Piped `api.piped.private.coffee`, `pipedapi.ducks.party`; Invidious `invidious.f5.si`.
+5. **Ranking por duración**: se conserva el orden de búsqueda pero se penalizan vídeos cuya duración difiere de la oficial de iTunes (> 10 s leve, > 30 s fuerte). Evita "Extended Edit", bucles de 1 h o directos.
+6. **Precarga**: al empezar una canción se resuelve en segundo plano la siguiente de la cola.
+
+### 5. Recuperación automática ante errores (100/101/150)
+```text
+error → markVideoFailed(id)            (se degrada en la caché persistente)
+      → siguiente candidato no probado  (triedIds evita bucles)
+      → re-resolución forzada en vivo   (una vez por pista)
+      → "no disponible": se muestra el error en la cápsula y se salta
+        a la siguiente de la cola tras 1,2 s (máx. 3 fallos seguidos)
+```
+Verificado: con un ID inexistente como único candidato, YouTube emite 150, se re-resuelve y la canción suena ~2 s después, con la caché corregida.
+
+### 6. Watchdog
+A los 3 s de cargar, si el iframe sigue en `BUFFERING / UNSTARTED / PAUSED`, se re-lanza `playVideo()`.
+
+### 7. Modo servidor propio (`<audio>` nativo, 0 anuncios)
+Si hay URL de servidor (`config.ts`), el motor usa `<audio src="…/api/stream?id=">`. Si no arranca en 3,5 s o da error → cae al iframe conservando la posición. Las URLs `onrender.com` se purgan (lección nº4).
+
+### 8. Ecualizador real (Web Audio)
+Solo aplicable al `<audio>` del servidor propio (el audio del iframe cross-origin no es accesible). El grafo `MediaElementSource → lowshelf 200 Hz → peaking 1 kHz → highshelf 4 kHz` se crea **solo al elegir un preset no plano**, para no arriesgar la reproducción en segundo plano de iOS con un `AudioContext` innecesario. Requiere que el servidor envíe CORS (`*`), como hace `server/`.
+
+### 9. Sesión persistente
+`state/player.ts` guarda cola (ventana de 200), índice y posición en `free_spoty_session` (cada 5 s, al pausar, al ocultar la pestaña). Al abrir la app se restaura **en pausa**; el primer Play carga la pista en la posición guardada.
 
 ---
 
-## 🌐 Instancias Invidious y CORS
+## 📱 MediaSession
+Handlers registrados **una sola vez** (`play`, `pause`, `nexttrack`, `previoustrack`, `seekto`, `seekbackward`, `seekforward`) que llaman a acciones del store, sin closures obsoletos. Metadatos con carátula 192/512 px y `setPositionState` cada 5 s para el scrubber de la pantalla de bloqueo.
 
-Para buscar videos de YouTube desde el navegador del cliente sin necesidad de una clave de API de pago de Google, la aplicación consulta instancias públicas de Invidious que admiten CORS (`Access-Control-Allow-Origin: *`):
-- Instancia primaria activa y verificada: `https://invidious.f5.si/api/v1/search` (tiempo de respuesta habitual < 900ms).
-- En caso de lentitud, el timeout por instancia está fijado en 2000ms para saltar de inmediato al siguiente nodo sin congelar la interfaz.
+## ⏱️ Temporizador de apagado
+Basado en una marca de tiempo (`sleepEndsAt`), no en un contador decrementado cada segundo. Fundido de volumen en los últimos 10 s y **restauración del volumen** tras pausar (antes quedaba a 0). Opción "Fin de canción" (`sleepAtTrackEnd`).
+
+## 🔎 Diagnóstico
+`localStorage.setItem('free_spoty_debug', '1')` y recargar: el motor registra en consola cada `loadIframe`, cambio de estado y `onReady`. Los errores de YouTube y las recuperaciones se registran siempre (`[YouTube] error N`, `[Recuperación] …`).
+
+## 🌐 Host del iframe: `youtube-nocookie.com`
+**Estado actual:** activo (commit `9fca205`, para reducir anuncios en móvil). La lección nº1 documenta que algunas discográficas bloquean ese dominio (error 150); la recuperación automática (candidatos alternativos tipo Topic/lyrics + re-resolución) mitiga el problema. Si vuelven a aparecer errores 150 masivos, revisar esta decisión.

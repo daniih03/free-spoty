@@ -1,99 +1,90 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { artwork } from '../lib/images';
 
 interface ColorResult {
   primary: string;
   secondary: string;
-  ambientGradient: string;
 }
 
 const DEFAULT_RESULT: ColorResult = {
-  primary: 'rgb(22, 28, 45)', // Deep luxury midnight indigo
-  secondary: 'rgb(14, 18, 30)', // Dark slate obsidian
-  ambientGradient: 'radial-gradient(circle at 50% 20%, rgba(26, 34, 56, 0.45) 0%, rgba(9, 11, 16, 0) 80%)',
+  primary: 'rgb(22, 28, 45)', // Midnight indigo
+  secondary: 'rgb(14, 18, 30)', // Obsidiana
 };
 
-// Global cache to avoid recomputing colors for same album art
 const colorCache = new Map<string, ColorResult>();
 
-export function useDominantColor(imageUrl?: string): ColorResult {
-  const [result, setResult] = useState<ColorResult>(() => {
-    if (imageUrl && colorCache.has(imageUrl)) {
-      return colorCache.get(imageUrl)!;
+function extract(img: HTMLImageElement): ColorResult | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 16;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, 16, 16);
+  const data = ctx.getImageData(0, 0, 16, 16).data;
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const brightness = (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000;
+    // Descarta casi-negros y casi-blancos para obtener tonos con carácter
+    if (brightness > 30 && brightness < 225) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count++;
     }
-    return DEFAULT_RESULT;
-  });
+  }
+  if (!count) return null;
+
+  r = Math.round(r / count);
+  g = Math.round(g / count);
+  b = Math.round(b / count);
+
+  // Filtro anti-verdes de la identidad visual: desplaza a pizarra/índigo
+  if (g > r * 1.15 && g > b * 1.15) {
+    g = Math.round(g * 0.4);
+    b = Math.max(b, Math.round(g * 1.3));
+  }
+
+  return {
+    primary: `rgb(${r}, ${g}, ${b})`,
+    secondary: `rgb(${Math.min(255, r + 30)}, ${Math.max(0, g - 15)}, ${Math.min(255, b + 45)})`,
+  };
+}
+
+/** Color dominante de una carátula (muestra de 16x16 sobre una imagen de 64px). */
+export function useDominantColor(imageUrl?: string): ColorResult {
+  const [result, setResult] = useState<ColorResult>(() => (imageUrl && colorCache.get(imageUrl)) || DEFAULT_RESULT);
 
   useEffect(() => {
     if (!imageUrl) {
       setResult(DEFAULT_RESULT);
       return;
     }
-
-    if (colorCache.has(imageUrl)) {
-      setResult(colorCache.get(imageUrl)!);
+    const cached = colorCache.get(imageUrl);
+    if (cached) {
+      setResult(cached);
       return;
     }
 
-    let isMounted = true;
+    let active = true;
     const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = imageUrl;
-
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.onload = () => {
       try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (!ctx) return;
-
-        // Sample with a tiny 16x16 canvas for blazing speed and zero CPU lag
-        canvas.width = 16;
-        canvas.height = 16;
-        ctx.drawImage(img, 0, 0, 16, 16);
-
-        const data = ctx.getImageData(0, 0, 16, 16).data;
-        let r = 0, g = 0, b = 0, count = 0;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const red = data[i];
-          const green = data[i + 1];
-          const blue = data[i + 2];
-          const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
-
-          // Filter out near-blacks and near-whites for vivid mood colors
-          if (brightness > 30 && brightness < 225) {
-            r += red;
-            g += green;
-            b += blue;
-            count++;
-          }
-        }
-
-        if (count > 0 && isMounted) {
-          let avgR = Math.round(r / count);
-          let avgG = Math.round(g / count);
-          let avgB = Math.round(b / count);
-
-          // Ensure no green ambient hue is ever cast; shift towards deep slate/indigo if green dominates
-          if (avgG > avgR * 1.15 && avgG > avgB * 1.15) {
-            avgG = Math.round(avgG * 0.4);
-            avgB = Math.max(avgB, Math.round(avgG * 1.3));
-          }
-
-          const primary = `rgb(${avgR}, ${avgG}, ${avgB})`;
-          const secondary = `rgb(${Math.min(255, avgR + 30)}, ${Math.max(0, avgG - 15)}, ${Math.min(255, avgB + 45)})`;
-          const ambientGradient = `radial-gradient(circle at 50% 20%, rgba(${avgR}, ${avgG}, ${avgB}, 0.28) 0%, rgba(0, 0, 0, 0) 80%)`;
-
-          const calculated = { primary, secondary, ambientGradient };
-          colorCache.set(imageUrl, calculated);
-          setResult(calculated);
-        }
+        const color = extract(img);
+        if (!color) return;
+        colorCache.set(imageUrl, color);
+        if (active) setResult(color);
       } catch {
-        // Graceful fallback
+        /* imagen sin CORS: se mantiene el color anterior */
       }
     };
-
+    img.src = artwork(imageUrl, 64);
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, [imageUrl]);
 

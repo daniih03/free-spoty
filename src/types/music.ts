@@ -1,28 +1,37 @@
+/** Variantes de vídeo conservadas por compatibilidad con los datos precargados. */
 export type VersionType = 'radio' | 'lyrics' | 'original';
 
-export interface SyncedLyricLine {
-  time: number; // in seconds
-  text: string;
-}
-
 export interface SongVersions {
-  radio?: string;    // YouTube Video ID for Radio Edit / Clean
-  lyrics?: string;   // YouTube Video ID for Lyric Video
-  original?: string; // YouTube Video ID for Original / Official
+  radio?: string;
+  lyrics?: string;
+  original?: string;
 }
 
 export interface Song {
-  id: string; // Unique internal ID (e.g. yt_xxx or itunes_xxx)
+  id: string; // ID interno único (yt_xxx, itunes_xxx)
   title: string;
   artist: string;
   album?: string;
-  duration: number; // in seconds
+  duration: number; // segundos
   coverUrl: string;
+  /** ID de vídeo de YouTube; vacío hasta que el resolver lo encuentra. */
   youtubeId: string;
-  currentVersion: VersionType;
-  availableVersions?: SongVersions;
+  /** Candidatos ordenados por calidad; se prueban en orden si uno falla. */
   candidateVideoIds?: string[];
+  currentVersion?: VersionType;
+  availableVersions?: SongVersions;
   hasSyncedLyrics?: boolean;
+}
+
+export interface SyncedLyricLine {
+  time: number; // segundos
+  text: string;
+}
+
+export interface LyricsResult {
+  /** true = marcas de tiempo reales (LRC); false = texto plano sin sincronizar. */
+  synced: boolean;
+  lines: SyncedLyricLine[];
 }
 
 export interface Album {
@@ -57,25 +66,3 @@ export interface Playlist {
 }
 
 export type RepeatMode = 'off' | 'all' | 'one';
-
-export interface EqualizerSetting {
-  name: string;
-  bass: number; // -10 to 10
-  mid: number;
-  treble: number;
-}
-
-export interface PlayerState {
-  currentSong: Song | null;
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  volume: number; // 0 to 100
-  isMuted: boolean;
-  isShuffle: boolean;
-  repeatMode: RepeatMode;
-  playbackRate: number; // 0.75, 1, 1.25, 1.5, etc.
-  sleepTimerSeconds: number | null; // remaining seconds or null
-  activeVersion: VersionType;
-  isLoadingSong: boolean;
-}

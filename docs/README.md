@@ -20,9 +20,11 @@ Bienvenido al sistema de documentación y memoria viva de **Free-Spoty**. Esta c
 
 - **Propósito:** Proporcionar una experiencia web idéntica a Spotify Premium (interfaz, velocidad, letras en tiempo real, perfiles de artistas y discografías completas) pero completamente gratuita, libre de anuncios molestos y accesible desde cualquier navegador (escritorio y móvil).
 - **Stack Tecnológico:**
-  - **Frontend:** React 18, TypeScript, Tailwind CSS, Lucide Icons, Vite.
-  - **Fuente de Metadatos:** iTunes Search API (rápida, sin CORS, carátulas 600x600) y Deezer API (imágenes 1000x1000 y conteo de fans).
-  - **Fuente de Audio:** Motor híbrido basado en la YouTube Iframe Player API con fallback automático a proxies de audio nativo (`<audio>`), orquestado por un resolver dinámico de instancias Invidious.
+  - **Frontend:** React 18, TypeScript, Tailwind CSS, Lucide Icons, Vite (code splitting por vista).
+  - **Estado:** stores propios sobre `useSyncExternalStore` (sin librerías externas).
+  - **Cuentas y nube:** Supabase (Auth + PostgreSQL con RLS), cargado bajo demanda.
+  - **Fuente de Metadatos:** iTunes Search API (CORS abierto, carátulas a cualquier tamaño) y Deezer API vía JSONP (retratos 1000x1000 y fans).
+  - **Fuente de Audio:** YouTube IFrame API por defecto, o `<audio>` nativo desde el servidor propio opcional (`server/`), con un resolver de vídeo con caché persistente y carrera de instancias Piped/Invidious.
   - **Letras Sincronizadas:** LRCLIB API con interpolación milimétrica en vivo.
   - **Despliegue:** GitHub Pages con GitHub Actions (`main` branch) en `https://daniih03.github.io/free-spoty/`.
 
@@ -30,8 +32,9 @@ Bienvenido al sistema de documentación y memoria viva de **Free-Spoty**. Esta c
 
 ## ⚡ Reglas de Oro para el Desarrollo
 
-1. **Auto-Despliegue Continuo:** Cualquier cambio debe compilar limpiamente (`npm run build`), actualizar la marca de tiempo en `public/version.json`, y publicarse a `origin main` de forma automatizada.
+1. **Auto-Despliegue Continuo:** Cualquier cambio debe compilar limpiamente (`npm run build`) y publicarse a `origin main`. La marca de `public/version.json` se genera sola en cada build.
 2. **Cero Silencios / Cero Bloqueos:** La reproducción musical debe arrancar con **1 solo toque**. Nunca debe detenerse por eventos transitorios de búfer (`PAUSED` espurio).
-3. **Imágenes Blindadas:** Todo componente que renderice carátulas (`<img>`) debe incluir manejador `onError` con fallback visual para evitar marcos negros o textos alternativos rotos.
+3. **Imágenes Blindadas:** Toda carátula usa `<Cover>` (`UI/Primitives.tsx`) o `onImageError` (`lib/images.ts`): fallback visual y tamaño adecuado vía `artwork(url, size)`.
 4. **Prioridad al Motor Nativo de YouTube:** No depender de servidores proxy de pago o instancias gratuitas de Render con "cold start" de 30+ segundos. El motor YouTube Iframe directo es instantáneo y universal si se respetan las directivas de visibilidad (`opacity: 1`, `z-index: -9999`).
-5. **Actualización Obligatoria del Segundo Cerebro (`docs/`):** Con **cada iteración**, cambio de diseño, refactorización o nueva funcionalidad implementada, es **estrictamente obligatorio actualizar y sincronizar la documentación en `docs/`**. El contexto vivo del proyecto debe mantenerse al 100% para que cualquier asistente de IA o desarrollador pueda continuar el trabajo sin pérdida de información ni dependencias en el historial del chat.
+5. **Rendimiento por diseño:** el estado global vive en stores con selectores (`lib/store.ts`). Nunca leer `currentTime` fuera de `useCurrentTime()` ni devolver objetos nuevos desde un selector. Ver `architecture.md`.
+6. **Actualización Obligatoria del Segundo Cerebro (`docs/`):** Con **cada iteración**, cambio de diseño, refactorización o nueva funcionalidad implementada, es **estrictamente obligatorio actualizar y sincronizar la documentación en `docs/`**. El contexto vivo del proyecto debe mantenerse al 100% para que cualquier asistente de IA o desarrollador pueda continuar el trabajo sin pérdida de información ni dependencias en el historial del chat.

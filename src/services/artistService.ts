@@ -1,195 +1,142 @@
-import { Song, Album, ArtistProfile } from '../types/music';
+import type { Song, Album, ArtistProfile } from '../types/music';
+import { fetchJson, fetchJsonp, TtlCache, dedupe } from '../lib/net';
+import { songKey } from '../lib/format';
+import { itunesArtwork, itunesTrackToSong } from './itunes';
+import { DEFAULT_PLAYLIST_COVER } from '../lib/images';
 
-const artistCache = new Map<string, ArtistProfile>();
-const albumTracksCache = new Map<string, Song[]>();
+const artistCache = new TtlCache<ArtistProfile | null>(30 * 60_000, 50);
+const albumTracksCache = new TtlCache<Song[]>(30 * 60_000, 100);
 
-/**
- * Format raw artist picture from Deezer or fallback to iTunes
- */
-async function getArtistPictureAndFans(artistName: string, fallbackUrl: string): Promise<{ pictureUrl: string; listeners: number }> {
+/** Retrato en alta resolución (Deezer 1000x1000) y número de fans. */
+async function getDeezerArtist(name: string): Promise<{ pictureUrl?: string; listeners: number }> {
   try {
-    const res = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}`, {
-      signal: AbortSignal.timeout(2500),
+    // La API de Deezer no envía CORS: se consulta por JSONP
+    const data = await fetchJsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=10`, {
+      timeoutMs: 3000,
     });
-    if (res.ok) {
-      const data = await res.json();
-      const match = data.data?.[0];
-      if (match) {
-        return {
-          pictureUrl: match.picture_xl || match.picture_big || match.picture_medium || fallbackUrl,
-          listeners: match.nb_fan || 0,
-        };
-      }
+    // Hay perfiles duplicados/fan-pages con el mismo nombre: se elige la
+    // coincidencia exacta con más fans (el perfil oficial).
+    const target = name.trim().toLowerCase();
+    const candidates: any[] = data.data || [];
+    const exact = candidates.filter((a) => String(a.name).trim().toLowerCase() === target);
+    const match = (exact.length ? exact : candidates.slice(0, 1)).sort((a, b) => (b.nb_fan || 0) - (a.nb_fan || 0))[0];
+    if (match && (exact.length || (match.nb_fan || 0) > 1000)) {
+      return {
+        pictureUrl: match.picture_xl || match.picture_big || match.picture_medium,
+        listeners: match.nb_fan || 0,
+      };
     }
-  } catch {}
+  } catch {
+    /* Deezer caído: se usa la carátula de iTunes */
+  }
+  return { listeners: 0 };
+}
 
-  return {
-    pictureUrl: fallbackUrl,
-    listeners: 0,
-  };
+function classify(title: string, trackCount: number): Album['type'] {
+  const t = title.toLowerCase();
+  if (trackCount <= 2 || /\bsingle\b/.test(t)) return 'single';
+  if (trackCount <= 6 || /\bep\b/.test(t)) return 'ep';
+  return 'album';
 }
 
 /**
- * Fetch full artist profile, top tracks, and complete discography (albums & singles)
+ * Perfil completo: top canciones + discografía (iTunes) + retrato/fans (Deezer).
+ * Deezer se consulta en paralelo con iTunes (antes iba en serie al final).
  */
-export async function getArtistProfile(artistName: string): Promise<ArtistProfile | null> {
-  const cleanName = artistName.trim();
-  const cacheKey = cleanName.toLowerCase();
+export const getArtistProfile = dedupe(
+  (name: string) => name.trim().toLowerCase(),
+  async (artistName: string): Promise<ArtistProfile | null> => {
+    const name = artistName.trim();
+    const key = name.toLowerCase();
+    const cached = artistCache.get(key);
+    if (cached !== undefined) return cached;
 
-  if (artistCache.has(cacheKey)) {
-    return artistCache.get(cacheKey)!;
-  }
+    const deezerPromise = getDeezerArtist(name);
 
-  try {
-    // 1. Find iTunes artist ID
-    const searchRes = await fetch(
-      `https://itunes.apple.com/search?term=${encodeURIComponent(cleanName)}&entity=musicArtist&limit=1`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-    if (!searchRes.ok) throw new Error('Artist not found in iTunes');
+    try {
+      const search = await fetchJson(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=musicArtist&limit=1`,
+        { timeoutMs: 5000 }
+      );
+      const artist = search.results?.[0];
+      if (!artist?.artistId) {
+        artistCache.set(key, null);
+        return null;
+      }
 
-    const searchData = await searchRes.json();
-    const artist = searchData.results?.[0];
-    if (!artist || !artist.artistId) {
+      const [songsData, albumsData, deezer] = await Promise.all([
+        fetchJson(`https://itunes.apple.com/lookup?id=${artist.artistId}&entity=song&limit=30`, {
+          timeoutMs: 5000,
+        }).catch(() => ({ results: [] })),
+        fetchJson(`https://itunes.apple.com/lookup?id=${artist.artistId}&entity=album&limit=80`, {
+          timeoutMs: 5000,
+        }).catch(() => ({ results: [] })),
+        deezerPromise,
+      ]);
+
+      const seenSongs = new Set<string>();
+      const topSongs: Song[] = [];
+      for (const item of songsData.results || []) {
+        if (item.wrapperType !== 'track') continue;
+        const song = itunesTrackToSong(item, name);
+        const k = songKey(song.title, song.artist);
+        if (seenSongs.has(k)) continue;
+        seenSongs.add(k);
+        topSongs.push(song);
+      }
+
+      const seenAlbums = new Set<string>();
+      const albums: Album[] = [];
+      for (const item of albumsData.results || []) {
+        if (item.wrapperType !== 'collection' || !item.collectionName) continue;
+        const title: string = item.collectionName;
+        if (seenAlbums.has(title.toLowerCase())) continue;
+        seenAlbums.add(title.toLowerCase());
+        const trackCount = item.trackCount || 1;
+        albums.push({
+          id: String(item.collectionId),
+          title,
+          artist: item.artistName || name,
+          coverUrl: itunesArtwork(item.artworkUrl100),
+          releaseYear: item.releaseDate ? item.releaseDate.substring(0, 4) : '',
+          trackCount,
+          genre: item.primaryGenreName,
+          type: classify(title, trackCount),
+        });
+      }
+      albums.sort((a, b) => b.releaseYear.localeCompare(a.releaseYear));
+
+      const profile: ArtistProfile = {
+        id: String(artist.artistId),
+        name: artist.artistName || name,
+        pictureUrl: deezer.pictureUrl || topSongs[0]?.coverUrl || albums[0]?.coverUrl || DEFAULT_PLAYLIST_COVER,
+        genre: artist.primaryGenreName || 'Música',
+        listeners: deezer.listeners,
+        topSongs,
+        albums,
+      };
+
+      artistCache.set(key, profile);
+      return profile;
+    } catch (err) {
+      console.warn('Error al cargar el perfil del artista:', err);
       return null;
     }
-
-    const artistId = artist.artistId;
-    const genre = artist.primaryGenreName || 'Música';
-
-    // 2. Concurrently fetch top songs and albums
-    const [songsRes, albumsRes] = await Promise.all([
-      fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=song&limit=25`, {
-        signal: AbortSignal.timeout(4000),
-      }),
-      fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=60`, {
-        signal: AbortSignal.timeout(4000),
-      }),
-    ]);
-
-    const songsData = songsRes.ok ? await songsRes.json() : { results: [] };
-    const albumsData = albumsRes.ok ? await albumsRes.json() : { results: [] };
-
-    // 3. Map top songs
-    const topSongs: Song[] = (songsData.results || [])
-      .filter((item: any) => item.wrapperType === 'track')
-      .map((item: any) => {
-        const artwork = item.artworkUrl100
-          ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-          : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
-
-        return {
-          id: `itunes_${item.trackId}`,
-          title: item.trackName,
-          artist: item.artistName || cleanName,
-          album: item.collectionName,
-          duration: Math.round(item.trackTimeMillis / 1000),
-          coverUrl: artwork,
-          youtubeId: '',
-          currentVersion: 'radio' as const,
-          availableVersions: {},
-          hasSyncedLyrics: true,
-        };
-      });
-
-    // 4. Map albums
-    const rawAlbums = (albumsData.results || []).filter((item: any) => item.wrapperType === 'collection');
-    const seenAlbums = new Set<string>();
-    const albums: Album[] = [];
-
-    for (const item of rawAlbums) {
-      const title = item.collectionName;
-      if (!title || seenAlbums.has(title.toLowerCase())) continue;
-      seenAlbums.add(title.toLowerCase());
-
-      const artwork = item.artworkUrl100
-        ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-        : topSongs[0]?.coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
-
-      const year = item.releaseDate ? item.releaseDate.substring(0, 4) : '';
-      const trackCount = item.trackCount || 1;
-      let type: 'album' | 'single' | 'ep' = 'album';
-
-      if (trackCount <= 2 || title.toLowerCase().includes('single')) {
-        type = 'single';
-      } else if (trackCount <= 6 || title.toLowerCase().includes('ep')) {
-        type = 'ep';
-      }
-
-      albums.push({
-        id: String(item.collectionId),
-        title,
-        artist: item.artistName || cleanName,
-        coverUrl: artwork,
-        releaseYear: year,
-        trackCount,
-        genre: item.primaryGenreName,
-        type,
-      });
-    }
-
-    // 5. Get high-res artist portrait and listeners count
-    const defaultArtwork = topSongs[0]?.coverUrl || albums[0]?.coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
-    const { pictureUrl, listeners } = await getArtistPictureAndFans(cleanName, defaultArtwork);
-
-    const profile: ArtistProfile = {
-      id: String(artistId),
-      name: artist.artistName || cleanName,
-      pictureUrl,
-      genre,
-      listeners,
-      topSongs,
-      albums,
-    };
-
-    artistCache.set(cacheKey, profile);
-    return profile;
-  } catch (err) {
-    console.warn('Error fetching artist profile:', err);
-    return null;
   }
-}
+);
 
-/**
- * Fetch all track songs from a specific album
- */
 export async function getAlbumTracks(albumId: string, artistName: string): Promise<Song[]> {
-  if (albumTracksCache.has(albumId)) {
-    return albumTracksCache.get(albumId)!;
-  }
-
+  const cached = albumTracksCache.get(albumId);
+  if (cached) return cached;
   try {
-    const res = await fetch(`https://itunes.apple.com/lookup?id=${albumId}&entity=song`, {
-      signal: AbortSignal.timeout(4000),
-    });
-    if (!res.ok) return [];
-
-    const data = await res.json();
+    const data = await fetchJson(`https://itunes.apple.com/lookup?id=${albumId}&entity=song`, { timeoutMs: 5000 });
     const tracks: Song[] = (data.results || [])
       .filter((item: any) => item.wrapperType === 'track')
-      .map((item: any) => {
-        const artwork = item.artworkUrl100
-          ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg')
-          : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
-
-        return {
-          id: `itunes_${item.trackId}`,
-          title: item.trackName,
-          artist: item.artistName || artistName,
-          album: item.collectionName,
-          duration: Math.round(item.trackTimeMillis / 1000),
-          coverUrl: artwork,
-          youtubeId: '',
-          currentVersion: 'radio' as const,
-          availableVersions: {},
-          hasSyncedLyrics: true,
-        };
-      });
-
+      .map((item: any) => itunesTrackToSong(item, artistName));
     albumTracksCache.set(albumId, tracks);
     return tracks;
   } catch (err) {
-    console.warn('Error fetching album tracks:', err);
+    console.warn('Error al cargar las pistas del álbum:', err);
     return [];
   }
 }

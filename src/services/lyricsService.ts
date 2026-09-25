@@ -1,117 +1,110 @@
-import { SyncedLyricLine } from '../types/music';
+import type { LyricsResult, SyncedLyricLine } from '../types/music';
+import { fetchJson, TtlCache, dedupe } from '../lib/net';
+import { cleanTitle, songKey } from '../lib/format';
 
-// Cache to avoid refetching lyrics for the same track
-const lyricsCache = new Map<string, SyncedLyricLine[] | null>();
+const lyricsCache = new TtlCache<LyricsResult | null>(60 * 60_000, 100);
+const TIME_TAG = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
 
-/**
- * Parses LRC format lyrics into an array of SyncedLyricLine objects.
- * Format: [mm:ss.xx] Lyric text
- */
-export function parseLrcLyrics(lrcText: string): SyncedLyricLine[] {
-  const lines = lrcText.split('\n');
+/** Parsea formato LRC ("[mm:ss.xx] texto") a líneas ordenadas. */
+export function parseLrcLyrics(lrc: string): SyncedLyricLine[] {
   const result: SyncedLyricLine[] = [];
-  const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    // Reset regex index
-    timeRegex.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    const timestamps: number[] = [];
-
-    while ((match = timeRegex.exec(trimmed)) !== null) {
-      const minutes = parseInt(match[1], 10);
-      const seconds = parseInt(match[2], 10);
-      const milliseconds = parseInt(match[3].padEnd(3, '0').slice(0, 3), 10);
-      timestamps.push(minutes * 60 + seconds + milliseconds / 1000);
+  for (const raw of lrc.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const times: number[] = [];
+    TIME_TAG.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = TIME_TAG.exec(line)) !== null) {
+      const ms = m[3] ? parseInt(m[3].padEnd(3, '0').slice(0, 3), 10) : 0;
+      times.push(parseInt(m[1], 10) * 60 + parseInt(m[2], 10) + ms / 1000);
     }
-
-    const text = trimmed.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
-    if (text || timestamps.length > 0) {
-      for (const time of timestamps) {
-        result.push({ time, text });
-      }
-    }
+    if (times.length === 0) continue; // metadatos [ar:], [ti:]…
+    const text = line.replace(TIME_TAG, '').trim();
+    for (const time of times) result.push({ time, text });
   }
-
-  // Sort chronologically
   return result.sort((a, b) => a.time - b.time);
 }
 
-/**
- * Fetches real-time synced lyrics from LRCLIB (open, free, no API key required).
- */
-export async function fetchLyrics(trackTitle: string, artistName: string, duration?: number): Promise<SyncedLyricLine[] | null> {
-  const cacheKey = `${trackTitle.toLowerCase()}-${artistName.toLowerCase()}`;
-  if (lyricsCache.has(cacheKey)) {
-    return lyricsCache.get(cacheKey)!;
+function fromRecord(rec: any): LyricsResult | null {
+  if (rec?.syncedLyrics) {
+    const lines = parseLrcLyrics(rec.syncedLyrics);
+    if (lines.length) return { synced: true, lines };
   }
-
-  // Clean track title (remove feat, radio edit, etc. for better lyrics match)
-  const cleanTitle = trackTitle
-    .replace(/\(.*?\)/g, '')
-    .replace(/\[.*?\]/g, '')
-    .replace(/feat\..*$/i, '')
-    .trim();
-
-  try {
-    // 1. Try exact get endpoint
-    let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistName)}&track_name=${encodeURIComponent(cleanTitle)}`;
-    if (duration) {
-      url += `&duration=${Math.round(duration)}`;
-    }
-
-    let res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.syncedLyrics) {
-        const parsed = parseLrcLyrics(data.syncedLyrics);
-        lyricsCache.set(cacheKey, parsed);
-        return parsed;
-      } else if (data.plainLyrics) {
-        // Synthesize evenly spaced lines if only plain lyrics exist
-        const plainLines: SyncedLyricLine[] = data.plainLyrics
-          .split('\n')
-          .filter((l: string) => l.trim())
-          .map((text: string, idx: number) => ({
-            time: idx * 4,
-            text: text.trim(),
-          }));
-        lyricsCache.set(cacheKey, plainLines);
-        return plainLines;
-      }
-    }
-
-    // 2. Try search endpoint as fallback
-    const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(`${cleanTitle} ${artistName}`)}`;
-    res = await fetch(searchUrl);
-    if (res.ok) {
-      const results = await res.json();
-      if (Array.isArray(results) && results.length > 0) {
-        const match = results.find((r: any) => r.syncedLyrics) || results[0];
-        if (match.syncedLyrics) {
-          const parsed = parseLrcLyrics(match.syncedLyrics);
-          lyricsCache.set(cacheKey, parsed);
-          return parsed;
-        } else if (match.plainLyrics) {
-          const plainLines: SyncedLyricLine[] = match.plainLyrics
-            .split('\n')
-            .filter((l: string) => l.trim())
-            .map((text: string, idx: number) => ({
-              time: idx * 4,
-              text: text.trim(),
-            }));
-          lyricsCache.set(cacheKey, plainLines);
-          return plainLines;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Could not load synced lyrics:', err);
+  if (rec?.plainLyrics) {
+    // Sin marcas de tiempo: se muestra como texto estático (no se inventa la sincronía)
+    const lines = String(rec.plainLyrics)
+      .split('\n')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((text) => ({ time: -1, text }));
+    if (lines.length) return { synced: false, lines };
   }
-
-  lyricsCache.set(cacheKey, null);
+  if (rec?.instrumental) return { synced: false, lines: [] };
   return null;
 }
+
+/**
+ * Índice de la línea activa por búsqueda binaria (O(log n) en cada tick).
+ */
+export function findActiveLine(lines: SyncedLyricLine[], time: number): number {
+  let lo = 0;
+  let hi = lines.length - 1;
+  let ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (lines[mid].time <= time) {
+      ans = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return ans;
+}
+
+/**
+ * Letras desde LRCLIB (gratis, sin API key). Endpoint exacto con duración
+ * primero; búsqueda difusa como respaldo, prefiriendo resultados sincronizados
+ * con duración cercana.
+ */
+export const fetchLyrics = dedupe(
+  (title: string, artist: string, _duration?: number) => songKey(title, artist),
+  async (title: string, artist: string, duration?: number): Promise<LyricsResult | null> => {
+    const key = songKey(title, artist);
+    const cached = lyricsCache.get(key);
+    if (cached !== undefined) return cached;
+
+    const track = cleanTitle(title);
+    let result: LyricsResult | null = null;
+
+    try {
+      let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(track)}`;
+      if (duration) url += `&duration=${Math.round(duration)}`;
+      result = fromRecord(await fetchJson(url, { timeoutMs: 5000 }));
+    } catch {
+      /* 404 o timeout → búsqueda */
+    }
+
+    if (!result || !result.synced) {
+      try {
+        const list = await fetchJson<any[]>(
+          `https://lrclib.net/api/search?q=${encodeURIComponent(`${track} ${artist}`)}`,
+          { timeoutMs: 5000 }
+        );
+        if (Array.isArray(list) && list.length) {
+          const close = (r: any) => !duration || !r.duration || Math.abs(r.duration - duration) <= 5;
+          const best =
+            list.find((r) => r.syncedLyrics && close(r)) ||
+            list.find((r) => r.syncedLyrics) ||
+            list.find((r) => r.plainLyrics);
+          result = fromRecord(best) || result;
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar las letras:', err);
+      }
+    }
+
+    lyricsCache.set(key, result);
+    return result;
+  }
+);

@@ -13,7 +13,7 @@ Free-Spoty fue creado para solucionar las mayores frustraciones que tienen los u
 1. **🎧 Audio Master de YouTube Music (Topic / Studio Master)**:
    - El gran problema de escuchar música en YouTube tradicional son los videoclips con 2 minutos de introducción dramática, diálogos de actores, ruidos de sirenas o silencios.
    - **Prioridad inteligente**: Free-Spoty busca y reproduce directamente la **pista oficial de YouTube Music** (Topic Channel subido por discográficas), idéntica a la que se escucha en Spotify/Apple Music con audio master de estudio.
-   - Si lo deseas, dispones del selector en la barra inferior para cambiar entre: **YT Music Master**, **Lyrics (Letra)** o **Videoclip Oficial** con 1 solo clic.
+   - El resolver ordena los candidatos por **duración oficial** (iTunes) para evitar intros, "Extended Edits" o bucles, y si un vídeo falla prueba automáticamente la siguiente alternativa.
 
 2. **🚫 Cero Anuncios y Saltos Ilimitados**:
    - Sin cuñas publicitarias entre canciones.
@@ -29,13 +29,14 @@ Free-Spoty fue creado para solucionar las mayores frustraciones que tienen los u
    - **Salto interactivo**: Haz clic en cualquier verso para saltar directamente a ese segundo exacto de la canción.
 
 5. **🎚️ Ecualizador, Bass Boost y Sleep Timer**:
-   - Presets de audio: *Plano*, *Bass Boost 💥*, *Voz Clara 🎙️*, *Electrónica ⚡*, *Acústico 🎸*.
+   - Presets de audio reales (Web Audio) al usar el servidor propio: *Plano*, *Bass Boost 💥*, *Voz Clara 🎙️*, *Electrónica ⚡*, *Acústico 🎸*.
    - Velocidad de reproducción personalizable (0.75x a 1.5x).
-   - **Temporizador de apagado (*Sleep Timer*)**: 15m, 30m, 45m, 1h con desvanecimiento de volumen progresivo (*smooth fade-out*) durante los últimos 10 segundos para no despertarte de golpe.
+   - **Temporizador de apagado (*Sleep Timer*)**: fin de canción, 15m, 30m, 45m, 1h con desvanecimiento de volumen progresivo (*smooth fade-out*) durante los últimos 10 segundos.
 
 6. **📋 Gestor de Cola que Sí Funciona**:
    - Vacía la cola restante con **1 solo clic** (la función más demandada que Spotify oculta o no tiene).
-   - Reordena pistas y añade canciones a "Reproducir siguiente".
+   - Reordena pistas, salta a cualquiera con un toque y añade canciones a "Reproducir siguiente".
+   - La app **recuerda tu sesión**: al volver, la última canción y la cola te esperan en la misma posición.
    - Pestaña de **Historial** con las últimas 50 canciones escuchadas.
 
 7. **📦 Importador de Spotify y Copias de Seguridad**:

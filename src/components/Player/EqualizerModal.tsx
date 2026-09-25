@@ -1,128 +1,120 @@
-import React, { useState } from 'react';
-import { usePlayer } from '../../context/PlayerContext';
-import { getCustomApiKey, setCustomApiKey } from '../../services/searchService';
-import { getCustomBackendUrl, setCustomBackendUrl } from '../../services/youtube';
-import { X, Sliders, Moon, Gauge, Key, Check, Sparkles, Server, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sliders, Moon, Gauge, Key, Check, Sparkles, Server, ShieldCheck, Info } from 'lucide-react';
+import { usePlayer, playerActions } from '../../state/player';
+import { ui } from '../../state/ui';
+import {
+  EQ_PRESETS,
+  getCustomApiKey,
+  setCustomApiKey,
+  getCustomBackendUrl,
+  setCustomBackendUrl,
+} from '../../services/config';
+import { getSettings, updateSettings } from '../../services/storageService';
+import { youtubeService } from '../../services/youtube';
+import { Sheet, inputClass } from '../UI/Primitives';
 
-interface EqualizerModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const PRESETS = [
-  { id: 'flat', name: 'Plano (Default)', bass: 0, mid: 0, treble: 0 },
-  { id: 'bass', name: 'Bass Boost 💥', bass: 8, mid: 2, treble: -2 },
-  { id: 'vocal', name: 'Voz Clara 🎙️', bass: -3, mid: 6, treble: 3 },
-  { id: 'electronic', name: 'Electrónica ⚡', bass: 6, mid: 0, treble: 5 },
-  { id: 'acoustic', name: 'Acústico 🎸', bass: 3, mid: 4, treble: 4 },
-];
 
 const SPEED_OPTIONS = [0.75, 0.9, 1.0, 1.1, 1.25, 1.5];
 
-const TIMER_OPTIONS = [
-  { label: 'Desactivado', minutes: null },
-  { label: '15 min', minutes: 15 },
-  { label: '30 min', minutes: 30 },
-  { label: '45 min', minutes: 45 },
-  { label: '1 hora', minutes: 60 },
+const TIMER_OPTIONS: { label: string; value: number | 'end' | null }[] = [
+  { label: 'Desactivado', value: null },
+  { label: 'Fin de canción', value: 'end' },
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '45 min', value: 45 },
+  { label: '1 hora', value: 60 },
 ];
 
-export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose }) => {
-  const {
-    playbackRate,
-    setPlaybackRate,
-    sleepTimerSeconds,
-    setSleepTimer,
-  } = usePlayer();
+function SleepCountdown({ endsAt }: { endsAt: number }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => force((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const secs = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+  return (
+    <span className="text-xs text-brand-coral font-mono font-bold animate-pulse tabular-nums">
+      {Math.floor(secs / 60)}:{(secs % 60).toString().padStart(2, '0')}
+    </span>
+  );
+}
 
-  const [activePreset, setActivePreset] = useState('flat');
-  const [apiKeyInput, setApiKeyInput] = useState(getCustomApiKey());
-  const [isKeySaved, setIsKeySaved] = useState(false);
+export default function EqualizerModal() {
+  const playbackRate = usePlayer((s) => s.playbackRate);
+  const sleepEndsAt = usePlayer((s) => s.sleepEndsAt);
+  const sleepAtTrackEnd = usePlayer((s) => s.sleepAtTrackEnd);
 
-  const [backendInput, setBackendInput] = useState(getCustomBackendUrl());
-  const [isBackendSaved, setIsBackendSaved] = useState(false);
+  const [activePreset, setActivePreset] = useState(() => getSettings().eqPreset);
+  const [apiKeyInput, setApiKeyInput] = useState(getCustomApiKey);
+  const [backendInput, setBackendInput] = useState(getCustomBackendUrl);
+  const [saved, setSaved] = useState<'key' | 'backend' | null>(null);
+  const hasBackend = !!getCustomBackendUrl();
 
-  if (!isOpen) return null;
-
-  const handleSaveApiKey = () => {
-    setCustomApiKey(apiKeyInput);
-    setIsKeySaved(true);
-    setTimeout(() => setIsKeySaved(false), 2000);
+  const flashSaved = (which: 'key' | 'backend') => {
+    setSaved(which);
+    setTimeout(() => setSaved(null), 2000);
   };
 
-  const handleSaveBackend = () => {
-    setCustomBackendUrl(backendInput);
-    setIsBackendSaved(true);
-    setTimeout(() => setIsBackendSaved(false), 2000);
+  const selectPreset = (id: string) => {
+    const preset = EQ_PRESETS.find((p) => p.id === id);
+    if (!preset) return;
+    setActivePreset(id);
+    updateSettings({ eqPreset: id });
+    youtubeService.setEqualizer(preset);
   };
 
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+  const timerIsActive = (value: number | 'end' | null) => {
+    if (value === null) return sleepEndsAt === null && !sleepAtTrackEnd;
+    if (value === 'end') return sleepAtTrackEnd;
+    return sleepEndsAt !== null && Math.abs((sleepEndsAt - Date.now()) / 60000 - value) < 1;
   };
+
+  const label = 'text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-fadeIn touch-manipulation">
-      <div className="relative w-full max-w-md bg-[#181818] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 sm:p-6 space-y-6 text-white max-h-[90dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:pb-6">
-        {/* Mobile drag handle */}
-        <div className="w-12 h-1 bg-white/25 rounded-full mx-auto -mt-1 sm:hidden shrink-0" />
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-brand-red/20 text-brand-coral border border-brand-red/30">
-              <Sliders className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold">Ajustes & Ecualizador</h2>
-              <p className="text-xs text-zinc-400">Personaliza el sonido a tu gusto</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* 1. Equalizer Presets */}
+    <Sheet onClose={ui.closeEqualizer} title="Ajustes & Ecualizador" subtitle="Personaliza el sonido a tu gusto" icon={<Sliders className="w-5 h-5" />}>
+      <div className="space-y-6">
+        {/* 1. Ecualizador */}
         <div className="space-y-3">
-          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+          <label className={label}>
             <Sparkles className="w-3.5 h-3.5 text-brand-coral" />
-            Presets de Ecualización
+            Presets de ecualización
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {PRESETS.map((p) => {
-              const isSelected = activePreset === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setActivePreset(p.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-medium text-left border transition-all ${
-                    isSelected
-                      ? 'border-brand-red bg-brand-red/15 text-brand-coral font-semibold shadow-md shadow-brand-red/10'
-                      : 'border-white/5 bg-white/5 text-zinc-300 hover:bg-white/10 hover:border-white/10'
-                  }`}
-                >
-                  {p.name}
-                </button>
-              );
-            })}
+            {EQ_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => selectPreset(p.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-medium text-left border transition-all ${
+                  activePreset === p.id
+                    ? 'border-brand-red bg-brand-red/15 text-brand-coral font-semibold shadow-md shadow-brand-red/10'
+                    : 'border-white/5 bg-white/5 text-zinc-300 hover:bg-white/10 hover:border-white/10'
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
+          {!hasBackend && activePreset !== 'flat' && (
+            <p className="text-[11px] text-zinc-500 flex gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0 text-brand-rose" />
+              El ecualizador procesa el audio del servidor propio (0 anuncios). Con el reproductor de YouTube el audio
+              no es accesible y el preset se aplicará al conectar un servidor.
+            </p>
+          )}
         </div>
 
-        {/* 2. Playback Speed */}
+        {/* 2. Velocidad */}
         <div className="space-y-3">
-          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Gauge className="w-3.5 h-3.5 text-blue-400" />
-            Velocidad de Reproducción ({playbackRate}x)
+          <label className={label}>
+            <Gauge className="w-3.5 h-3.5 text-brand-rose" />
+            Velocidad de reproducción ({playbackRate}x)
           </label>
           <div className="flex items-center justify-between gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
             {SPEED_OPTIONS.map((rate) => (
               <button
                 key={rate}
-                onClick={() => setPlaybackRate(rate)}
+                onClick={() => playerActions.setPlaybackRate(rate)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   playbackRate === rate
                     ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white font-bold shadow-md shadow-brand-red/20'
@@ -135,55 +127,44 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
           </div>
         </div>
 
-        {/* 3. Sleep Timer */}
+        {/* 3. Temporizador */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Moon className="w-3.5 h-3.5 text-purple-400" />
-              Temporizador de Apagado (Sleep Timer)
+            <label className={label}>
+              <Moon className="w-3.5 h-3.5 text-brand-blush" />
+              Temporizador de apagado
             </label>
-            {sleepTimerSeconds !== null && (
-              <span className="text-xs text-brand-coral font-mono font-bold animate-pulse">
-                {formatTimer(sleepTimerSeconds)}
-              </span>
-            )}
+            {sleepEndsAt !== null && <SleepCountdown endsAt={sleepEndsAt} />}
+            {sleepAtTrackEnd && <span className="text-xs text-brand-coral font-bold">Al terminar</span>}
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-            {TIMER_OPTIONS.map((opt) => {
-              const isCurrent =
-                (opt.minutes === null && sleepTimerSeconds === null) ||
-                (opt.minutes !== null &&
-                  sleepTimerSeconds !== null &&
-                  Math.abs(sleepTimerSeconds - opt.minutes * 60) < 60);
-
-              return (
-                <button
-                  key={opt.label}
-                  onClick={() => setSleepTimer(opt.minutes)}
-                  className={`py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                    isCurrent
-                      ? 'bg-purple-600/30 border-purple-500 text-purple-300 font-bold'
-                      : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-3 gap-1.5">
+            {TIMER_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => playerActions.setSleepTimer(opt.value)}
+                className={`py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                  timerIsActive(opt.value)
+                    ? 'bg-brand-red/20 border-brand-red/60 text-brand-coral font-bold'
+                    : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
           <p className="text-[11px] text-zinc-500">
-            * Los últimos 10 segundos realizan un fade-out suave de volumen para que no te despiertes de golpe.
+            Los últimos 10 segundos hacen un fundido suave de volumen para que no te despiertes de golpe.
           </p>
         </div>
 
-        {/* 4. Ad-Free Streaming Server (0 Anuncios) */}
+        {/* 4. Servidor de audio */}
         <div className="space-y-2 pt-2 border-t border-white/10">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+            <label className={label}>
               <Server className="w-3.5 h-3.5 text-brand-coral" />
-              Servidor de Audio (0 Anuncios)
+              Servidor de audio (0 anuncios)
             </label>
-            {backendInput && (
+            {hasBackend && (
               <span className="flex items-center gap-1 text-[11px] text-brand-coral font-medium">
                 <ShieldCheck className="w-3.5 h-3.5" /> Activo
               </span>
@@ -191,29 +172,34 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
           </div>
           <div className="flex gap-2">
             <input
-              type="text"
+              type="url"
               value={backendInput}
               onChange={(e) => setBackendInput(e.target.value)}
-              placeholder="https://tu-servidor.onrender.com"
-              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
+              placeholder="https://tu-servidor.fly.dev"
+              className={`${inputClass} !py-1.5 !rounded-lg text-xs`}
             />
             <button
-              onClick={handleSaveBackend}
+              onClick={() => {
+                setCustomBackendUrl(backendInput);
+                setBackendInput(getCustomBackendUrl());
+                flashSaved('backend');
+              }}
               className="px-3 py-1.5 rounded-lg bg-brand-red/20 hover:bg-brand-red/30 text-brand-coral text-xs font-semibold flex items-center gap-1 transition-colors border border-brand-red/30"
             >
-              {isBackendSaved ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
+              {saved === 'backend' ? <Check className="w-3.5 h-3.5" /> : 'Guardar'}
             </button>
           </div>
           <p className="text-[11px] text-zinc-500">
-            Conecta tu micro-backend de Render para transmitir audio puro en cualquier dispositivo sin un solo anuncio.
+            Conecta tu micro-backend (carpeta <code>server/</code>) para transmitir audio puro sin anuncios. Evita
+            planes con "cold start" (p. ej. Render gratuito).
           </p>
         </div>
 
-        {/* 5. YouTube API Key (Optional) */}
+        {/* 5. API Key */}
         <div className="space-y-2 pt-2 border-t border-white/10">
-          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Key className="w-3.5 h-3.5 text-amber-400" />
-            API Key de YouTube (Opcional)
+          <label className={label}>
+            <Key className="w-3.5 h-3.5 text-brand-blush" />
+            API Key de YouTube (opcional)
           </label>
           <div className="flex gap-2">
             <input
@@ -221,20 +207,23 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="Pega tu API Key de Google Cloud..."
-              className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral"
+              className={`${inputClass} !py-1.5 !rounded-lg text-xs`}
             />
             <button
-              onClick={handleSaveApiKey}
+              onClick={() => {
+                setCustomApiKey(apiKeyInput);
+                flashSaved('key');
+              }}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1 transition-colors"
             >
-              {isKeySaved ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
+              {saved === 'key' ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
             </button>
           </div>
           <p className="text-[11px] text-zinc-500">
-            No es obligatoria. Por defecto Free-Spoty busca de manera libre e instantánea sin necesidad de configuración.
+            No es obligatoria: por defecto Free-Spoty busca de forma libre e instantánea sin configuración.
           </p>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
-};
+}

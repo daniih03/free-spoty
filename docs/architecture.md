@@ -1,145 +1,149 @@
 # 🏗️ Arquitectura de Free-Spoty
 
-Este documento describe la arquitectura general de **Free-Spoty**, la jerarquía de componentes, la gestión de estados y el flujo de datos que permite ofrecer una experiencia similar a una aplicación nativa.
+Este documento describe la arquitectura de **Free-Spoty** tras el overhaul de rendimiento (v2): capas, gestión de estado con stores de suscripción selectiva, enrutado por hash y flujo de datos.
 
 ---
 
-## 🧩 Diagrama de Componentes y Flujo de Datos
+## 🧩 Diagrama de capas
 
 ```mermaid
 flowchart TD
-    subgraph UI ["Capa de Presentación (React 18 + Tailwind Minimalist Studio)"]
-        App["App.tsx (Enrutador de Vistas e Historial)"]
-        SmartDock["SmartDock (Dock flotante retráctil con Perfil/Login)"]
-        MobileNav["MobileNav (Navegación Móvil)"]
-        TopNavbar["TopNavbar (Buscador, Ecualizador, Estado de Usuario)"]
-        AuthModal["AuthModal (Ventana Modal de Login / Registro Obsidiana)"]
-        
-        subgraph Views ["Vistas Principales"]
-            HomeView["HomeView (Listas destacadas y Mix)"]
-            SearchView["SearchView (Buscador y Tarjeta Spotlight)"]
-            PlaylistView["PlaylistView (Vista de Álbum / Playlist)"]
-            ArtistView["ArtistView (Perfil Spotify: Portada, Top, Discografía)"]
-            LyricsView["LyricsView (Letras Sincronizadas Fullscreen)"]
-        end
-
-        subgraph PlayerUI ["Controles del Reproductor Minimalista"]
-            FloatingPlayer["FloatingPlayer (Cápsula Flotante Suspendida / Zen Sheet)"]
-            SongCard["SongCard (Aura Cards con Soundwave Dinámico)"]
-        end
+    subgraph UI ["Presentación (React 18 + Tailwind · Minimalist Studio)"]
+        App["App.tsx (rutas por hash, lazy views, overlays)"]
+        Nav["SmartDock · MobileNav · TopNavbar"]
+        Views["HomeView (eager) · SearchView · PlaylistView · LibraryView · ArtistView (lazy)"]
+        Player["FloatingPlayer · ZenSheet · LyricsView · QueueDrawer · EqualizerModal"]
+        Shared["UI/Primitives (Cover, Vinyl, Sheet…) · Player/Controls · SongCard · TrackRow"]
     end
 
-    subgraph State ["Capa de Estado Global (React Context)"]
-        PlayerCtx["PlayerContext (isPlaying, currentSong, queue, progress)"]
-        AuthCtx["AuthContext (user, session, profile, signIn, signUp, signOut)"]
-        StorageSvc["storageService.ts (Playlists, Liked, LocalStorage + Sync Trigger)"]
+    subgraph State ["Estado global (stores con useSyncExternalStore)"]
+        PS["state/player.ts → playerStore + progressStore + acciones"]
+        UIS["state/ui.ts → modales y paneles"]
+        LIB["services/storageService.ts → libraryStore (favoritos, playlists, historial, artistas)"]
+        Auth["context/AuthContext.tsx (usuario/perfil)"]
     end
 
-    subgraph Services ["Capa de Servicios y Red"]
-        SupabaseSvc["supabaseClient.ts & cloudStorageService.ts (PostgreSQL + RLS + Auth)"]
-        SearchSvc["searchService.ts (iTunes API + Invidious Resolver)"]
-        ArtistSvc["artistService.ts (iTunes Discography + Deezer Visuals)"]
-        LyricsSvc["lyricsService.ts (LRCLIB Synced Lyrics API)"]
-        YTSvc["youtube.ts (YouTube Iframe Engine + Fallback Resolver)"]
+    subgraph Services ["Servicios"]
+        Engine["youtube.ts (motor híbrido iframe / <audio> + EQ Web Audio)"]
+        Resolver["searchService.ts (iTunes + resolver de vídeo con caché persistente)"]
+        Artist["artistService.ts (iTunes + Deezer JSONP)"]
+        Lyrics["lyricsService.ts (LRCLIB)"]
+        Cloud["cloudStorageService.ts + supabaseClient.ts (lazy)"]
     end
 
-    App --> TopNavbar
-    App --> SmartDock
-    App --> MobileNav
-    App --> Views
-    App --> FloatingPlayer
-    App --> AuthModal
-
-    Views --> PlayerCtx
-    Views --> StorageSvc
-    Views --> AuthCtx
-    PlayerUI --> PlayerCtx
-    PlayerUI --> StorageSvc
-    SmartDock --> AuthCtx
-    TopNavbar --> AuthCtx
-
-    StorageSvc --> SupabaseSvc
-    AuthCtx --> SupabaseSvc
-    PlayerCtx --> YTSvc
-    PlayerCtx --> SearchSvc
-    PlayerCtx --> LyricsSvc
-    SearchView --> SearchSvc
-    ArtistView --> ArtistSvc
+    Views --> Shared --> PS
+    Player --> PS
+    Views --> LIB
+    Nav --> UIS
+    PS --> Engine
+    PS --> Resolver
+    PS --> Lyrics
+    LIB --> Cloud
+    Auth --> Cloud
+    Views --> Artist
 ```
 
 ---
 
-## 📁 Estructura del Código Fuente (`src/`)
+## 📁 Estructura de `src/`
 
 ```text
 src/
-├── App.tsx                      # Orquestador raíz: layout libre, dock y cápsula flotante con enrutamiento de vistas
-├── main.tsx                     # Punto de entrada de React 18 en Vite
-├── index.css                    # Estilos globales y personalización Tailwind
-├── types/
-│   └── music.ts                 # Interfaces TypeScript: Song, Album, ArtistProfile, Playlist, etc.
-├── context/
-│   └── PlayerContext.tsx        # Estado central del reproductor, cola inteligente, volumen y MediaSession
-├── components/
-│   ├── Navigation/
-│   │   ├── SmartDock.tsx        # Dock flotante retráctil 3D (68px contraído, 240px al interactuar)
-│   │   └── MobileNav.tsx        # Barra de navegación inferior fija para móviles
-│   ├── Player/
-│   │   ├── FloatingPlayer.tsx   # Cápsula de sonido flotante suspendida con scrubber perimétrico y Zen Sheet
-│   │   ├── LyricsView.tsx       # Pantalla completa de letras sincronizadas con scroll automático
-│   │   ├── QueueDrawer.tsx      # Cajón lateral de cola interactiva con reordenación
-│   │   └── EqualizerModal.tsx   # Ecualizador de 5 bandas con presets de audio pro
-│   ├── UI/
-│   │   ├── SongCard.tsx         # Aura Minimalist Card con soundwave dinámico y rim glow
-│   │   ├── AmbientBackground.tsx# Fondo ambiental reactivo (Obsidian Midnight sin tonos verdes)
-│   │   └── Modal.tsx            # Modales genéricos de la aplicación
-│   ├── Views/
-│   │   ├── HomeView.tsx         # Pantalla de inicio con playlists destacadas y accesos rápidos
-│   │   ├── SearchView.tsx       # Buscador instantáneo con tarjeta "Resultado principal"
-│   │   ├── PlaylistView.tsx     # Vista detallada de listas de reproducción con cabecera dinámica
-│   │   └── ArtistView.tsx       # Perfil oficial de artista con discografía y oyentes
-│   └── TopNavbar.tsx            # Barra superior con buscador integrado y ecualizador
-└── services/
-    ├── youtube.ts               # Motor de reproducción de YouTube Iframe API y gestor de watchdog
-    ├── searchService.ts         # Consultas de metadatos (iTunes) y resolución dinámica de audio (Invidious)
-    ├── artistService.ts         # Obtención de discografía, portadas en 1000x1000 y conteo de oyentes
-    ├── lyricsService.ts         # Proveedor de letras sincronizadas (LRCLIB)
-    ├── storageService.ts        # Persistencia en localStorage (favoritos, playlists, historial)
-    └── exploreData.ts           # Listas destacadas precargadas con metadatos verificados
+├── App.tsx                     # Shell: rutas, vistas lazy, overlays montados solo al abrirse
+├── main.tsx
+├── index.css                   # Estilos base + utilidades (vinyl-spin, cv-auto, scrollbar-none)
+├── vite-env.d.ts               # Tipos de import.meta.env y __APP_VERSION__
+├── types/music.ts              # Song, Playlist, Album, ArtistProfile, LyricsResult…
+├── lib/
+│   ├── store.ts                # createStore + useStore(selector)  ← núcleo del rendimiento
+│   ├── net.ts                  # fetchJson (timeout), fetchJsonp, raceFirst, TtlCache, dedupe, safeStorage
+│   ├── images.ts               # artwork(url, size), FALLBACK_COVER, onImageError
+│   └── format.ts               # formatTime, getGreeting, songKey, cleanTitle
+├── state/
+│   ├── player.ts               # Reproductor: estado, acciones, MediaSession, sleep timer, sesión
+│   └── ui.ts                   # Modales/paneles (letras, cola, EQ, import, auth, añadir a playlist)
+├── context/AuthContext.tsx     # Sesión Supabase (SDK cargado bajo demanda)
+├── hooks/
+│   ├── useNavigation.ts        # Router por hash integrado con history (atrás de Android/iOS)
+│   ├── useKeyboardShortcuts.ts # Atajos globales (registro único)
+│   ├── useVersionCheck.ts      # Detección de despliegues sin cortar la música
+│   └── useDominantColor.ts     # Color de carátula para el fondo ambiental
+├── services/
+│   ├── youtube.ts              # Motor de audio (ver audio-engine.md)
+│   ├── searchService.ts        # Búsqueda iTunes + resolución Canción → vídeo
+│   ├── artistService.ts        # Perfil de artista y discografía
+│   ├── lyricsService.ts        # Letras LRC + búsqueda binaria de línea activa
+│   ├── storageService.ts       # libraryStore + persistencia local + ajustes + backups
+│   ├── cloudStorageService.ts  # Escrituras Supabase serializadas + migración de invitado
+│   ├── supabaseClient.ts       # getSupabase() con import dinámico
+│   ├── config.ts               # URL de servidor propio, API Key, presets de EQ
+│   ├── itunes.ts               # Mapeo de resultados iTunes → Song
+│   └── exploreData.ts          # Playlists destacadas con IDs verificados
+└── components/
+    ├── Navigation/  SmartDock.tsx · MobileNav.tsx
+    ├── Player/      FloatingPlayer.tsx · ZenSheet.tsx · Controls.tsx · LyricsView.tsx · QueueDrawer.tsx · EqualizerModal.tsx
+    ├── UI/          Primitives.tsx · SongCard.tsx · TrackRow.tsx · AmbientBackground.tsx · AuthModal.tsx · AddToPlaylistModal.tsx · CreatePlaylistSheet.tsx
+    ├── Views/       HomeView · SearchView · PlaylistView · LibraryView · ArtistView · ImportExportModal
+    └── TopNavbar.tsx
 ```
 
 ---
 
-## 🔄 Gestión de Rutas y Navegación Interna
+## ⚡ Gestión de estado: stores con suscripción selectiva
 
-Para garantizar máxima compatibilidad con **GitHub Pages** sin problemas de enrutamiento del lado del servidor (404 en refresco), la aplicación utiliza un **sistema de enrutamiento basado en estado e historial**:
+**Problema original:** `PlayerContext` exponía `currentTime`, actualizado 4 veces por segundo. Cualquier componente que usara `usePlayer()` (cada `SongCard`, las vistas, la barra superior, el fondo) se re-renderizaba 4 veces por segundo mientras sonaba música. Además, cada tarjeta ejecutaba `JSON.parse(localStorage)` en cada render (`isSongLiked`, `getCustomPlaylists`).
 
-1. **Vistas Soportadas (`ViewType`):**
-   - `'home'`: Pantalla principal con accesos rápidos y secciones.
-   - `'search'`: Explorador y resultados de búsqueda.
-   - `'playlist'`: Contenido de una lista o álbum.
-   - `'artist'`: Perfil completo del artista seleccionado (`selectedArtistName`).
-2. **Pila de Historial (`historyStack`):**
-   - Cada cambio de vista añade la vista anterior a una pila (`historyStack: ViewState[]`).
-   - El botón atrás (`←`) desapila y restaura la vista previa exactamente en su estado, permitiendo navegar entre canciones, artistas y listas con total naturalidad tanto en escritorio como en móvil.
-3. **Navegación al Artista (`onNavigateArtist`):**
-   - Una función centralizada inyectada en todos los componentes (`SongCard`, `SearchView`, `PlaylistView`, `BottomPlayer`, `LyricsView`).
-   - Al pulsar sobre el nombre del artista en cualquier parte de la aplicación, el usuario es redirigido inmediatamente a la vista `'artist'`.
+**Solución (`lib/store.ts`):** stores mínimos sobre `useSyncExternalStore`. Cada componente declara un selector y solo se re-renderiza si **ese valor** cambia:
+
+```tsx
+const isPlaying = useIsSongPlaying(song.id);           // boolean: solo cambia para 1-2 tarjetas
+const liked = useIsLiked(song.id);                     // Set en memoria, O(1)
+const currentTime = useCurrentTime();                  // solo Scrubber, ProgressLine y letras
+```
+
+| Store | Contenido | Frecuencia de cambio |
+| :--- | :--- | :--- |
+| `playerStore` | canción, cola, play/pausa, volumen, letras, temporizador, error | Pocas veces por minuto |
+| `progressStore` | `currentTime` | 4/s (solo mientras suena) |
+| `uiStore` | modales y paneles abiertos | Por interacción |
+| `libraryStore` | favoritos (+ `Set` de IDs), playlists, historial, artistas seguidos | Por interacción |
+
+**Reglas:**
+1. Los selectores devuelven primitivos o referencias existentes; nunca objetos nuevos (bucle infinito).
+2. Las acciones (`playerActions.*`, `ui.*`, `toggleLikeSong`…) son funciones de módulo estables que leen el estado actual con `store.get()`: no hay closures obsoletos en MediaSession ni en los atajos de teclado.
+3. `SongCard`, `TrackRow` y los controles están memoizados; el menú contextual solo lee las playlists cuando se abre.
 
 ---
 
-## 🎛️ Contextos Principales
+## 🔄 Rutas (`hooks/useNavigation.ts`)
 
-### 1. `PlayerContext` (`src/context/PlayerContext.tsx`)
-- **Responsabilidades:**
-  - Control de reproducción: `playSong(song, contextQueue)`, `togglePlay()`, `seek(seconds)`, `nextTrack()`, `prevTrack()`.
-  - Estados reactivos: `isPlaying`, `isLoadingSong`, `currentTime`, `duration`, `volume`, `isMuted`, `isShuffle`, `repeatMode` (`'off' | 'all' | 'one'`).
-  - **Sincronización con YouTube Engine:** Escucha cambios de estado (`onStateChange`) y códigos de error (`onError`).
-  - **MediaSession API:** Actualiza los controles de la pantalla de bloqueo de iOS/Android con el título, artista y carátulas en 512x512.
-  - **Letras Sincronizadas:** Dispara automáticamente la descarga de letras a través de `fetchLyrics` al cambiar de tema.
+Enrutado por hash, compatible con GitHub Pages (sin 404 al refrescar) y enlazable:
 
-### 2. `MusicContext` (`src/context/MusicContext.tsx`)
-- **Responsabilidades:**
-  - Persistencia en `localStorage` de las canciones favoritas (`likedSongs`).
-  - Creación, edición y borrado de playlists del usuario.
-  - Historial reciente de reproducción (`playHistory`).
+| Ruta | Vista |
+| :--- | :--- |
+| `#/` | Inicio |
+| `#/search/<consulta>` | Búsqueda (la consulta vive en la URL; teclear usa `replaceState`) |
+| `#/library`, `#/liked`, `#/history` | Biblioteca, Me Gusta, Historial |
+| `#/playlist/<id>` | Playlist destacada o propia |
+| `#/artist/<nombre>` | Perfil de artista |
+
+- Cada entrada del historial guarda `{ idx }`: los botones ←/→ de la barra superior y el botón **atrás del sistema** (Android/iOS) navegan dentro de la app.
+- Hashes editados a mano o enlaces `<a href="#/…">` también se sincronizan (`hashchange`).
+- Al cambiar de vista, el contenedor de scroll vuelve arriba.
+
+---
+
+## 📦 Carga y rendimiento
+
+- **Code splitting:** Inicio va en el bundle principal; Búsqueda, Playlist, Biblioteca, Artista y todos los modales/paneles son chunks `lazy` que se montan solo al abrirse.
+- **Supabase bajo demanda:** `getSupabase()` importa el SDK (~59 KB gzip) en paralelo, sin bloquear el primer render.
+- **Chunks estables:** `react` e `icons` separados (`vite.config.ts → manualChunks`) para mejor caché entre despliegues.
+- **Imágenes a su tamaño:** `artwork(url, size)` pide a mzstatic/Unsplash la resolución que se pinta (120 px en miniaturas en lugar de 600 px).
+- **`content-visibility: auto`** en las secciones de Inicio fuera de pantalla.
+
+| Métrica (build de producción) | Antes | Después |
+| :--- | :--- | :--- |
+| JS inicial | 580 KB (153 KB gzip), 1 chunk | 267 KB (≈84 KB gzip) + chunks lazy |
+| Re-renders por tick del reproductor | Toda la app | Solo Scrubber / letras |
+| Lectura de favoritos por tarjeta | `JSON.parse(localStorage)` por render | `Set.has()` en memoria |
+| Reproducir una canción ya escuchada tras recargar | Re-búsqueda en red | Caché persistente (0 peticiones) |

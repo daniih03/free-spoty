@@ -8,6 +8,20 @@ Este documento describe todas las características implementadas en **Free-Spoty
 
 | Característica | Estado | Ubicación Principal |
 | :--- | :--- | :--- |
+| 🔍 **Buscador Universal con Studio Stage** | Activo | `src/components/Views/SearchView.tsx` |
+| 🎤 **Perfil de Artista y Discografía** | Activo | `src/components/Views/ArtistView.tsx` (álbumes en `AlbumSheet`) |
+| 📜 **Letras Sincronizadas en Vivo** | Activo | `src/components/Player/LyricsView.tsx` |
+| 🎵 **Cápsula flotante + Zen Sheet móvil** | Activo | `src/components/Player/FloatingPlayer.tsx`, `ZenSheet.tsx` |
+| 🔀 **True Shuffle (Fisher-Yates)** | Activo | `src/state/player.ts` |
+| ⏱️ **Sleep Timer (incl. fin de canción)** | Activo | `src/state/player.ts` |
+| 📱 **MediaSession API (Pantalla de Bloqueo)** | Activo | `src/state/player.ts` |
+| ❤️ **Favoritos, Playlists y Artistas seguidos** | Activo | `src/services/storageService.ts` |
+| ☁️ **Sincronización con Supabase** | Activo | `src/services/cloudStorageService.ts` |
+| 🎚️ **Ecualizador real (con servidor de audio)** | Activo | `src/services/youtube.ts`, `EqualizerModal.tsx` |
+| 💾 **Reanudar sesión (canción, cola, posición)** | Activo | `src/state/player.ts` |
+| 🔗 **Rutas enlazables + botón atrás del sistema** | Activo | `src/hooks/useNavigation.ts` |
+
+--- | :--- | :--- |
 | 🔍 **Buscador Universal con Spotlight** | Activo | `src/components/Views/SearchView.tsx` |
 | 🎤 **Perfil de Artista y Discografía** | Activo | `src/components/Views/ArtistView.tsx` |
 | 💿 **Explorador de Discos y Álbumes** | Activo | `src/components/UI/AlbumModal.tsx` |
@@ -39,13 +53,14 @@ Este documento describe todas las características implementadas en **Free-Spoty
   - Mini-player y reproductor expandido en móviles.
   - Pantalla completa de letras (`LyricsView`).
 - **Diseño Oficial Estilo Spotify:**
-  - **Hero Banner:** Fotografía del artista en gran formato (resolución 1000x1000 de Deezer), insignia de **Artista Verificado**, nombre en tipografía negrita destacada, conteo de oyentes mensuales y botón verde circular de reproducción total.
+  - **Hero Banner:** Fotografía del artista en 1000x1000 de Deezer (vía **JSONP**, ya que la API de Deezer no envía CORS), insignia de **Artista Verificado**, nombre en tipografía destacada, **número de fans de Deezer** y botón escarlata de reproducción total. Entre perfiles con el mismo nombre se elige la coincidencia exacta con más fans (evita fan-pages impostoras).
+  - **Seguir artista:** persistente en local; los artistas seguidos aparecen en *Tu Biblioteca*.
   - **Canciones Populares:** Lista interactiva con los 10 temas más escuchados del artista, duraciones reales y botón para añadir a favoritos.
   - **Discografía Completa:**
     - Filtro por pestañas: **Todos**, **Álbumes**, y **Sencillos / EPs**.
     - Cuadrícula con carátulas en alta definición, año de lanzamiento y tipo de publicación.
-- **Explorador de Álbumes (`AlbumModal.tsx`):**
-  - Al pulsar sobre cualquier disco, se despliega un modal con la lista de temas del álbum.
+- **Explorador de Álbumes (`AlbumSheet` dentro de `ArtistView.tsx`):**
+  - Al pulsar sobre cualquier disco, se despliega una hoja (bottom sheet en móvil) con la lista de temas del álbum.
   - Permite reproducir canciones específicas o el álbum completo en orden.
 
 ---
@@ -53,13 +68,16 @@ Este documento describe todas las características implementadas en **Free-Spoty
 ## 📜 3. Letras Sincronizadas en Vivo (`LyricsView.tsx`)
 
 - **Proveedor:** Integración con la API de LRCLIB mediante `lyricsService.ts`.
-- **Sincronización al Milisegundo:** El bucle de tiempo (`timeTracker`) del reproductor corre 4 veces por segundo (cada 250ms), logrando transiciones fluidas de estrofas.
-- **Scroll Automático Inteligente:** La línea actual se resalta con texto blanco agrandado (`text-white font-bold scale-105`) y se desplaza automáticamente hacia el tercio central de la pantalla.
+- **Sincronización:** el tick de progreso corre a 4 Hz, pero la línea activa se calcula con **búsqueda binaria** en un selector: el flujo de letras solo se re-renderiza al cambiar de verso.
+- **Scroll Automático Inteligente:** la línea actual se centra dentro del contenedor (sin desplazar la página) y el auto-scroll se pausa 4 s si el usuario desplaza manualmente.
+- **Letras sin sincronizar:** si LRCLIB solo tiene texto plano, se muestra como texto estático con el aviso "Letra sin sincronización disponible" (antes se inventaban marcas cada 4 s).
 - **Modo Pantalla Completa:** Accesible con la tecla `F` o pulsando el icono de letras en la barra inferior. Cuenta con fondo dinámico derivado de la carátula y controles de transporte flotantes.
 
 ---
 
 ## 🎵 4. Reproductor Multipantalla Adaptativo
+
+> Nota: la barra inferior clásica (`BottomPlayer`) fue sustituida por la cápsula flotante (ver sección 9). Esta sección se conserva como referencia histórica.
 
 - **Desktop View (`md:flex`):**
   - Barra inferior fija de altura 96px (`h-24`) con desenfoque de fondo (`backdrop-blur-2xl`).
@@ -83,22 +101,23 @@ A diferencia de los reproductores convencionales que repiten canciones o desorde
 
 ## ⏱️ 6. Temporizador de Apagado (Sleep Timer)
 
-- Opciones preconfiguradas: 5, 10, 15, 30, 45, 60 minutos o fin de la pista actual.
-- **Desvanecimiento Suave (Smooth Fade Out):** En los últimos 10 segundos antes de expirar, el volumen se atenúa progresivamente hasta 0 para no despertar al usuario bruscamente, tras lo cual se pausa la reproducción de forma limpia.
+- Opciones: fin de la canción actual, 15, 30, 45 y 60 minutos.
+- **Desvanecimiento Suave (Smooth Fade Out):** en los últimos 10 segundos el volumen se atenúa progresivamente; tras pausar, el volumen original se restaura para la siguiente reproducción.
 
 ---
 
 ## 📱 7. MediaSession API Nativa
 
 - Conexión con los controladores del sistema operativo (iOS Dynamic Island, pantalla de bloqueo de Android, teclas multimedia de teclados Windows/Mac).
-- Metadatos sincronizados: título, artista, álbum y conjunto de carátulas en resoluciones 192x192 y 512x512.
-- Manejadores soportados: `play`, `pause`, `nexttrack`, `previoustrack`, `seekto`.
+- Metadatos sincronizados: título, artista, álbum y carátulas 192x192 y 512x512 (pedidas a ese tamaño real).
+- Manejadores: `play`, `pause`, `nexttrack`, `previoustrack`, `seekto`, `seekbackward`, `seekforward`, registrados una sola vez.
+- `setPositionState` periódico para el scrubber de la pantalla de bloqueo.
 
 ---
 
 ## 🎨 8. Identidad Visual y Sistema de Diseño de Marca
 
-La interfaz está construida con una paleta cromática sofisticada basada exclusivamente en **tonos de rojo hiperprofesionales y fondos carbón mate**, sin presencia alguna de verdes:
+La interfaz está construida con una paleta cromática sofisticada basada exclusivamente en **tonos de rojo hiperprofesionales y fondos carbón mate**, sin presencia alguna de verdes. En el overhaul v2 se retiraron los últimos acentos cian/púrpura/ámbar (insignias de Inicio, True Shuffle, tarjeta "Me Gusta", portales) para unificar la identidad roja:
 
 | Elemento / Tonalidad | Color Hexadecimal | Uso en la Aplicación |
 | :--- | :--- | :--- |
@@ -111,6 +130,7 @@ La interfaz está construida con una paleta cromática sofisticada basada exclus
 | **Rojo Escarlata Primario** | `#c81900` | Botones de acción principales (Play Spotlight, Verified Artist, Discografía) |
 | **Rojo Vibrante Hover** | `#e02200` | Efectos hover de botones interactivos y elementos activos |
 | **Coral Neón Alta Claridad** | `#ff3b24` | Indicadores de estado activo (Shuffle, Repeat, Me Gusta, ecualizador animado) |
+| **Blush** | `#ffa89c` | Iconos secundarios en ajustes y textos sobre tarjetas rojas |
 | **Rosa Cálido** | `#ff6b57` | Subtítulos, etiquetas de fidelidad de audio y chips informativos |
 | **Blanco Puro** | `#ffffff` | Iconografía dentro de botones de acción, glifos del logo y tipografía titular |
 
@@ -187,3 +207,15 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Contención de Flex y Grid en Vistas:** Incorporación de `min-w-0 overflow-hidden` en las tarjetas de `HomeView`, `SongCard`, `SearchView`, `PlaylistView`, `LibraryView` y en la cabecera `TopNavbar`, impidiendo que los textos largos o inputs empujen el ancho fuera de la pantalla.
 
 
+
+
+13. **Overhaul v2 de rendimiento y arquitectura:**
+   - **Stores con suscripción selectiva** (`lib/store.ts`) en lugar de un Context monolítico: el tick del reproductor ya no re-renderiza toda la app. Detalles en `architecture.md`.
+   - **Code splitting y Supabase bajo demanda:** JS inicial de 153 KB → ~84 KB gzip.
+   - **Caché persistente de resolución:** una canción escuchada vuelve a sonar tras recargar sin ninguna petición de búsqueda.
+   - **Reanudar sesión:** la app recuerda canción, cola y posición; también se usa para aplicar actualizaciones sin perder el contexto.
+   - **Rutas por hash** (`#/artist/…`, `#/search/…`) enlazables y conectadas al botón atrás del sistema.
+   - **Cola reordenable:** subir/bajar pistas y saltar a cualquiera con un toque en `QueueDrawer`.
+   - **Importador de listas en paralelo** (4 búsquedas simultáneas con barra de progreso) y restauración de backup desde archivo `.json`; la restauración **combina** con la biblioteca existente en vez de sobrescribirla.
+   - **Aviso de actualización no intrusivo:** nunca se recarga la app en mitad de una canción.
+   - **Accesibilidad:** `aria-label`/`aria-pressed` en controles, foco visible coral, soporte de `prefers-reduced-motion`; el vinilo congela su ángulo al pausar en lugar de saltar a 0º.

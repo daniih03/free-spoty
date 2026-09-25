@@ -1,27 +1,47 @@
 # 🎧 Free-Spoty Audio Engine (Backend Proxy)
 
-Micro-servicio de backend para transmitir audio de YouTube Music de forma directa, nativa y con **0 anuncios** para la web **Free-Spoty**.
+Microservicio opcional que transmite el audio de YouTube como `<audio>` HTML5 nativo, con **0 anuncios**, y además activa el ecualizador real de la app.
 
----
+| Endpoint | Descripción |
+| :--- | :--- |
+| `GET /api/stream?id=VIDEO_ID` | Audio (m4a/webm) con soporte `Range` (seek instantáneo). |
+| `GET /api/search?q=QUERY` | `{ results: [{ videoId, title, duration }] }` (caché 1 h, 90 req/min por IP). |
+| `GET /health` | Estado y versión de `yt-dlp`. |
 
-## 🚀 Despliegue Gratuito en 1 Minuto (en Render.com)
+## Características
 
-1. Entra en [Render.com](https://render.com) e inicia sesión con tu cuenta de GitHub.
-2. Haz clic en **New +** y selecciona **Web Service**.
-3. Selecciona tu repositorio: `daniih03/free-spoty`.
-4. Configura estos sencillos campos:
-   - **Name:** `free-spoty-api` (o el nombre que quieras)
-   - **Root Directory:** `server`
-   - **Language / Runtime:** `Docker` (seleccionará automáticamente el `Dockerfile` optimizado con `yt-dlp`).
-   - **Instance Type:** `Free` (0 €/mes).
-5. Haz clic en **Create Web Service**.
-6. En 2 minutos Render te dará tu URL pública, por ejemplo:
-   `https://free-spoty-api.onrender.com`
+- **Seguro:** `yt-dlp` se ejecuta con `execFile`/`spawn` y argumentos en array (sin shell); los IDs se validan con `/^[\w-]{11}$/`.
+- **Rápido:** caché LRU de URLs con la caducidad real de googlevideo (`expire`), deduplicación de extracciones concurrentes y límite de procesos `yt-dlp` simultáneos (`MAX_EXTRACTIONS`, por defecto 4).
+- **Resiliente:** si la URL cacheada devuelve 403/410 se re-extrae una vez; como último recurso se emite el audio directamente desde `yt-dlp -o -`.
+- **CORS abierto** (`*`) con cabeceras `Range` expuestas: necesario para el streaming y para el ecualizador Web Audio.
 
----
+## ⚠️ Elige un hosting sin "cold start"
+
+Los planes gratuitos que duermen el servidor (p. ej. **Render Free**) tardan 30-45 s en despertar; el navegador agota el gesto del usuario y la canción no arranca. Por eso la app **descarta automáticamente las URLs `onrender.com`** (ver `docs/troubleshooting-and-lessons.md`, lección nº4).
+
+Opciones recomendadas: un VPS o Raspberry Pi propio, Fly.io / Railway con instancia siempre encendida, o Docker en tu PC para uso local.
+
+## 🚀 Despliegue con Docker
+
+```bash
+cd server
+docker build -t free-spoty-audio .
+docker run -d --restart unless-stopped -p 3000:3000 --name free-spoty-audio free-spoty-audio
+curl http://localhost:3000/health
+```
+
+Variables opcionales: `PORT` (3000), `MAX_EXTRACTIONS` (4), `YTDLP_PATH` (`yt-dlp`).
+
+## 💻 Ejecución local sin Docker
+
+Requiere Node 20+ y `yt-dlp` en el `PATH`:
+
+```bash
+cd server
+npm install
+npm start
+```
 
 ## 🔗 Conexión con Free-Spoty
 
-Pega esa URL en Free-Spoty (en el modal de Ajustes / Ecualizador, o en la variable de entorno `VITE_STREAM_API_URL`).
-
-¡Y listo! Todas las canciones se reproducirán al instante en cualquier móvil y ordenador con **CERO anuncios garantizado**.
+Pega la URL pública (HTTPS) en **Ajustes & Ecualizador → Servidor de audio**, o compílala en la variable `VITE_STREAM_API_URL`. Si el servidor no responde en 3,5 s, la app vuelve automáticamente al reproductor de YouTube.

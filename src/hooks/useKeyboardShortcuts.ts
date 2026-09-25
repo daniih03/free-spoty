@@ -1,128 +1,62 @@
-import { useEffect } from 'react';
-import { usePlayer } from '../context/PlayerContext';
+import { useEffect, useRef } from 'react';
+import { playerActions, playerStore, progressStore } from '../state/player';
+import { ui } from '../state/ui';
 
-interface UseKeyboardShortcutsOptions {
-  onToggleLyrics?: () => void;
+interface Options {
   onFocusSearch?: () => void;
 }
 
-export function useKeyboardShortcuts(options?: UseKeyboardShortcutsOptions) {
-  const {
-    currentSong,
-    togglePlay,
-    seek,
-    currentTime,
-    duration,
-    nextTrack,
-    prevTrack,
-    volume,
-    setVolume,
-    toggleMute,
-    toggleShuffle,
-    cycleRepeatMode
-  } = usePlayer();
+/**
+ * Atajos globales. Se registra una sola vez y lee el estado en el momento de
+ * la pulsación (antes se re-registraba 4 veces por segundo con cada tick).
+ */
+export function useKeyboardShortcuts({ onFocusSearch }: Options = {}) {
+  const focusRef = useRef(onFocusSearch);
+  focusRef.current = onFocusSearch;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore key events if focused on input, textarea, or contentEditable
       const target = e.target as HTMLElement;
       if (
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
         target.isContentEditable
       ) {
         return;
       }
 
-      switch (e.key) {
-        case ' ':
-        case 'k':
-        case 'K':
-          e.preventDefault();
-          togglePlay();
-          break;
+      const time = progressStore.get().currentTime;
+      const { duration, volume } = playerStore.get();
 
-        case 'j':
-        case 'J':
-          e.preventDefault();
-          seek(Math.max(0, currentTime - 5));
-          break;
+      const actions: Record<string, () => void> = {
+        ' ': playerActions.togglePlay,
+        k: playerActions.togglePlay,
+        j: () => playerActions.seek(Math.max(0, time - 5)),
+        l: () => playerActions.seek(Math.min(duration, time + 5)),
+        arrowleft: playerActions.prevTrack,
+        arrowright: playerActions.nextTrack,
+        arrowup: () => playerActions.setVolume(volume + 5),
+        arrowdown: () => playerActions.setVolume(volume - 5),
+        m: playerActions.toggleMute,
+        s: playerActions.toggleShuffle,
+        r: playerActions.cycleRepeatMode,
+        f: ui.toggleLyrics,
+        '/': () => focusRef.current?.(),
+      };
 
-        case 'l':
-        case 'L':
-          e.preventDefault();
-          seek(Math.min(duration, currentTime + 5));
-          break;
-
-        case 'ArrowLeft':
-          e.preventDefault();
-          prevTrack();
-          break;
-
-        case 'ArrowRight':
-          e.preventDefault();
-          nextTrack();
-          break;
-
-        case 'ArrowUp':
-          e.preventDefault();
-          setVolume(Math.min(100, volume + 5));
-          break;
-
-        case 'ArrowDown':
-          e.preventDefault();
-          setVolume(Math.max(0, volume - 5));
-          break;
-
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          toggleMute();
-          break;
-
-        case 's':
-        case 'S':
-          e.preventDefault();
-          toggleShuffle();
-          break;
-
-        case 'r':
-        case 'R':
-          e.preventDefault();
-          cycleRepeatMode();
-          break;
-
-        case 'f':
-        case 'F':
-          e.preventDefault();
-          options?.onToggleLyrics?.();
-          break;
-
-        case '/':
-          e.preventDefault();
-          options?.onFocusSearch?.();
-          break;
-
-        default:
-          break;
-      }
+      const action = actions[e.key.toLowerCase()];
+      if (!action) return;
+      // Espacio sobre un botón enfocado: dejar el comportamiento nativo del botón
+      if (e.key === ' ' && target.tagName === 'BUTTON') return;
+      e.preventDefault();
+      action();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    currentSong,
-    togglePlay,
-    seek,
-    currentTime,
-    duration,
-    nextTrack,
-    prevTrack,
-    volume,
-    setVolume,
-    toggleMute,
-    toggleShuffle,
-    cycleRepeatMode,
-    options
-  ]);
+  }, []);
 }
