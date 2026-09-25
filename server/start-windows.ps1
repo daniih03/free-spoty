@@ -112,9 +112,9 @@ $env:PORT = "$Port"
 # Modo servicio (arranque automático)
 # ---------------------------------------------------------------------------
 if ($Background) {
-  # Un solo servicio a la vez
-  $busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-  if ($busy) { exit 0 }
+  # Si otro proceso ya sirve el puerto (p. ej. arrancado a mano), se espera a
+  # que lo libere en lugar de salir: así el bucle siempre queda vigilando.
+  while (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 30 }
 
   while ($true) {
     try { Update-YtDlp -MaxAgeDays 1 } catch { Add-Content (Join-Path $BinDir 'server.err.log') "[$(Get-Date)] $_" }
