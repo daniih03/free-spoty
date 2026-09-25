@@ -25,6 +25,7 @@ export function onServerStateChange(fn: (up: boolean) => void) {
 
 function setState(next: State) {
   const changed = next !== state;
+  if (changed && localStorage.getItem('free_spoty_debug') === '1') console.info('[ServerStatus]', state, '→', next);
   state = next;
   lastCheck = Date.now();
   if (changed && next !== 'unknown') listeners.forEach((fn) => fn(next === 'up'));

@@ -63,7 +63,9 @@ Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sis
 ```powershell
 powershell -ExecutionPolicy Bypass -File server\setup-windows.ps1
 ```
-Instala Tailscale e inicia sesión, publica el servidor con **Tailscale Funnel** en una dirección HTTPS **fija** (`https://<pc>.<tailnet>.ts.net`), registra la tarea programada "Free-Spoty Audio Engine" (arranque al iniciar sesión, en segundo plano, reinicio si cae, yt-dlp actualizado a diario; logs en `serverin\server*.log`) y muestra el enlace + QR para conectar cada dispositivo una sola vez. Deshacer: `setup-windows.ps1 -Uninstall`.
+Instala Tailscale e inicia sesión, desactiva su DNS interno en el PC (lección 17), publica el servidor con **Tailscale Funnel** en una dirección HTTPS **fija** (`https://<pc>.<tailnet>.ts.net`), registra la tarea programada "Free-Spoty Audio Engine" (arranque al iniciar sesión, en segundo plano, reinicio si cae, yt-dlp actualizado a diario; logs en `serverin\server*.log`) y muestra el enlace + QR para conectar cada dispositivo una sola vez. Deshacer: `setup-windows.ps1 -Uninstall`.
+
+**Estado actual de la instalación:** dirección fija `https://daniel.tail9bdd7f.ts.net`, enlace de conexión `https://daniih03.github.io/free-spoty/?server=https://daniel.tail9bdd7f.ts.net`.
 
 **Arranque manual (alternativa):**
 ```powershell

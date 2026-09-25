@@ -328,6 +328,7 @@ class AudioEngine {
     this.clearWatchdog();
 
     const backend = activeBackend();
+    debug('loadVideo', videoId, backend ? `servidor ${backend}` : 'YouTube');
     if (backend && this.audio) {
       this.usingHtmlAudio = true;
       this.call('pauseVideo');

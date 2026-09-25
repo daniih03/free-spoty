@@ -67,6 +67,13 @@ if (-not $status -or $status.BackendState -ne 'Running') {
 $DnsName = $status.Self.DNSName.TrimEnd('.')
 Write-Host "Conectado como $DnsName"
 
+# Sin esto, en ESTE PC la dirección *.ts.net resuelve a una IP interna de
+# Tailscale (100.x) y Chrome/Edge bloquean que la web pública (GitHub Pages) la
+# use ("Local Network Access"). Resolviendo por DNS público, el PC usa el mismo
+# camino que el móvil.
+Invoke-Tailscale set --accept-dns=false | Out-Null
+Clear-DnsClientCache
+
 # 2. Arranque automático + servidor -------------------------------------------
 Step 'Arranque automático con Windows'
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' `

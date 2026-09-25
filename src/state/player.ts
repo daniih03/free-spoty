@@ -97,6 +97,8 @@ let reResolved = false;
 let consecutiveFailures = 0;
 /** Posición pendiente de una sesión restaurada: se carga al pulsar Play. */
 let resumeAt: number | null = null;
+/** Entre elegir canción y cargarla en el motor: la anterior se silencia y su progreso se ignora. */
+let switchingTrack = false;
 
 function fisherYates<T>(array: T[]): T[] {
   const arr = [...array];
@@ -127,6 +129,7 @@ function effectiveVolume() {
 }
 
 function loadIntoEngine(videoId: string, startAt = 0) {
+  switchingTrack = false;
   triedIds.add(videoId);
   armStartingGuard();
   youtubeService.setVolume(effectiveVolume());
@@ -184,6 +187,10 @@ async function startTrack(song: Song, startAt = 0) {
   reResolved = false;
   resumeAt = null;
 
+  // La canción anterior deja de oírse ya (sin pausar: evita eventos PAUSED)
+  switchingTrack = true;
+  youtubeService.setVolume(0);
+
   // Feedback visual inmediato (0 ms): la cápsula aparece con carátula y spinner
   set({
     currentSong: song,
@@ -231,6 +238,12 @@ function playAtIndex(index: number) {
 }
 
 function handleUnplayable(message: string) {
+  if (switchingTrack) {
+    // La canción anterior seguía sonando en silencio: se detiene
+    switchingTrack = false;
+    youtubeService.pause();
+    youtubeService.setVolume(effectiveVolume());
+  }
   consecutiveFailures++;
   set({ isLoading: false, isPlaying: false, playbackError: message });
   // Evita silencios en la cola, pero sin cascadas infinitas de saltos
@@ -339,6 +352,7 @@ let ticker: ReturnType<typeof setInterval> | null = null;
 let lastPositionSync = 0;
 
 function tick() {
+  if (switchingTrack) return; // el motor aún reproduce la canción anterior
   const time = youtubeService.getCurrentTime();
   progressStore.set({ currentTime: time });
   const dur = youtubeService.getDuration();

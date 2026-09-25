@@ -120,7 +120,7 @@ if ($Background) {
     try { Update-YtDlp -MaxAgeDays 1 } catch { Add-Content (Join-Path $BinDir 'server.err.log') "[$(Get-Date)] $_" }
     $server = Start-Server
     # Reinicio diario (para aplicar actualizaciones de yt-dlp) o si el servidor cae
-    $server | Wait-Process -Timeout 86400 -ErrorAction SilentlyContinue
+    [void]$server.WaitForExit(86400000)
     if (-not $server.HasExited) {
       Stop-Process -Id $server.Id -Force
       Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" |

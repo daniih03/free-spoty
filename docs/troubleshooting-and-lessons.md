@@ -140,3 +140,18 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
 ## 16. PowerShell 5.1 y stderr de ejecutables
 
 - Con `$ErrorActionPreference = 'Stop'`, cualquier línea en stderr de un ejecutable nativo (p. ej. el aviso de versión de `pip`) aborta el script. `start-windows.ps1` usa `Invoke-Native`, que ejecuta en modo `Continue` y comprueba `$LASTEXITCODE`.
+
+---
+
+## 17. Local Network Access: la web pública no puede llamar a direcciones "locales"
+
+- **Síntoma:** en el PC con Tailscale, la app publicada no usaba el servidor (`https://<pc>.ts.net`) aunque `curl` respondía; en consola: *"Permission was denied for this request to access the `local` address space"*.
+- **Causa:** con MagicDNS, el nombre `*.ts.net` resuelve en ese PC a una IP 100.x (CGNAT) y Chrome/Edge tratan como "red local" cualquier IP privada o de loopback: una web pública (GitHub Pages) necesita permiso explícito del usuario. Lo mismo ocurre con `http://localhost:3000` desde la web publicada.
+- **Solución:** `tailscale set --accept-dns=false` en el PC (lo hace `setup-windows.ps1`): el nombre resuelve a las IPs públicas del Funnel, igual que en el móvil. En los móviles no hace falta instalar Tailscale.
+
+---
+
+## 18. Al cambiar de canción seguía sonando la anterior
+
+- Mientras se resolvía la nueva canción (2-5 s sin caché), el motor seguía reproduciendo la anterior y el tick de progreso mostraba su tiempo.
+- `startTrack()` ahora silencia el motor (`setVolume(0)`, sin pausar para no disparar eventos `PAUSED`) y el tick se ignora (`switchingTrack`) hasta `loadIntoEngine()`, que restaura el volumen. Si la canción nueva no se encuentra, la anterior se detiene.
