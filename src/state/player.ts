@@ -1,6 +1,6 @@
 import type { LyricsResult, RepeatMode, Song } from '../types/music';
 import { createStore, useStore } from '../lib/store';
-import { youtubeService, PlayerStates } from '../services/youtube';
+import { youtubeService, PlayerStates, EngineErrors } from '../services/youtube';
 import { resolveSongWithVersions, peekResolved, prefetchSong, markVideoFailed } from '../services/searchService';
 import { fetchLyrics } from '../services/lyricsService';
 import { addToPlayHistory, getSettings, updateSettings, slimSong } from '../services/storageService';
@@ -266,6 +266,16 @@ async function handleEngineError(code: number) {
   const song = get().currentSong;
   if (!song) {
     set({ isLoading: false, isPlaying: false });
+    return;
+  }
+  if (code === EngineErrors.SERVER_DOWN) {
+    // Sin servidor no hay audio sin anuncios: se avisa en lugar de saltar canciones
+    clearStartingGuard();
+    set({
+      isLoading: false,
+      isPlaying: false,
+      playbackError: 'Servidor de audio sin conexión · pulsa Play para reintentar',
+    });
     return;
   }
   const token = playToken;

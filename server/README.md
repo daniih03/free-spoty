@@ -6,11 +6,13 @@ Microservicio opcional que transmite el audio de YouTube como `<audio>` HTML5 na
 | :--- | :--- |
 | `GET /api/stream?id=VIDEO_ID` | Audio (m4a/webm) con soporte `Range` (seek instantáneo). |
 | `GET /api/search?q=QUERY` | `{ results: [{ videoId, title, duration }] }` (caché 1 h, 90 req/min por IP). |
+| `GET /api/warm?id=VIDEO_ID` | Pre-extrae la URL (la app lo usa para precargar la siguiente canción). |
 | `GET /health` | Estado y versión de `yt-dlp`. |
 
 ## Características
 
 - **Seguro:** `yt-dlp` se ejecuta con `execFile`/`spawn` y argumentos en array (sin shell); los IDs se validan con `/^[\w-]{11}$/`.
+- **Workers persistentes de yt-dlp** (`ytdlp_worker.py`, si `YTDLP_PYTHON` apunta a un Python con yt-dlp): la extracción baja de ~4,5 s (yt-dlp.exe en Windows) a ~1,3 s.
 - **Rápido:** caché LRU de URLs con la caducidad real de googlevideo (`expire`), deduplicación de extracciones concurrentes y límite de procesos `yt-dlp` simultáneos (`MAX_EXTRACTIONS`, por defecto 4).
 - **Resiliente:** si la URL cacheada devuelve 403/410 se re-extrae una vez; como último recurso se emite el audio directamente desde `yt-dlp -o -`.
 - **CORS abierto** (`*`) con cabeceras `Range` expuestas: necesario para el streaming y para el ecualizador Web Audio.
@@ -21,6 +23,13 @@ Los planes gratuitos que duermen el servidor (p. ej. **Render Free**) tardan 30-
 
 Opciones recomendadas: un VPS o Raspberry Pi propio, Fly.io / Railway con instancia siempre encendida, o Docker en tu PC para uso local.
 
+## 🪟 Windows en 1 comando (recomendado)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File server\start-windows.ps1 -Tunnel
+```
+Instala y actualiza todo, arranca el servidor y muestra el enlace + QR para conectar la app (también en el móvil). Sin `-Tunnel`, solo funciona en este PC (`http://localhost:3000`).
+
 ## 🚀 Despliegue con Docker
 
 ```bash
@@ -30,7 +39,7 @@ docker run -d --restart unless-stopped -p 3000:3000 --name free-spoty-audio free
 curl http://localhost:3000/health
 ```
 
-Variables opcionales: `PORT` (3000), `MAX_EXTRACTIONS` (4), `YTDLP_PATH` (`yt-dlp`).
+Variables opcionales: `PORT` (3000), `MAX_EXTRACTIONS` (4), `YTDLP_PATH` (`yt-dlp`), `YTDLP_PYTHON` (activa los workers), `YTDLP_WORKERS` (2).
 
 ## 💻 Ejecución local sin Docker
 

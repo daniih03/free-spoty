@@ -6,6 +6,7 @@ import { ui } from '../../state/ui';
 import { usePlaylists, addSongToPlaylist } from '../../services/storageService';
 import { LikeButton } from '../Player/Controls';
 import { Cover, SoundBars } from './Primitives';
+import { usePrefetchIntent } from '../../hooks/usePrefetchIntent';
 
 interface SongCardProps {
   song: Song;
@@ -22,6 +23,7 @@ export const SongCard = memo(function SongCard({ song, contextQueue, onNavigateA
   const isCurrent = useIsCurrentSong(song.id);
   const isPlaying = useIsSongPlaying(song.id);
   const [showMenu, setShowMenu] = useState(false);
+  const prefetch = usePrefetchIntent(song);
 
   const handlePlay = () => {
     if (isCurrent) playerActions.togglePlay();
@@ -31,6 +33,7 @@ export const SongCard = memo(function SongCard({ song, contextQueue, onNavigateA
   return (
     <div
       onClick={handlePlay}
+      {...prefetch}
       className={`group relative p-2.5 sm:p-3 rounded-2xl md:rounded-[22px] backdrop-blur-xl transition-all duration-300 cursor-pointer border transform-gpu hover:-translate-y-1 w-full min-w-0 ${
         isCurrent
           ? 'bg-brand-burgundy/25 border-brand-red/50 shadow-[0_8px_30px_rgba(200,25,0,0.2)]'

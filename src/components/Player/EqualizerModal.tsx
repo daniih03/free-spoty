@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Sliders, Moon, Gauge, Key, Check, Sparkles, Server, ShieldCheck, Info } from 'lucide-react';
+import { Sliders, Moon, Gauge, Key, Check, Sparkles, Server, ShieldCheck, ShieldAlert, Info } from 'lucide-react';
 import { usePlayer, playerActions } from '../../state/player';
 import { ui } from '../../state/ui';
 import {
@@ -8,6 +8,8 @@ import {
   setCustomApiKey,
   getCustomBackendUrl,
   setCustomBackendUrl,
+  isStrictAdFree,
+  setStrictAdFree,
 } from '../../services/config';
 import { getSettings, updateSettings } from '../../services/storageService';
 import { youtubeService } from '../../services/youtube';
@@ -24,6 +26,29 @@ const TIMER_OPTIONS: { label: string; value: number | 'end' | null }[] = [
   { label: '45 min', value: 45 },
   { label: '1 hora', value: 60 },
 ];
+
+type ServerHealth = { state: 'checking' } | { state: 'ok'; ytDlp?: string } | { state: 'down' };
+
+/** Comprueba /health del servidor configurado. */
+function useServerHealth(url: string): ServerHealth | null {
+  const [health, setHealth] = useState<ServerHealth | null>(null);
+  useEffect(() => {
+    if (!url) {
+      setHealth(null);
+      return;
+    }
+    let active = true;
+    setHealth({ state: 'checking' });
+    fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => active && setHealth({ state: 'ok', ytDlp: d.ytDlp }))
+      .catch(() => active && setHealth({ state: 'down' }));
+    return () => {
+      active = false;
+    };
+  }, [url]);
+  return health;
+}
 
 function SleepCountdown({ endsAt }: { endsAt: number }) {
   const [, force] = useState(0);
@@ -48,7 +73,10 @@ export default function EqualizerModal() {
   const [apiKeyInput, setApiKeyInput] = useState(getCustomApiKey);
   const [backendInput, setBackendInput] = useState(getCustomBackendUrl);
   const [saved, setSaved] = useState<'key' | 'backend' | null>(null);
-  const hasBackend = !!getCustomBackendUrl();
+  const [backendUrl, setBackendUrl] = useState(getCustomBackendUrl);
+  const [strict, setStrict] = useState(isStrictAdFree);
+  const health = useServerHealth(backendUrl);
+  const hasBackend = !!backendUrl;
 
   const flashSaved = (which: 'key' | 'backend') => {
     setSaved(which);
@@ -157,31 +185,39 @@ export default function EqualizerModal() {
           </p>
         </div>
 
-        {/* 4. Servidor de audio */}
-        <div className="space-y-2 pt-2 border-t border-white/10">
-          <div className="flex items-center justify-between">
+        {/* 4. Servidor de audio: la única garantía de 0 anuncios */}
+        <div className="space-y-2.5 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between gap-2">
             <label className={label}>
               <Server className="w-3.5 h-3.5 text-brand-coral" />
               Servidor de audio (0 anuncios)
             </label>
-            {hasBackend && (
-              <span className="flex items-center gap-1 text-[11px] text-brand-coral font-medium">
-                <ShieldCheck className="w-3.5 h-3.5" /> Activo
+            {health?.state === 'ok' && (
+              <span className="flex items-center gap-1 text-[11px] text-brand-coral font-medium" title={`yt-dlp ${health.ytDlp || ''}`}>
+                <ShieldCheck className="w-3.5 h-3.5" /> Conectado
               </span>
             )}
+            {health?.state === 'down' && (
+              <span className="flex items-center gap-1 text-[11px] text-zinc-400 font-medium">
+                <ShieldAlert className="w-3.5 h-3.5 text-brand-rose" /> Sin conexión
+              </span>
+            )}
+            {health?.state === 'checking' && <span className="text-[11px] text-zinc-500">Comprobando…</span>}
           </div>
           <div className="flex gap-2">
             <input
               type="url"
               value={backendInput}
               onChange={(e) => setBackendInput(e.target.value)}
-              placeholder="https://tu-servidor.fly.dev"
+              placeholder="http://localhost:3000 o https://…trycloudflare.com"
               className={`${inputClass} !py-1.5 !rounded-lg text-xs`}
             />
             <button
               onClick={() => {
                 setCustomBackendUrl(backendInput);
-                setBackendInput(getCustomBackendUrl());
+                const saved = getCustomBackendUrl();
+                setBackendInput(saved);
+                setBackendUrl(saved);
                 flashSaved('backend');
               }}
               className="px-3 py-1.5 rounded-lg bg-brand-red/20 hover:bg-brand-red/30 text-brand-coral text-xs font-semibold flex items-center gap-1 transition-colors border border-brand-red/30"
@@ -189,10 +225,35 @@ export default function EqualizerModal() {
               {saved === 'backend' ? <Check className="w-3.5 h-3.5" /> : 'Guardar'}
             </button>
           </div>
-          <p className="text-[11px] text-zinc-500">
-            Conecta tu micro-backend (carpeta <code>server/</code>) para transmitir audio puro sin anuncios. Evita
-            planes con "cold start" (p. ej. Render gratuito).
-          </p>
+
+          {hasBackend ? (
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={strict}
+                onChange={(e) => {
+                  setStrict(e.target.checked);
+                  setStrictAdFree(e.target.checked);
+                }}
+                className="mt-0.5 accent-[#c81900] w-4 h-4 shrink-0"
+              />
+              <span className="text-[11px] text-zinc-300 leading-relaxed">
+                <strong className="text-white">Modo 0 anuncios estricto.</strong> Nunca usa el reproductor de YouTube
+                (la única fuente posible de anuncios). Si el servidor no puede servir una canción, se prueba otro vídeo
+                o se salta. Desactívalo para usar YouTube como respaldo.
+              </span>
+            </label>
+          ) : (
+            <p className="text-[11px] text-zinc-400 leading-relaxed flex gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0 text-brand-rose mt-0.5" />
+              <span>
+                Sin servidor se usa el reproductor de YouTube, que puede mostrar anuncios en algunos vídeos. Para
+                eliminarlos por completo, en tu PC ejecuta{' '}
+                <code className="text-brand-blush">server\start-windows.ps1 -Tunnel</code> y abre el enlace o QR que
+                muestra: el servidor se conecta solo.
+              </span>
+            </p>
+          )}
         </div>
 
         {/* 5. API Key */}

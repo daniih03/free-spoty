@@ -1,4 +1,4 @@
-import { getCustomBackendUrl } from './config';
+import { getCustomBackendUrl, isStrictAdFree } from './config';
 
 declare global {
   interface Window {
@@ -19,6 +19,36 @@ export const PlayerStates = {
 export type PlayerStateChangeHandler = (state: number) => void;
 export type PlayerErrorHandler = (errorCode: number) => void;
 
+/** Códigos de error propios (los de YouTube son 2, 5, 100, 101, 150). */
+export const EngineErrors = {
+  /** El servidor no pudo servir este vídeo: probar otro candidato. */
+  STREAM_FAILED: 9001,
+  /** El servidor de audio no responde. */
+  SERVER_DOWN: 9002,
+} as const;
+
+/** 10 ms de silencio (WAV PCM): desbloquea el <audio> dentro del gesto del usuario (iOS). */
+const SILENT_WAV = (() => {
+  const samples = 441;
+  const buf = new DataView(new ArrayBuffer(44 + samples * 2));
+  const str = (o: number, t: string) => [...t].forEach((c, i) => buf.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF');
+  buf.setUint32(4, 36 + samples * 2, true);
+  str(8, 'WAVEfmt ');
+  buf.setUint32(16, 16, true);
+  buf.setUint16(20, 1, true); // PCM
+  buf.setUint16(22, 1, true); // mono
+  buf.setUint32(24, 44100, true);
+  buf.setUint32(28, 88200, true);
+  buf.setUint16(32, 2, true);
+  buf.setUint16(34, 16, true);
+  str(36, 'data');
+  buf.setUint32(40, samples * 2, true);
+  let bin = '';
+  new Uint8Array(buf.buffer).forEach((b) => (bin += String.fromCharCode(b)));
+  return `data:audio/wav;base64,${btoa(bin)}`;
+})();
+
 export interface EqGains {
   bass: number; // dB, -12..12
   mid: number;
@@ -36,14 +66,17 @@ const DEBUG = (() => {
   }
 })();
 const debug = (...args: unknown[]) => DEBUG && console.info('[AudioEngine]', ...args);
-const STREAM_FALLBACK_MS = 3500;
+const STREAM_FALLBACK_MS = 3500; // modo flexible: pasar a YouTube pronto
+const STREAM_STRICT_MS = 15000; // modo estricto: la 1ª extracción de yt-dlp puede tardar
 const WATCHDOG_MS = 3000;
 
 /**
  * Motor de audio híbrido:
- *  1. Servidor propio configurado → <audio> HTML5 nativo (0 anuncios), con
- *     fallback automático al iframe si no arranca en 3,5 s.
- *  2. Por defecto → YouTube IFrame API.
+ *  1. Servidor propio configurado → <audio> HTML5 nativo (0 anuncios).
+ *     - Modo estricto (por defecto): nunca se usa YouTube; si un stream falla
+ *       se emite un error para que el reproductor pruebe otro vídeo.
+ *     - Modo flexible: si no arranca en 3,5 s se pasa al iframe.
+ *  2. Sin servidor → YouTube IFrame API (cargada solo cuando hace falta).
  *
  * Reglas heredadas (ver docs/troubleshooting-and-lessons.md):
  *  - El contenedor del iframe es visible para el navegador (opacity 1) pero
@@ -62,6 +95,7 @@ class AudioEngine {
   private audio: HTMLAudioElement | null = null;
   private usingHtmlAudio = false;
   private htmlVideoId: string | null = null;
+  private audioUnlocked = false;
 
   private volume = 100;
   private rate = 1;
@@ -76,7 +110,12 @@ class AudioEngine {
   constructor() {
     if (typeof window === 'undefined') return;
     this.initHtmlAudio();
-    this.initIframeApi();
+    // El iframe (≈1 MB de JS de YouTube) solo se carga si puede llegar a usarse
+    if (!this.strictServerMode()) this.initIframeApi();
+  }
+
+  private strictServerMode(): boolean {
+    return !!getCustomBackendUrl() && isStrictAdFree();
   }
 
   // -------------------------------------------------------------------------
@@ -94,8 +133,9 @@ class AudioEngine {
     audio.setAttribute('playsinline', 'true');
     audio.setAttribute('webkit-playsinline', 'true');
 
+    // Solo eventos del stream real (no del silencio de desbloqueo)
     const whenActive = (fn: () => void) => () => {
-      if (this.usingHtmlAudio) fn();
+      if (this.usingHtmlAudio && !audio.src.startsWith('data:')) fn();
     };
 
     audio.addEventListener('playing', whenActive(() => {
@@ -105,11 +145,8 @@ class AudioEngine {
     audio.addEventListener('pause', whenActive(() => this.emit(PlayerStates.PAUSED)));
     audio.addEventListener('ended', whenActive(() => this.emit(PlayerStates.ENDED)));
     audio.addEventListener('waiting', whenActive(() => this.emit(PlayerStates.BUFFERING)));
-    audio.addEventListener('canplay', () => this.clearStreamTimer());
-    audio.addEventListener('error', whenActive(() => {
-      console.warn('[AudioEngine] Error en stream del servidor → iframe de YouTube');
-      this.fallbackToIframe();
-    }));
+    audio.addEventListener('canplay', whenActive(() => this.clearStreamTimer()));
+    audio.addEventListener('error', whenActive(() => this.handleStreamFailure('error de stream')));
 
     this.audio = audio;
   }
@@ -243,6 +280,26 @@ class AudioEngine {
     }, WATCHDOG_MS);
   }
 
+  /** Stream del servidor fallido: modo estricto → error recuperable; flexible → iframe. */
+  private handleStreamFailure(reason: string) {
+    this.clearStreamTimer();
+    if (!this.strictServerMode()) {
+      console.warn(`[AudioEngine] ${reason} → iframe de YouTube`);
+      this.fallbackToIframe();
+      return;
+    }
+    const backend = getCustomBackendUrl();
+    this.audio?.pause();
+    console.warn(`[AudioEngine] ${reason} (modo 0 anuncios: sin YouTube)`);
+    // ¿Falla el vídeo o el servidor entero?
+    fetch(`${backend}/health`, { signal: AbortSignal.timeout(3000) })
+      .then((r) => (r.ok ? EngineErrors.STREAM_FAILED : EngineErrors.SERVER_DOWN))
+      .catch(() => EngineErrors.SERVER_DOWN)
+      .then((code) => {
+        if (this.usingHtmlAudio) this.errorListeners.forEach((fn) => fn(code));
+      });
+  }
+
   private fallbackToIframe() {
     this.clearStreamTimer();
     const videoId = this.htmlVideoId;
@@ -254,6 +311,7 @@ class AudioEngine {
       this.audio.removeAttribute('src');
       this.audio.load();
     }
+    if (!this.player) this.initIframeApi();
     if (videoId) this.loadIframe(videoId, start, true);
   }
 
@@ -275,16 +333,20 @@ class AudioEngine {
       if (startSeconds > 0) audio.currentTime = startSeconds;
       this.emit(PlayerStates.BUFFERING);
 
-      // Si el stream no arranca a tiempo → iframe instantáneo
       this.streamTimer = setTimeout(() => {
-        if (this.usingHtmlAudio && audio.paused && audio.currentTime === 0) {
-          console.warn('[AudioEngine] Stream lento → iframe de YouTube');
-          this.fallbackToIframe();
+        if (this.usingHtmlAudio && audio.paused && audio.currentTime <= startSeconds) {
+          this.handleStreamFailure('stream sin arrancar a tiempo');
         }
-      }, STREAM_FALLBACK_MS);
+      }, this.strictServerMode() ? STREAM_STRICT_MS : STREAM_FALLBACK_MS);
 
       if (autoplay) {
-        audio.play().catch(() => {
+        audio.play().catch((err: DOMException) => {
+          if (err?.name === 'NotAllowedError') {
+            // Autoplay bloqueado por el navegador: el usuario pulsará Play
+            this.clearStreamTimer();
+            this.emit(PlayerStates.PAUSED);
+            return;
+          }
           // Autoplay diferido hasta tener datos
           audio.addEventListener('canplay', () => audio.play().catch(() => {}), { once: true });
         });
@@ -294,6 +356,7 @@ class AudioEngine {
 
     this.usingHtmlAudio = false;
     this.audio?.pause();
+    if (!this.player) this.initIframeApi();
     this.loadIframe(videoId, startSeconds, autoplay);
   }
 
@@ -304,12 +367,26 @@ class AudioEngine {
   /** Llamar de forma síncrona dentro del gesto del usuario (Safari). */
   public unlockAudio() {
     if (this.audioCtx?.state === 'suspended') this.audioCtx.resume().catch(() => {});
-    if (!this.player) this.initIframeApi();
+    if (getCustomBackendUrl()) {
+      // iOS/Safari: un <audio> solo puede sonar sin gesto si ya sonó con uno.
+      // El src real llega tras la resolución asíncrona, así que se "estrena"
+      // aquí con un silencio, síncronamente dentro del toque del usuario.
+      if (!this.audioUnlocked && this.audio && !this.usingHtmlAudio) {
+        this.audio.src = SILENT_WAV;
+        this.audio
+          .play()
+          .then(() => (this.audioUnlocked = true))
+          .catch(() => {});
+      }
+    }
+    if (!this.player && !this.strictServerMode()) this.initIframeApi();
   }
 
   public play() {
     if (this.usingHtmlAudio && this.audio) {
-      this.audio.play().catch(() => this.fallbackToIframe());
+      this.audio.play().catch((err: DOMException) => {
+        if (err?.name !== 'NotAllowedError') this.handleStreamFailure('play() rechazado');
+      });
       return;
     }
     if (this.pendingVideoId && this.playerReady) {

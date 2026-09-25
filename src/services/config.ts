@@ -4,6 +4,7 @@
 
 const BACKEND_URL_KEY = 'free_spoty_backend_url';
 const YT_API_KEY = 'free_spoty_yt_api_key';
+const STRICT_ADFREE_KEY = 'free_spoty_strict_adfree';
 
 function read(key: string): string {
   try {
@@ -35,6 +36,49 @@ export function getCustomBackendUrl(): string {
 
 export function setCustomBackendUrl(url: string) {
   write(BACKEND_URL_KEY, url.trim().replace(/\/+$/, ''));
+}
+
+/**
+ * Modo 0 anuncios estricto (por defecto activado): con servidor propio nunca se
+ * recurre al reproductor de YouTube, que es la única fuente posible de anuncios.
+ * Si el servidor no puede servir una canción, se prueba otro vídeo o se salta.
+ */
+export function isStrictAdFree(): boolean {
+  return read(STRICT_ADFREE_KEY) !== '0';
+}
+
+export function setStrictAdFree(strict: boolean) {
+  write(STRICT_ADFREE_KEY, strict ? '' : '0');
+}
+
+function isAcceptableServerUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    // Desde una web HTTPS solo se permite HTTPS, salvo localhost (contexto seguro)
+    return url.protocol === 'https:' || (url.protocol === 'http:' && local);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Conecta un servidor desde un enlace `…/free-spoty/?server=https://…`
+ * (el que imprime server/start-windows.ps1, también como QR para el móvil).
+ */
+export function consumeServerLinkParam() {
+  const params = new URLSearchParams(window.location.search);
+  const server = params.get('server');
+  if (!server) return;
+  params.delete('server');
+  const query = params.toString();
+  window.history.replaceState(window.history.state, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+
+  const clean = server.trim().replace(/\/+$/, '');
+  if (clean === getCustomBackendUrl() || !isAcceptableServerUrl(clean)) return;
+  if (window.confirm(`¿Conectar el servidor de audio sin anuncios?
+
+${clean}`)) setCustomBackendUrl(clean);
 }
 
 export function getCustomApiKey(): string {

@@ -252,10 +252,25 @@ export function peekResolved(song: Song): Song | null {
   return cached ? withIds(song, cached.ids) : null;
 }
 
-/** Precarga en segundo plano (siguiente canción de la cola). */
+/**
+ * Precarga en segundo plano (siguiente canción de la cola): resuelve el vídeo
+ * y, con servidor propio, le pide que extraiga ya la URL de audio para que el
+ * cambio de canción sea instantáneo.
+ */
 export function prefetchSong(song: Song | undefined) {
-  if (!song || song.youtubeId || peekResolved(song)) return;
-  resolveInternal(song).catch(() => {});
+  if (!song) return;
+  const known = peekResolved(song);
+  const ready = known ? Promise.resolve(known) : resolveInternal(song);
+  const backend = getCustomBackendUrl();
+  ready
+    .then((s) => {
+      if (backend && s.youtubeId) {
+        return fetch(`${backend}/api/warm?id=${encodeURIComponent(s.youtubeId)}`, {
+          signal: AbortSignal.timeout(20000),
+        });
+      }
+    })
+    .catch(() => {});
 }
 
 /** Descarta un ID que ha fallado para que no vuelva a elegirse primero. */

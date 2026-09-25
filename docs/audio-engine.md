@@ -77,8 +77,16 @@ Verificado: con un ID inexistente como único candidato, YouTube emite 150, se r
 ### 6. Watchdog
 A los 3 s de cargar, si el iframe sigue en `BUFFERING / UNSTARTED / PAUSED`, se re-lanza `playVideo()`.
 
-### 7. Modo servidor propio (`<audio>` nativo, 0 anuncios)
-Si hay URL de servidor (`config.ts`), el motor usa `<audio src="…/api/stream?id=">`. Si no arranca en 3,5 s o da error → cae al iframe conservando la posición. Las URLs `onrender.com` se purgan (lección nº4).
+### 7. Modo 0 anuncios (servidor propio + `<audio>` nativo)
+Los anuncios solo pueden venir del reproductor de YouTube. La única forma de garantizar **cero anuncios** es no usarlo: el audio lo sirve el servidor propio (`server/`, yt-dlp) y se reproduce en un `<audio>` HTML5.
+
+- **Conexión:** Ajustes → Servidor de audio, o abriendo `…/free-spoty/?server=URL` (lo imprime `server/start-windows.ps1`, también como QR). `src/serverLink.ts` lee el parámetro *antes* de que arranque el motor.
+- **Modo estricto** (`isStrictAdFree()`, activado por defecto): con servidor configurado **el iframe de YouTube ni siquiera se carga** (≈1 MB menos de JS). Si un stream falla, el motor emite `EngineErrors.STREAM_FAILED (9001)` y el reproductor prueba el siguiente candidato / re-resuelve / salta; si `/health` no responde emite `SERVER_DOWN (9002)` y la cápsula muestra "Servidor de audio sin conexión" (sin saltar canciones). Timeout de arranque: 15 s.
+- **Modo flexible** (desactivando el interruptor): si el stream no arranca en 3,5 s se usa el iframe como respaldo (puede haber anuncios).
+- **iOS:** `unlockAudio()` reproduce 10 ms de silencio en el `<audio>` dentro del gesto del usuario, porque el `src` real llega tras la resolución asíncrona. Los eventos del silencio se ignoran (`src` `data:`).
+- **Precarga:** con servidor propio se precargan (resolución + `/api/warm`) la siguiente canción de la cola, el resultado principal de cada búsqueda y cualquier tarjeta sobre la que se pose el cursor 250 ms o se toque.
+- **Medido (PC doméstico, Edge):** canción sin caché ~5,8 s; resultado principal precargado ~2,7 s; siguiente de la cola ~1,6 s; servidor caído → aviso en 0,24 s. Cero peticiones al reproductor de YouTube.
+- Las URLs `onrender.com` se purgan (lección nº4).
 
 ### 8. Ecualizador real (Web Audio)
 Solo aplicable al `<audio>` del servidor propio (el audio del iframe cross-origin no es accesible). El grafo `MediaElementSource → lowshelf 200 Hz → peaking 1 kHz → highshelf 4 kHz` se crea **solo al elegir un preset no plano**, para no arriesgar la reproducción en segundo plano de iOS con un `AudioContext` innecesario. Requiere que el servidor envíe CORS (`*`), como hace `server/`.
@@ -98,4 +106,4 @@ Basado en una marca de tiempo (`sleepEndsAt`), no en un contador decrementado ca
 `localStorage.setItem('free_spoty_debug', '1')` y recargar: el motor registra en consola cada `loadIframe`, cambio de estado y `onReady`. Los errores de YouTube y las recuperaciones se registran siempre (`[YouTube] error N`, `[Recuperación] …`).
 
 ## 🌐 Host del iframe: `youtube-nocookie.com`
-**Estado actual:** activo (commit `9fca205`, para reducir anuncios en móvil). La lección nº1 documenta que algunas discográficas bloquean ese dominio (error 150); la recuperación automática (candidatos alternativos tipo Topic/lyrics + re-resolución) mitiga el problema. Si vuelven a aparecer errores 150 masivos, revisar esta decisión.
+**Estado actual:** activo (commit `9fca205`, para reducir anuncios en móvil) — solo se usa **sin** servidor propio o en modo flexible. La lección nº1 documenta que algunas discográficas bloquean ese dominio (error 150); la recuperación automática (candidatos alternativos tipo Topic/lyrics + re-resolución) mitiga el problema. Si vuelven a aparecer errores 150 masivos, revisar esta decisión.

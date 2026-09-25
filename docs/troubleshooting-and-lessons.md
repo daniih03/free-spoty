@@ -112,3 +112,31 @@ Este documento es el **registro histórico de problemas críticos resueltos** en
 
 - `server/index.js` construía `` exec(`yt-dlp … "https://www.youtube.com/watch?v=${videoId}"`) `` con el `id` de la query sin validar: **inyección de comandos** (y `/api/debug` igual).
 - **Regla:** `execFile`/`spawn` con argumentos en array, `--` antes de la URL y validación `/^[\w-]{11}$/`. El endpoint de depuración se eliminó.
+
+---
+
+## 13. "0 anuncios" sin servidor propio no es viable (sept. 2026)
+
+- Se probó reproducir el audio vía instancias públicas Piped (`/streams/:id`) e Invidious (`local=true`): YouTube bloquea sus IPs ("Sign in to confirm you're not a bot") e Invidious está tras un muro anti-bots (Anubis). Descartado como fuente principal.
+- Anuncios en el iframe: no se pueden bloquear ni detectar de forma fiable desde fuera (iframe cross-origin).
+- **Conclusión:** la garantía de 0 anuncios es el servidor propio con yt-dlp en una **IP doméstica** + modo estricto. Ver `audio-engine.md` §7.
+
+---
+
+## 14. yt-dlp en Windows: arranque lento y runtime JS
+
+- `yt-dlp.exe` (PyInstaller) tarda ~2,4 s solo en arrancar; con extracción, ~4,5 s por canción. Un worker Python persistente (`server/ytdlp_worker.py`) lo baja a ~1,3 s.
+- Desde finales de 2025 yt-dlp necesita un runtime JS para las firmas de YouTube; solo `deno` viene habilitado por defecto. Se pasa `--js-runtimes node` (Node siempre está presente en el servidor).
+
+---
+
+## 15. IDs "verificados" de las destacadas que no lo estaban
+
+- 5 IDs de `exploreData.ts` eran vídeos borrados y 2 reproducían **otra canción** ("Yellow" → "Paradise", "In The End" → "Numb"), sin ningún error que disparase la recuperación.
+- **Regla:** tras tocar `exploreData.ts`, ejecutar `node server/scripts/verify-featured.js` (oEmbed + coincidencia de título; `--write` regenera con yt-search filtrando por título y duración).
+
+---
+
+## 16. PowerShell 5.1 y stderr de ejecutables
+
+- Con `$ErrorActionPreference = 'Stop'`, cualquier línea en stderr de un ejecutable nativo (p. ej. el aviso de versión de `pip`) aborta el script. `start-windows.ps1` usa `Invoke-Native`, que ejecuta en modo `Continue` y comprueba `$LASTEXITCODE`.

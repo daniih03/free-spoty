@@ -5,6 +5,7 @@
  *
  *   GET /api/stream?id=VIDEO_ID   → audio (m4a/webm) con soporte HTTP Range
  *   GET /api/search?q=QUERY       → [{ videoId, title, duration }]
+ *   GET /api/warm?id=VIDEO_ID     → pre-extrae la URL (la siguiente canción arranca al instante)
  *   GET /health                   → estado + versión de yt-dlp
  *
  * Seguridad: yt-dlp se invoca SIEMPRE con execFile/spawn y argumentos en array
@@ -19,12 +20,23 @@ const { pipeline } = require('stream/promises');
 
 const PORT = Number(process.env.PORT) || 3000;
 const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
+/** Python con yt_dlp instalado → workers persistentes (extracción ~3x más rápida). */
+const YTDLP_PYTHON = process.env.YTDLP_PYTHON || '';
+const WORKER_COUNT = Number(process.env.YTDLP_WORKERS) || 2;
 const MAX_CONCURRENT_EXTRACTIONS = Number(process.env.MAX_EXTRACTIONS) || 4;
 const VIDEO_ID_RE = /^[\w-]{11}$/;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 const app = express();
 app.disable('x-powered-by');
+// Private Network Access: permite que la web en HTTPS (GitHub Pages) use un
+// servidor en localhost / red local sin bloqueos de Chrome.
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
 app.use(
   cors({
     origin: '*',
@@ -95,6 +107,77 @@ function rateLimit({ windowMs, max }) {
 const withExtractionSlot = createSemaphore(MAX_CONCURRENT_EXTRACTIONS);
 
 // ---------------------------------------------------------------------------
+// Workers persistentes de yt-dlp (ytdlp_worker.py)
+// ---------------------------------------------------------------------------
+
+class YtDlpWorker {
+  constructor(python) {
+    this.python = python;
+    this.pending = new Map();
+    this.rid = 0;
+    this.ready = false;
+    this.start();
+  }
+
+  start() {
+    this.ready = false;
+    this.proc = spawn(this.python, [require('path').join(__dirname, 'ytdlp_worker.py')], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let buf = '';
+    this.proc.stdout.on('data', (chunk) => {
+      buf += chunk;
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl);
+        buf = buf.slice(nl + 1);
+        let msg;
+        try {
+          msg = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        if (msg.ready) {
+          this.ready = true;
+          ytDlpVersion = ytDlpVersion || `${msg.version} (worker)`;
+          continue;
+        }
+        const job = this.pending.get(msg.rid);
+        if (!job) continue;
+        this.pending.delete(msg.rid);
+        clearTimeout(job.timer);
+        msg.url ? job.resolve(msg.url) : job.reject(new Error(msg.error || 'worker error'));
+      }
+    });
+    this.proc.stderr.resume();
+    this.proc.on('exit', () => {
+      for (const job of this.pending.values()) job.reject(new Error('worker terminado'));
+      this.pending.clear();
+      if (!shuttingDown) setTimeout(() => this.start(), 1000);
+    });
+  }
+
+  extract(videoId) {
+    return new Promise((resolve, reject) => {
+      const rid = ++this.rid;
+      const timer = setTimeout(() => {
+        this.pending.delete(rid);
+        reject(new Error('worker timeout'));
+      }, 25_000);
+      this.pending.set(rid, { resolve, reject, timer });
+      this.proc.stdin.write(JSON.stringify({ rid, id: videoId }) + '\n');
+    });
+  }
+
+  get load() {
+    return this.pending.size;
+  }
+}
+
+let shuttingDown = false;
+const workers = YTDLP_PYTHON ? Array.from({ length: WORKER_COUNT }, () => new YtDlpWorker(YTDLP_PYTHON)) : [];
+
+// ---------------------------------------------------------------------------
 // Resolución de URL de audio con yt-dlp
 // ---------------------------------------------------------------------------
 
@@ -109,6 +192,19 @@ function ttlFromUrl(url) {
 }
 
 function extractAudioUrl(videoId) {
+  // Worker persistente disponible → el menos cargado; si falla, CLI como respaldo
+  const live = workers.filter((w) => w.ready);
+  if (live.length) {
+    const worker = live.reduce((a, b) => (b.load < a.load ? b : a));
+    return worker.extract(videoId).catch((err) => {
+      console.warn(`[worker] ${err.message} → yt-dlp CLI`);
+      return extractAudioUrlCli(videoId);
+    });
+  }
+  return extractAudioUrlCli(videoId);
+}
+
+function extractAudioUrlCli(videoId) {
   return withExtractionSlot(
     () =>
       new Promise((resolve, reject) => {
@@ -120,6 +216,9 @@ function extractAudioUrl(videoId) {
             'bestaudio[ext=m4a]/bestaudio/best',
             '--no-warnings',
             '--no-playlist',
+            // Runtime JS para descifrar firmas de YouTube (Node ya está presente)
+            '--js-runtimes',
+            'node',
             '--',
             `https://www.youtube.com/watch?v=${videoId}`,
           ],
@@ -156,7 +255,7 @@ async function getAudioUrl(videoId) {
 // ---------------------------------------------------------------------------
 
 let ytDlpVersion = null;
-execFile(YTDLP, ['--version'], { timeout: 10_000 }, (err, out) => {
+if (!YTDLP_PYTHON) execFile(YTDLP, ['--version'], { timeout: 10_000 }, (err, out) => {
   ytDlpVersion = err ? `unavailable: ${err.message}` : out.trim();
 });
 
@@ -253,6 +352,8 @@ function spawnFallback(req, res, videoId) {
     '-',
     '--no-playlist',
     '--no-warnings',
+    '--js-runtimes',
+    'node',
     '--',
     `https://www.youtube.com/watch?v=${videoId}`,
   ]);
@@ -266,6 +367,17 @@ function spawnFallback(req, res, videoId) {
   });
   req.on('close', () => proc.kill('SIGKILL'));
 }
+
+app.get('/api/warm', async (req, res) => {
+  const videoId = String(req.query.id || '');
+  if (!VIDEO_ID_RE.test(videoId)) return res.status(400).json({ error: 'Invalid id parameter' });
+  try {
+    await getAudioUrl(videoId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ ok: false, error: err.message });
+  }
+});
 
 app.get('/api/stream', async (req, res) => {
   const videoId = String(req.query.id || '');
@@ -287,6 +399,8 @@ const server = app.listen(PORT, () => {
 
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.on(signal, () => {
+    shuttingDown = true;
+    workers.forEach((w) => w.proc.kill());
     server.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 5000).unref();
   });

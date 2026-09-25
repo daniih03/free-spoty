@@ -219,3 +219,9 @@ Para alejarse de la saturada y rígida interfaz tradicional de Spotify, Free-Spo
    - **Importador de listas en paralelo** (4 búsquedas simultáneas con barra de progreso) y restauración de backup desde archivo `.json`; la restauración **combina** con la biblioteca existente en vez de sobrescribirla.
    - **Aviso de actualización no intrusivo:** nunca se recarga la app en mitad de una canción.
    - **Accesibilidad:** `aria-label`/`aria-pressed` en controles, foco visible coral, soporte de `prefers-reduced-motion`; el vinilo congela su ángulo al pausar en lugar de saltar a 0º.
+
+14. **Modo 0 anuncios garantizado:**
+   - Con el servidor propio (`server\start-windows.ps1 -Tunnel` en Windows) la música se reproduce como audio nativo y el reproductor de YouTube **no se carga**: no puede haber anuncios. Conexión con un toque desde el enlace/QR (`?server=`).
+   - Estado del servidor en Ajustes ("Conectado" / "Sin conexión") e interruptor de modo estricto.
+   - Precarga inteligente (siguiente canción, resultado principal, hover/toque) para que el audio sin anuncios arranque casi al instante.
+   - Bonus del audio nativo: reproducción en segundo plano y pantalla bloqueada más fiable en móvil, y ecualizador real.

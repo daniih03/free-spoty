@@ -13,3 +13,6 @@ dist-ssr
 *.sln
 *.sw?
 scratch
+
+# Binarios locales del audio engine (yt-dlp, cloudflared)
+server/bin/

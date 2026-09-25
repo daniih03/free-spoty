@@ -6,6 +6,7 @@ import { ui } from '../../state/ui';
 import { formatTime } from '../../lib/format';
 import { LikeButton } from '../Player/Controls';
 import { Cover, SoundBars } from './Primitives';
+import { usePrefetchIntent } from '../../hooks/usePrefetchIntent';
 
 interface TrackRowProps {
   song: Song;
@@ -32,6 +33,7 @@ export const TrackRow = memo(function TrackRow({
 }: TrackRowProps) {
   const isCurrent = useIsCurrentSong(song.id);
   const isPlaying = useIsSongPlaying(song.id);
+  const prefetch = usePrefetchIntent(song);
 
   const handlePlay = () => {
     if (isCurrent) playerActions.togglePlay();
@@ -52,6 +54,7 @@ export const TrackRow = memo(function TrackRow({
   return (
     <div
       onClick={handlePlay}
+      {...prefetch}
       className={`group flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer min-w-0 ${container}`}
     >
       <div className="flex items-center gap-3 md:gap-3.5 min-w-0 flex-1">

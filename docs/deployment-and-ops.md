@@ -57,7 +57,17 @@ Compilación y despliegue automático de **Free-Spoty** en **GitHub Pages**, sis
 
 ---
 
-## 🎧 Backend opcional (`server/`)
+## 🎧 Backend de audio 0 anuncios (`server/`)
+
+**En Windows (recomendado: IP doméstica, YouTube no la bloquea):**
+```powershell
+powershell -ExecutionPolicy Bypass -File server\start-windows.ps1          # solo este PC
+powershell -ExecutionPolicy Bypass -File server\start-windows.ps1 -Tunnel  # + móvil/fuera de casa
+```
+El script instala dependencias, crea un venv con yt-dlp (o descarga `yt-dlp.exe` si no hay Python), lo actualiza cada 3 días, arranca el servidor y con `-Tunnel` abre un túnel HTTPS gratuito de Cloudflare mostrando el enlace `…/free-spoty/?server=…` y un **QR** para el móvil. La URL del túnel cambia en cada arranque (para una fija: Tailscale Funnel o un túnel con nombre de Cloudflare).
+
+Para verificar los IDs de las playlists destacadas: `cd server && node scripts/verify-featured.js [--write]`.
+
 
 Proxy de audio sin anuncios con `yt-dlp` (ver `server/README.md`): streaming con `Range`, búsqueda cacheada, validación estricta de IDs y ejecución sin shell. Debe alojarse en un servicio **sin cold start**; las URLs `onrender.com` se descartan en el cliente.
 
