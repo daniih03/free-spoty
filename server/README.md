@@ -8,6 +8,7 @@ Microservicio opcional que transmite el audio de YouTube como `<audio>` HTML5 na
 | `GET /api/search?q=QUERY` | `{ results: [{ videoId, title, duration }] }` (caché 1 h, 90 req/min por IP). |
 | `GET /api/warm?id=VIDEO_ID` | Pre-extrae la URL (la app lo usa para precargar la siguiente canción). |
 | `GET /health` | Estado y versión de `yt-dlp`. |
+| `GET /api/spotify-playlist?id=ID` | `{ name, coverUrl, tracks }` de una playlist pública de Spotify (playlist completa si hay `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET`; si no, solo las primeras ~100 pistas). |
 
 ## Características
 
@@ -40,6 +41,23 @@ curl http://localhost:3000/health
 ```
 
 Variables opcionales: `PORT` (3000), `MAX_EXTRACTIONS` (4), `YTDLP_PATH` (`yt-dlp`), `YTDLP_PYTHON` (activa los workers), `YTDLP_WORKERS` (2).
+
+### Importar playlists de Spotify completas
+
+`/api/spotify-playlist` prueba, en orden, hasta que una funcione:
+
+1. **Client Credentials** (si defines `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET`, app gratis en [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)). ⚠️ Desde 2026 Spotify exige que la **cuenta dueña de la app tenga Premium activo**; sin Premium devuelve 403 y se pasa al siguiente método automáticamente.
+2. **Token anónimo del propio widget** (gratis, sin cuenta ni configuración) — el mismo mecanismo que usa `open.spotify.com/embed`. Spotify bloquea este endpoint desde algunas IPs de datacenter, pero suele funcionar desde una IP doméstica normal.
+3. **Widget público sin token** (siempre disponible): **recorta a ~100 pistas**, así que playlists más largas se importan incompletas.
+
+Para usar el método 1 (si tienes Premium en la cuenta de la app):
+
+```powershell
+$env:SPOTIFY_CLIENT_ID = "tu_client_id"
+$env:SPOTIFY_CLIENT_SECRET = "tu_client_secret"
+```
+
+antes de arrancar el servidor (o añádelas al entorno de la tarea programada en `setup-windows.ps1`). Sin Premium, no hace falta configurar nada: el método 2 se intenta solo.
 
 ## 💻 Ejecución local sin Docker
 

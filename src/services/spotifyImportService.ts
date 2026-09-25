@@ -4,12 +4,16 @@ import { fetchJson } from '../lib/net';
 /**
  * Importación de playlists de Spotify a partir de su link público.
  *
- * Spotify no ofrece una API de solo lectura sin credenciales, pero el widget
- * embebible (`open.spotify.com/embed/playlist/<id>`) es público y contiene el
- * listado completo de pistas en un JSON incrustado (`__NEXT_DATA__`). Esa
- * página no envía cabeceras CORS, así que se pide primero al servidor propio
- * (sin problema de CORS) y, si no está activo, al lector de Jina AI
- * (`r.jina.ai`, refleja el origen en `Access-Control-Allow-Origin`).
+ * Se pide primero al servidor propio (`GET /api/spotify-playlist`, sin
+ * problema de CORS), que intenta en orden: Web API con Client Credentials
+ * (si hay `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` configuradas, aunque
+ * Spotify exige Premium en la cuenta dueña de la app), Web API con el token
+ * anónimo del propio widget (gratis, sin cuenta), y por último el widget
+ * embebible (`open.spotify.com/embed/playlist/<id>`, JSON `__NEXT_DATA__`),
+ * que recorta a ~100 pistas. Si el servidor propio no está activo, se usa
+ * como último respaldo el lector de Jina AI (`r.jina.ai`, refleja el origen
+ * en `Access-Control-Allow-Origin`) sobre el widget, porque esa página no
+ * envía cabeceras CORS.
  */
 
 export interface SpotifyImportTrack {

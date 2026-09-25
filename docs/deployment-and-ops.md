@@ -79,7 +79,7 @@ Para verificar los IDs de las playlists destacadas: `cd server && node scripts/v
 
 Proxy de audio sin anuncios con `yt-dlp` (ver `server/README.md`): streaming con `Range`, búsqueda cacheada, validación estricta de IDs y ejecución sin shell. Debe alojarse en un servicio **sin cold start**; las URLs `onrender.com` se descartan en el cliente.
 
-`GET /api/spotify-playlist?id=<id>` lee el widget público de Spotify server-side (evita el CORS que bloquea la petición directa desde el navegador) y devuelve `{ name, coverUrl, tracks }` para la importación de playlists por link (`services/spotifyImportService.ts`). Caché en memoria de 15 min por playlist.
+`GET /api/spotify-playlist?id=<id>` devuelve `{ name, coverUrl, tracks }` para la importación de playlists por link (`services/spotifyImportService.ts`). Caché en memoria de 15 min por playlist. Prueba en orden: (1) Web API con `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` (Client Credentials — requiere Premium en la cuenta dueña de la app desde 2026, si no da 403); (2) Web API con el token anónimo del propio widget (gratis, sin cuenta; Spotify lo bloquea desde algunas IPs de datacenter pero suele funcionar desde IP doméstica); (3) widget público server-side (`open.spotify.com/embed/playlist/<id>`, evita el CORS que bloquea la petición directa desde el navegador), que **recorta a ~100 pistas** (comprobado: `?offset=` no pagina). Los métodos 1 y 2 paginan y traen la playlist completa. Ver `server/README.md`.
 
 ```bash
 cd server && docker build -t platino-audio . && docker run -d -p 3000:3000 platino-audio

@@ -7,6 +7,7 @@
  *   GET /api/search?q=QUERY           → [{ videoId, title, duration }]
  *   GET /api/warm?id=VIDEO_ID         → pre-extrae la URL (la siguiente canción arranca al instante)
  *   GET /api/spotify-playlist?id=ID   → { name, coverUrl, tracks } de una playlist pública de Spotify
+ *     (playlist completa si hay SPOTIFY_CLIENT_ID/SPOTIFY_CLIENT_SECRET; si no, ~100 pistas)
  *   GET /health                       → estado + versión de yt-dlp
  *
  * Seguridad: yt-dlp se invoca SIEMPRE con execFile/spawn y argumentos en array
@@ -25,6 +26,9 @@ const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
 const YTDLP_PYTHON = process.env.YTDLP_PYTHON || '';
 const WORKER_COUNT = Number(process.env.YTDLP_WORKERS) || 2;
 const MAX_CONCURRENT_EXTRACTIONS = Number(process.env.MAX_EXTRACTIONS) || 4;
+/** Credenciales opcionales (Client Credentials) para leer playlists de Spotify sin límite de pistas. */
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const VIDEO_ID_RE = /^[\w-]{11}$/;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
@@ -308,10 +312,116 @@ app.get('/api/search', rateLimit({ windowMs: 60_000, max: 90 }), async (req, res
   }
 });
 
-// Importación de playlists de Spotify: lee el widget público (sin API key) y
-// extrae el JSON embebido (__NEXT_DATA__) con el listado de pistas.
+// Importación de playlists de Spotify.
+//
+// Todas las vías por Web API pagan /v1/playlists/{id}/tracks (100 por
+// página) para traer la playlist completa; se prueban en orden hasta que
+// una funcione:
+//   1. Client Credentials (si hay SPOTIFY_CLIENT_ID/SECRET) — requiere que
+//      la cuenta dueña de la app tenga Spotify Premium (403
+//      "Active premium subscription required" si no).
+//   2. Token anónimo del propio widget embebible (gratis, sin cuenta):
+//      `open.spotify.com/get_access_token?...&productType=embed`. Spotify
+//      bloquea este endpoint desde algunas IPs de datacenter (403 "URL
+//      Blocked" vía Varnish); desde una IP doméstica normal suele funcionar.
+//
+// Último fallback (siempre disponible, sin red): el widget público
+// (`open.spotify.com/embed/playlist/<id>`) trae su JSON embebido
+// (__NEXT_DATA__), pero SIEMPRE recorta a ~100 pistas (comprobado: el
+// parámetro ?offset= no tiene efecto), así que playlists grandes quedan
+// truncadas con este método.
 const SPOTIFY_PLAYLIST_ID_RE = /^[A-Za-z0-9]{22}$/;
 const spotifyPlaylistCache = new LruCache(200);
+let spotifyApiToken = { value: '', expiresAt: 0 };
+let spotifyAnonToken = { value: '', expiresAt: 0 };
+
+async function getSpotifyApiToken() {
+  if (spotifyApiToken.value && Date.now() < spotifyApiToken.expiresAt) return spotifyApiToken.value;
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+    },
+    body: 'grant_type=client_credentials',
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`Spotify token ${res.status}`);
+  const data = await res.json();
+  spotifyApiToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return spotifyApiToken.value;
+}
+
+async function getSpotifyAnonToken() {
+  if (spotifyAnonToken.value && Date.now() < spotifyAnonToken.expiresAt) return spotifyAnonToken.value;
+  const res = await fetch('https://open.spotify.com/get_access_token?reason=transport&productType=embed', {
+    headers: { 'User-Agent': UA, Referer: 'https://open.spotify.com/' },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`Spotify anon token ${res.status}`);
+  const data = await res.json();
+  if (!data.accessToken) throw new Error('Spotify anon token sin accessToken');
+  spotifyAnonToken = {
+    value: data.accessToken,
+    expiresAt: (data.accessTokenExpirationTimestampMs || Date.now() + 3_600_000) - 60_000,
+  };
+  return spotifyAnonToken.value;
+}
+
+async function fetchSpotifyPlaylistViaWebApi(id, token) {
+  const authHeaders = { Authorization: `Bearer ${token}` };
+
+  const metaRes = await fetch(`https://api.spotify.com/v1/playlists/${id}?fields=name,images`, {
+    headers: authHeaders,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!metaRes.ok) throw new Error(`Spotify API ${metaRes.status}`);
+  const meta = await metaRes.json();
+
+  const tracks = [];
+  let url =
+    `https://api.spotify.com/v1/playlists/${id}/tracks?limit=100&` +
+    'fields=next,items(track(name,duration_ms,artists(name)))';
+  for (let page = 0; url && page < 30; page++) {
+    const res = await fetch(url, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) throw new Error(`Spotify API ${res.status}`);
+    const data = await res.json();
+    for (const item of data.items || []) {
+      const t = item.track;
+      if (!t) continue;
+      tracks.push({
+        title: t.name,
+        artist: (t.artists || []).map((a) => a.name).join(', '),
+        duration: Math.round((t.duration_ms || 0) / 1000),
+      });
+    }
+    url = data.next;
+  }
+
+  return { name: meta.name || 'Playlist importada', coverUrl: meta.images?.[0]?.url || '', tracks };
+}
+
+async function fetchSpotifyPlaylistViaEmbed(id) {
+  const upstream = await fetch(`https://open.spotify.com/embed/playlist/${id}`, {
+    headers: { 'User-Agent': UA },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!upstream.ok) throw new Error(`Spotify respondió ${upstream.status}`);
+  const html = await upstream.text();
+  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!match) throw new Error('No se encontraron datos de la playlist');
+  const data = JSON.parse(match[1]);
+  const entity = data?.props?.pageProps?.state?.data?.entity;
+  if (!entity || entity.type !== 'playlist') throw new Error('El enlace no es una playlist pública de Spotify');
+
+  return {
+    name: entity.name || 'Playlist importada',
+    coverUrl: entity.coverArt?.sources?.[0]?.url || '',
+    tracks: (entity.trackList || [])
+      .filter((t) => t && t.entityType === 'track')
+      .map((t) => ({ title: t.title, artist: t.subtitle, duration: Math.round((t.duration || 0) / 1000) })),
+  };
+}
 
 app.get('/api/spotify-playlist', rateLimit({ windowMs: 60_000, max: 20 }), async (req, res) => {
   const id = String(req.query.id || '');
@@ -321,25 +431,22 @@ app.get('/api/spotify-playlist', rateLimit({ windowMs: 60_000, max: 20 }), async
   if (cached) return res.json(cached);
 
   try {
-    const upstream = await fetch(`https://open.spotify.com/embed/playlist/${id}`, {
-      headers: { 'User-Agent': UA },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!upstream.ok) throw new Error(`Spotify respondió ${upstream.status}`);
-    const html = await upstream.text();
-    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!match) throw new Error('No se encontraron datos de la playlist');
-    const data = JSON.parse(match[1]);
-    const entity = data?.props?.pageProps?.state?.data?.entity;
-    if (!entity || entity.type !== 'playlist') throw new Error('El enlace no es una playlist pública de Spotify');
-
-    const result = {
-      name: entity.name || 'Playlist importada',
-      coverUrl: entity.coverArt?.sources?.[0]?.url || '',
-      tracks: (entity.trackList || [])
-        .filter((t) => t && t.entityType === 'track')
-        .map((t) => ({ title: t.title, artist: t.subtitle, duration: Math.round((t.duration || 0) / 1000) })),
-    };
+    let result;
+    if (SPOTIFY_CLIENT_ID && SPOTIFY_CLIENT_SECRET) {
+      try {
+        result = await fetchSpotifyPlaylistViaWebApi(id, await getSpotifyApiToken());
+      } catch (err) {
+        console.error('Spotify Web API (Client Credentials) falló:', err.message);
+      }
+    }
+    if (!result) {
+      try {
+        result = await fetchSpotifyPlaylistViaWebApi(id, await getSpotifyAnonToken());
+      } catch (err) {
+        console.error('Spotify Web API (token anónimo) falló, usando fallback del widget:', err.message);
+      }
+    }
+    if (!result) result = await fetchSpotifyPlaylistViaEmbed(id);
     spotifyPlaylistCache.set(id, result, 15 * 60_000);
     res.json(result);
   } catch (err) {
