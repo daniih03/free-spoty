@@ -40,7 +40,7 @@ export function CreatePlaylistSheet({
           maxLength={200}
         />
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs text-zinc-400 hover:text-white">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs text-mute hover:text-paper">
             Cancelar
           </button>
           <button type="submit" disabled={!name.trim()} className={primaryButtonClass}>

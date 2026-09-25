@@ -1,11 +1,12 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
-import { Play, Pause, Shuffle, Trash2, Music, LayoutList, LayoutGrid } from 'lucide-react';
+import { Play, Pause, Shuffle, Trash2, ListMusic, LayoutList, LayoutGrid, Search, Clock3 } from 'lucide-react';
 import type { Playlist } from '../../types/music';
 import { usePlayer, playerActions, playerStore } from '../../state/player';
 import { removeSongFromPlaylist, deleteCustomPlaylist } from '../../services/storageService';
+import { useDominantColor } from '../../hooks/useDominantColor';
 import { SongCard } from '../UI/SongCard';
 import { TrackRow } from '../UI/TrackRow';
-import { Cover } from '../UI/Primitives';
+import { Sleeve } from '../UI/Primitives';
 
 interface PlaylistViewProps {
   playlist: Playlist | null;
@@ -13,11 +14,19 @@ interface PlaylistViewProps {
   onNavigateArtist: (artistName: string) => void;
 }
 
+function formatLength(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.round((totalSeconds % 3600) / 60);
+  return h > 0 ? `${h} h ${m} min` : `${m} min`;
+}
+
 export default function PlaylistView({ playlist, onNavigateHome, onNavigateArtist }: PlaylistViewProps) {
   const [filter, setFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'stream' | 'gallery'>('stream');
+  const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const deferredFilter = useDeferredValue(filter);
   const songs = playlist?.songs ?? [];
+  const { rgb } = useDominantColor(playlist?.coverUrl);
 
   // ¿Suena alguna canción de esta playlist? (primitivo → re-render solo al cambiar)
   const songIds = useMemo(() => new Set(songs.map((s) => s.id)), [songs]);
@@ -36,17 +45,17 @@ export default function PlaylistView({ playlist, onNavigateHome, onNavigateArtis
 
   if (!playlist) {
     return (
-      <div className="p-10 text-center space-y-4">
-        <Music className="w-14 h-14 text-zinc-600 mx-auto" />
-        <h2 className="text-xl font-bold text-white">Esta playlist ya no existe</h2>
-        <button onClick={onNavigateHome} className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm">
+      <div className="py-24 text-center max-w-sm mx-auto px-6">
+        <ListMusic className="w-10 h-10 text-faint mx-auto" />
+        <h2 className="font-display text-2xl font-bold text-paper mt-4">Esta playlist ya no existe</h2>
+        <button onClick={onNavigateHome} className="mt-6 h-11 px-6 rounded-full bg-paper text-ink font-semibold text-[14px]">
           Volver al inicio
         </button>
       </div>
     );
   }
 
-  const totalMinutes = Math.round(songs.reduce((acc, s) => acc + (s.duration || 0), 0) / 60);
+  const totalSeconds = songs.reduce((acc, s) => acc + (s.duration || 0), 0);
 
   const handlePlayAll = () => {
     if (!songs.length) return;
@@ -67,118 +76,134 @@ export default function PlaylistView({ playlist, onNavigateHome, onNavigateArtis
     }
   };
 
-  const modeBtn = (active: boolean) =>
-    `p-1.5 rounded-xl transition-colors ${
-      active ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md' : 'text-zinc-400 hover:text-white'
-    }`;
+  const iconBtn = 'w-11 h-11 flex items-center justify-center rounded-full text-mute hover:text-paper hover:bg-paper/[0.07] transition-colors';
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-3.5 sm:p-4 md:p-8 space-y-6 md:space-y-8 min-w-0">
-      {/* 1. Cabecera */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 sm:gap-6 p-4 sm:p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl min-w-0">
-        <div className="w-36 h-36 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0 border border-white/10">
-          <Cover src={playlist.coverUrl} size={420} eager alt={playlist.name} className="w-full h-full" />
-        </div>
-        <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-coral">
-            {playlist.isCustom ? 'Playlist personalizada' : 'Playlist'}
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight break-words">{playlist.name}</h1>
-          {playlist.description && <p className="text-sm text-zinc-400 max-w-2xl">{playlist.description}</p>}
-          <div className="pt-2 flex items-center justify-center sm:justify-start gap-2 text-xs text-zinc-400 font-medium flex-wrap">
-            <span className="text-white font-semibold">{songs.length} canciones</span>
-            <span>•</span>
-            <span>Aprox. {totalMinutes} min</span>
-            <span>•</span>
-            <span className="text-brand-coral font-medium">Audio alta fidelidad</span>
+    <div className="min-w-0">
+      {/* Cabecera teñida con el color de la carátula */}
+      <header
+        className="relative -mt-[calc(60px+env(safe-area-inset-top,0px))] md:-mt-[72px] px-4 sm:px-6 md:px-10 pt-[calc(76px+env(safe-area-inset-top,0px))] md:pt-[112px] pb-8"
+        style={{ background: `linear-gradient(180deg, rgba(${rgb}, 0.55) 0%, rgba(${rgb}, 0.15) 65%, transparent 100%)` }}
+      >
+        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end gap-6 md:gap-10">
+          <Sleeve
+            src={playlist.coverUrl}
+            size={520}
+            isPlaying={isPlaylistPlaying}
+            slide="30%"
+            coverClassName="rounded-xl"
+            className="w-48 h-48 md:w-60 md:h-60 mx-auto md:mx-0 md:mr-[72px]"
+            alt={playlist.name}
+          />
+          <div className="min-w-0 text-center md:text-left">
+            <p className="text-[13px] font-medium text-paper/75">{playlist.isCustom ? 'Tu playlist' : 'Playlist'}</p>
+            <h1 className="font-display text-display-xl font-extrabold text-paper mt-2 break-words text-balance">{playlist.name}</h1>
+            {playlist.description && <p className="text-[15px] text-paper/70 mt-4 max-w-2xl mx-auto md:mx-0">{playlist.description}</p>}
+            <p className="text-[14px] text-paper/60 mt-3 tabular">
+              {songs.length === 1 ? '1 canción' : `${songs.length} canciones`}
+              {totalSeconds > 0 && `, ${formatLength(totalSeconds)}`}
+            </p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* 2. Barra de acciones */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 pb-8">
+        {/* Acciones */}
+        <div className="flex items-center gap-2 md:gap-3 py-2">
           <button
             onClick={handlePlayAll}
             disabled={!songs.length}
-            className="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white flex items-center justify-center shadow-xl shadow-brand-red/35 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-            title={isPlaylistPlaying ? 'Pausar' : 'Reproducir playlist'}
+            className="w-14 h-14 rounded-full bg-brand-red hover:bg-brand-lightred text-paper flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 mr-1"
+            title={isPlaylistPlaying ? 'Pausar' : 'Reproducir'}
+            aria-label={isPlaylistPlaying ? 'Pausar' : 'Reproducir'}
           >
-            {isPlaylistPlaying ? <Pause className="w-6 h-6 fill-white" /> : <Play className="w-6 h-6 fill-white ml-1" />}
+            {isPlaylistPlaying ? (
+              <Pause className="w-6 h-6 fill-current" strokeWidth={0} />
+            ) : (
+              <Play className="w-6 h-6 fill-current translate-x-[1px]" strokeWidth={0} />
+            )}
           </button>
-          <button
-            onClick={handleShufflePlay}
-            disabled={!songs.length}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors disabled:opacity-50"
-            title="True Shuffle: orden 100% aleatorio sin sesgos"
-          >
-            <Shuffle className="w-4 h-4 text-brand-coral" />
-            <span>True Shuffle</span>
+          <button onClick={handleShufflePlay} disabled={!songs.length} className={iconBtn} title="Reproducir en aleatorio real">
+            <Shuffle className="w-6 h-6" />
           </button>
           {playlist.isCustom && (
-            <button
-              onClick={handleDelete}
-              className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-red-400 transition-colors"
-              title="Eliminar playlist"
-            >
-              <Trash2 className="w-4 h-4" />
+            <button onClick={handleDelete} className={`${iconBtn} hover:!text-brand-rose`} title="Eliminar playlist">
+              <Trash2 className="w-5 h-5" />
             </button>
           )}
-        </div>
 
-        <div className="flex items-center gap-2.5 min-w-0">
-          {songs.length > 5 && (
-            <input
-              type="search"
-              placeholder="Filtrar en esta lista..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-coral w-40 sm:w-56 min-w-0"
-            />
-          )}
-          <div className="flex items-center gap-1 p-1 bg-[#141520]/80 border border-white/10 rounded-2xl backdrop-blur-md shrink-0">
-            <button onClick={() => setViewMode('stream')} className={modeBtn(viewMode === 'stream')} title="Vista Stream">
-              <LayoutList className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => setViewMode('gallery')} className={modeBtn(viewMode === 'gallery')} title="Vista Galería">
-              <LayoutGrid className="w-3.5 h-3.5" />
+          <div className="ml-auto flex items-center gap-1">
+            {songs.length > 5 &&
+              (showFilter ? (
+                <input
+                  autoFocus
+                  type="search"
+                  placeholder="Buscar en esta lista"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  onBlur={() => !filter && setShowFilter(false)}
+                  className="h-9 w-40 sm:w-56 px-4 rounded-full bg-paper/[0.08] text-[13px] text-paper placeholder-mute outline-none focus:ring-1 focus:ring-paper/25 animate-fade-in"
+                />
+              ) : (
+                <button onClick={() => setShowFilter(true)} className={iconBtn} title="Buscar en esta lista">
+                  <Search className="w-5 h-5" />
+                </button>
+              ))}
+            <button
+              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+              className={iconBtn}
+              title={viewMode === 'list' ? 'Ver como cuadrícula' : 'Ver como lista'}
+            >
+              {viewMode === 'list' ? <LayoutGrid className="w-5 h-5" /> : <LayoutList className="w-5 h-5" />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* 3. Canciones */}
-      {filtered.length === 0 ? (
-        <div className="p-10 sm:p-16 text-center text-zinc-500 space-y-3 bg-[#13141f]/30 rounded-3xl border border-white/5">
-          <Music className="w-12 h-12 mx-auto opacity-30 text-brand-coral" />
-          <p className="text-base font-semibold text-zinc-400">
-            {songs.length === 0 ? 'Esta playlist está vacía' : 'Ninguna canción coincide con el filtro'}
-          </p>
-          {songs.length === 0 && (
-            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-              Busca cualquier canción o artista y añádela con el menú de 3 puntos.
+        {/* Canciones */}
+        {filtered.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="font-display text-2xl font-bold text-paper">
+              {songs.length === 0 ? 'Todavía no hay canciones' : 'Ninguna canción coincide'}
             </p>
-          )}
-        </div>
-      ) : viewMode === 'stream' ? (
-        <div className="space-y-2">
-          {filtered.map((song) => (
-            <TrackRow
-              key={song.id}
-              song={song}
-              contextQueue={songs}
-              onNavigateArtist={onNavigateArtist}
-              onRemove={playlist.isCustom ? () => removeSongFromPlaylist(playlist.id, song.id) : undefined}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-          {filtered.map((song) => (
-            <SongCard key={song.id} song={song} contextQueue={songs} onNavigateArtist={onNavigateArtist} />
-          ))}
-        </div>
-      )}
+            {songs.length === 0 && (
+              <p className="text-[14px] text-mute mt-2">
+                Busca una canción y usa el menú <span className="text-paper">···</span> para añadirla aquí.
+              </p>
+            )}
+          </div>
+        ) : viewMode === 'list' ? (
+          <div className="mt-4 -mx-2 md:-mx-3">
+            <div className="hidden md:grid grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto] gap-4 px-3 pb-2 mb-2 border-b border-line text-[13px] text-mute">
+              <span className="flex gap-4">
+                <span className="w-6 text-center">#</span>
+                <span className="w-11" />
+              </span>
+              <span>Título</span>
+              <span>Álbum</span>
+              <span className="flex justify-end w-[124px] pr-[40px]">
+                <Clock3 className="w-4 h-4" aria-label="Duración" />
+              </span>
+            </div>
+            {filtered.map((song, i) => (
+              <TrackRow
+                key={song.id}
+                song={song}
+                number={i + 1}
+                contextQueue={songs}
+                showAlbum
+                onNavigateArtist={onNavigateArtist}
+                onRemove={playlist.isCustom ? () => removeSongFromPlaylist(playlist.id, song.id) : undefined}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-5 gap-y-7">
+            {filtered.map((song) => (
+              <SongCard key={song.id} song={song} contextQueue={songs} onNavigateArtist={onNavigateArtist} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

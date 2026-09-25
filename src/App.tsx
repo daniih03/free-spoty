@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { SmartDock } from './components/Navigation/SmartDock';
@@ -36,7 +36,7 @@ const HISTORY_COVER = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b
 function ViewFallback() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <Spinner className="w-9 h-9 border-2 border-brand-coral" />
+      <Spinner className="w-8 h-8 border-2 border-brand-coral" />
     </div>
   );
 }
@@ -50,7 +50,7 @@ function UpdateNotice() {
     <div className="fixed top-[calc(env(safe-area-inset-top,0px)+64px)] md:top-5 inset-x-0 z-[70] flex justify-center px-4 pointer-events-none">
       <button
         onClick={() => window.location.reload()}
-        className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-[#15151c]/95 border border-brand-red/40 text-xs text-white shadow-2xl shadow-black/60 backdrop-blur-xl animate-fadeIn"
+        className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-full bg-raised border border-line text-[13px] text-paper shadow-[0_20px_40px_-12px_rgba(0,0,0,0.9)] animate-scale-up"
       >
         <RefreshCw className="w-3.5 h-3.5 text-brand-coral shrink-0" />
         <span>Nueva versión lista · se aplicará al pausar</span>
@@ -84,6 +84,7 @@ const AppContent: React.FC = () => {
   const { route, navigate, goBack, goForward, canGoBack, canGoForward } = useNavigation();
   const searchRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   const likedSongs = useLikedSongs();
   const history = useHistory();
@@ -113,6 +114,7 @@ const AppContent: React.FC = () => {
   // Cada vista nueva empieza arriba
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
+    setScrolled(false);
   }, [route.view, route.id]);
 
   const go = useCallback((view: ViewType, id?: string) => navigate(view, id), [navigate]);
@@ -152,15 +154,17 @@ const AppContent: React.FC = () => {
   }, [route, likedSongs, history, playlists]);
 
   return (
-    <div className="relative h-[100dvh] w-full max-w-full overflow-hidden flex flex-col bg-black text-white select-none">
+    <div className="relative h-[100dvh] w-full max-w-full overflow-hidden flex flex-col bg-ink text-paper select-none">
       <AmbientBackground />
 
       <div className="flex-1 flex overflow-hidden z-10 w-full min-w-0">
         <SmartDock route={route} onNavigate={go} />
 
-        <main className="flex-1 flex flex-col overflow-hidden relative md:pl-[84px] w-full min-w-0">
+        <main className="flex-1 flex flex-col overflow-hidden relative md:pl-[88px] w-full min-w-0">
+          <div className="absolute top-0 left-0 md:left-[88px] right-0 z-20">
           <TopNavbar
             ref={searchRef}
+            scrolled={scrolled}
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             canGoBack={canGoBack}
@@ -168,12 +172,18 @@ const AppContent: React.FC = () => {
             canGoForward={canGoForward}
             onGoForward={goForward}
           />
+          </div>
 
           <div
             ref={scrollRef}
-            className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pb-[calc(148px+env(safe-area-inset-bottom,0px))] md:pb-32 w-full min-w-0"
+            onScroll={(e) => {
+              const next = e.currentTarget.scrollTop > 8;
+              if (next !== scrolled) setScrolled(next);
+            }}
+            className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pt-[calc(60px+env(safe-area-inset-top,0px))] md:pt-[72px] pb-[calc(148px+env(safe-area-inset-bottom,0px))] md:pb-32 w-full min-w-0"
           >
             <Suspense fallback={<ViewFallback />}>
+              <div key={`${route.view}/${route.view === 'search' ? '' : route.id ?? ''}`} className="animate-view">
               {route.view === 'home' && <HomeView onSelectPlaylist={goPlaylist} onNavigateArtist={goArtist} />}
               {route.view === 'search' && (
                 <SearchView query={searchQuery} onSearchChange={handleSearchChange} onNavigateArtist={goArtist} />
@@ -192,6 +202,7 @@ const AppContent: React.FC = () => {
               {route.view === 'artist' && route.id && (
                 <ArtistView artistName={route.id} onNavigateBack={canGoBack ? goBack : goHome} onNavigateArtist={goArtist} />
               )}
+              </div>
             </Suspense>
           </div>
         </main>

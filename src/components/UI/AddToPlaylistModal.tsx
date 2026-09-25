@@ -41,21 +41,21 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
       title={isCreating ? 'Crear y añadir a playlist' : 'Añadir a playlist'}
       subtitle="Organiza tus pistas favoritas en tu biblioteca"
     >
-      <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 border border-white/5 mb-5">
+      <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-paper/[0.05] border border-line mb-5">
         <Cover src={song.coverUrl} size={96} eager alt={song.title} className="w-12 h-12 rounded-xl shadow-md shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{song.title}</p>
-          <p className="text-xs text-zinc-400 truncate mt-0.5">{song.artist}</p>
+          <p className="text-sm font-semibold text-paper truncate">{song.title}</p>
+          <p className="text-xs text-mute truncate mt-0.5">{song.artist}</p>
         </div>
       </div>
 
       {feedback && (
         <div
           className={`mb-4 p-3 rounded-2xl text-xs flex items-center gap-2.5 animate-fadeIn ${
-            feedback.ok ? 'bg-brand-red/15 border border-brand-red/30 text-white' : 'bg-white/5 border border-white/10 text-zinc-300'
+            feedback.ok ? 'bg-brand-red/15 border border-brand-red/30 text-paper' : 'bg-paper/[0.05] border border-line text-paper/80'
           }`}
         >
-          {feedback.ok ? <Check className="w-4 h-4 text-brand-coral shrink-0" /> : <Music className="w-4 h-4 text-zinc-400 shrink-0" />}
+          {feedback.ok ? <Check className="w-4 h-4 text-brand-coral shrink-0" /> : <Music className="w-4 h-4 text-mute shrink-0" />}
           <span>{feedback.text}</span>
         </div>
       )}
@@ -63,12 +63,12 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
       {isCreating ? (
         <form onSubmit={handleCreate} className="space-y-4">
           {playlists.length === 0 && (
-            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-[11px] text-zinc-300">
+            <div className="p-3 rounded-2xl bg-paper/[0.05] border border-line text-[11px] text-paper/80">
               Aún no tienes ninguna playlist. Ponle nombre y la canción se añadirá directamente.
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+            <label className="block text-xs font-medium text-paper/80 mb-1.5">
               Nombre de la playlist <span className="text-brand-coral">*</span>
             </label>
             <input
@@ -82,7 +82,7 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Descripción (opcional)</label>
+            <label className="block text-xs font-medium text-paper/80 mb-1.5">Descripción (opcional)</label>
             <input
               maxLength={200}
               placeholder="Breve descripción o temática"
@@ -99,7 +99,7 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
                   setIsCreating(false);
                   setFeedback(null);
                 }}
-                className="px-4 py-2.5 rounded-2xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="px-4 py-2.5 rounded-2xl text-xs font-semibold text-mute hover:text-paper hover:bg-paper/[0.05] transition-colors"
               >
                 Volver a mis listas
               </button>
@@ -119,9 +119,9 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
               setIsCreating(true);
               setFeedback(null);
             }}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all group"
+            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-paper/[0.05] hover:bg-paper/[0.08] border border-line text-paper text-xs font-semibold transition-all group"
           >
-            <div className="w-8 h-8 rounded-xl bg-white/10 group-hover:bg-brand-coral/20 flex items-center justify-center text-brand-coral transition-colors">
+            <div className="w-8 h-8 rounded-xl bg-paper/[0.08] group-hover:bg-brand-coral/20 flex items-center justify-center text-brand-coral transition-colors">
               <Plus className="w-4 h-4" />
             </div>
             Crear nueva playlist
@@ -136,14 +136,14 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
                   onClick={() => handleSelect(pl)}
                   disabled={already}
                   className={`w-full flex items-center justify-between p-2.5 rounded-2xl text-left transition-all ${
-                    already ? 'bg-white/5 opacity-60 cursor-not-allowed' : 'hover:bg-white/10 active:scale-[0.99]'
+                    already ? 'bg-paper/[0.05] opacity-60 cursor-not-allowed' : 'hover:bg-paper/[0.08] active:scale-[0.99]'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Cover src={pl.coverUrl} size={80} alt="" className="w-10 h-10 rounded-xl shadow shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">{pl.name}</p>
-                      <p className="text-[10px] text-zinc-400">
+                      <p className="text-xs font-semibold text-paper truncate">{pl.name}</p>
+                      <p className="text-[10px] text-mute">
                         {pl.songs.length} {pl.songs.length === 1 ? 'canción' : 'canciones'}
                       </p>
                     </div>
@@ -153,7 +153,7 @@ export default function AddToPlaylistModal({ song }: { song: Song }) {
                       <Check className="w-3 h-3" /> Añadida
                     </span>
                   ) : (
-                    <span className="p-2 rounded-xl text-zinc-400 shrink-0">
+                    <span className="p-2 rounded-xl text-mute shrink-0">
                       <Plus className="w-4 h-4" />
                     </span>
                   )}

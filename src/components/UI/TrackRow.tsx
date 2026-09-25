@@ -1,157 +1,152 @@
-import React, { memo } from 'react';
-import { Play, Pause, Trash2, ListPlus } from 'lucide-react';
+import React, { memo, useState } from 'react';
+import { Play, Pause, Trash2, MoreHorizontal } from 'lucide-react';
 import type { Song } from '../../types/music';
 import { useIsCurrentSong, useIsSongPlaying, playerActions } from '../../state/player';
-import { ui } from '../../state/ui';
 import { formatTime } from '../../lib/format';
 import { LikeButton } from '../Player/Controls';
 import { Cover, SoundBars } from './Primitives';
+import { SongMenu } from './SongCard';
 import { usePrefetchIntent } from '../../hooks/usePrefetchIntent';
 
 interface TrackRowProps {
   song: Song;
   contextQueue: Song[];
-  /** Número de pista (estilo lista de artista/álbum). */
+  /** Número de pista; si no se da, se usa la posición implícita sin número. */
   number?: number;
   showCover?: boolean;
-  /** 'glass' = tracklist orgánico de playlists; 'plain' = lista compacta. */
+  /** Se conserva por compatibilidad: ambas variantes comparten estilo. */
   variant?: 'glass' | 'plain';
   subtitle?: 'artist' | 'album';
+  /** Muestra la columna de álbum en pantallas anchas. */
+  showAlbum?: boolean;
   onNavigateArtist?: (artistName: string) => void;
   onRemove?: () => void;
 }
 
+/** Fila de tracklist: número/ecualizador, carátula, título, álbum, me gusta, duración. */
 export const TrackRow = memo(function TrackRow({
   song,
   contextQueue,
   number,
   showCover = true,
-  variant = 'glass',
   subtitle = 'artist',
+  showAlbum = false,
   onNavigateArtist,
   onRemove,
 }: TrackRowProps) {
   const isCurrent = useIsCurrentSong(song.id);
   const isPlaying = useIsSongPlaying(song.id);
   const prefetch = usePrefetchIntent(song);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handlePlay = () => {
     if (isCurrent) playerActions.togglePlay();
     else playerActions.playSong(song, contextQueue);
   };
 
-  const container =
-    variant === 'glass'
-      ? `p-3 rounded-2xl backdrop-blur-xl border transform-gpu hover:-translate-y-0.5 ${
-          isCurrent
-            ? 'bg-brand-burgundy/30 border-brand-red/50 shadow-[0_4px_24px_rgba(200,25,0,0.18)]'
-            : 'bg-[#13141f]/40 hover:bg-[#191b29]/75 border-white/[0.05] hover:border-brand-red/30'
-        }`
-      : `p-2.5 rounded-xl ${isCurrent ? 'bg-white/15' : 'hover:bg-white/10'}`;
-
-  const reveal = 'opacity-100 md:opacity-0 md:group-hover:opacity-100';
+  const reveal = 'opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100';
 
   return (
     <div
       onClick={handlePlay}
       {...prefetch}
-      className={`group flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer min-w-0 ${container}`}
+      className={`group relative grid items-center gap-3 md:gap-4 px-2 md:px-3 py-2 rounded-lg cursor-pointer transition-colors min-w-0 ${
+        showAlbum ? 'grid-cols-[auto_minmax(0,1fr)_auto] md:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto]' : 'grid-cols-[auto_minmax(0,1fr)_auto]'
+      } ${isCurrent ? 'bg-paper/[0.06]' : 'hover:bg-paper/[0.045]'} ${showMenu ? 'z-30' : ''}`}
     >
-      <div className="flex items-center gap-3 md:gap-3.5 min-w-0 flex-1">
+      {/* Número / estado */}
+      <div className="flex items-center gap-3 md:gap-4">
         {number !== undefined && (
-          <div className="w-6 flex justify-center text-sm font-semibold text-zinc-400 tabular-nums shrink-0">
+          <div className="w-6 flex justify-center text-[14px] text-mute tabular shrink-0">
             {isPlaying ? (
               <>
                 <span className="group-hover:hidden">
-                  <SoundBars className="h-3.5" />
+                  <SoundBars className="h-3.5 text-brand-coral" />
                 </span>
-                <Pause className="w-4 h-4 fill-current text-brand-coral hidden group-hover:block" />
+                <Pause className="w-4 h-4 fill-current text-paper hidden group-hover:block" strokeWidth={0} />
               </>
             ) : (
               <>
-                <span className="group-hover:hidden">{number}</span>
-                <Play className="w-4 h-4 fill-current text-white hidden group-hover:block" />
+                <span className={`group-hover:hidden ${isCurrent ? 'text-brand-coral' : ''}`}>{number}</span>
+                <Play className="w-4 h-4 fill-current text-paper hidden group-hover:block" strokeWidth={0} />
               </>
             )}
           </div>
         )}
 
         {showCover && (
-          <div className="relative w-11 h-11 md:w-12 md:h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-white/[0.03] border border-white/10">
-            <Cover src={song.coverUrl} size={96} alt={song.title} className="w-full h-full" />
-            {number === undefined &&
-              (isPlaying ? (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                  <SoundBars className="h-4" />
-                </div>
-              ) : (
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
-                </div>
-              ))}
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <p
-            className={`truncate text-sm font-semibold transition-colors ${
-              isCurrent ? 'text-brand-coral' : 'text-white/95 group-hover:text-white'
-            }`}
-          >
-            {song.title}
-          </p>
-          <div className="flex items-center gap-2 text-xs text-white/45 min-w-0">
-            {subtitle === 'artist' ? (
-              <>
-                <span
-                  onClick={(e) => {
-                    if (!onNavigateArtist) return;
-                    e.stopPropagation();
-                    onNavigateArtist(song.artist);
-                  }}
-                  className={`truncate ${onNavigateArtist ? 'hover:underline hover:text-brand-rose cursor-pointer' : ''}`}
-                >
-                  {song.artist}
-                </span>
-                {song.album && (
-                  <>
-                    <span className="hidden sm:inline">•</span>
-                    <span className="hidden sm:inline truncate max-w-[200px] text-zinc-500">{song.album}</span>
-                  </>
+          <div className="relative w-11 h-11 rounded-md overflow-hidden flex-shrink-0 bg-lacquer">
+            <Cover src={song.coverUrl} size={96} alt="" className="w-full h-full" />
+            {number === undefined && (
+              <div
+                className={`absolute inset-0 bg-ink/60 flex items-center justify-center transition-opacity ${
+                  isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+              >
+                {isPlaying ? (
+                  <SoundBars className="h-4 text-brand-coral" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current text-paper translate-x-[1px]" strokeWidth={0} />
                 )}
-              </>
-            ) : (
-              <span className="truncate">{song.album || song.artist}</span>
+              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={() => ui.openAddToPlaylist(song)}
-          className={`hidden sm:block p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-all ${reveal}`}
-          title="Añadir a playlist"
-        >
-          <ListPlus className="w-3.5 h-3.5" />
-        </button>
+      {/* Título */}
+      <div className="min-w-0">
+        <p className={`truncate text-[15px] font-medium ${isCurrent ? 'text-brand-coral' : 'text-paper'}`}>{song.title}</p>
+        {subtitle === 'artist' ? (
+          <span
+            onClick={(e) => {
+              if (!onNavigateArtist) return;
+              e.stopPropagation();
+              onNavigateArtist(song.artist);
+            }}
+            className={`block truncate text-[13px] text-mute ${onNavigateArtist ? 'hover:text-paper hover:underline cursor-pointer' : ''}`}
+          >
+            {song.artist}
+          </span>
+        ) : (
+          song.album && <span className="block truncate text-[13px] text-mute">{song.album}</span>
+        )}
+      </div>
+
+      {showAlbum && <span className="hidden md:block truncate text-[13px] text-mute">{song.album}</span>}
+
+      {/* Acciones */}
+      <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <LikeButton
           song={song}
-          className="p-2 rounded-lg"
-          iconClassName="w-3.5 h-3.5"
-          activeClassName="text-brand-coral"
-          inactiveClassName={`text-zinc-500 hover:text-white hover:bg-white/10 ${reveal}`}
+          className="p-2 rounded-full"
+          iconClassName="w-4 h-4"
+          inactiveClassName={`text-mute hover:text-paper ${reveal}`}
         />
         {onRemove && (
           <button
             onClick={onRemove}
-            className={`p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-white/10 transition-all ${reveal}`}
+            className={`p-2 rounded-full text-mute hover:text-brand-rose transition-all ${reveal}`}
             title="Quitar de esta playlist"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         )}
-        <span className="text-xs font-mono text-zinc-500 w-10 text-right tabular-nums">{formatTime(song.duration)}</span>
+        <span className="hidden sm:block text-[13px] text-mute w-11 text-right tabular">{formatTime(song.duration)}</span>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            className={`p-2 rounded-full text-mute hover:text-paper transition-all ${reveal}`}
+            title="Más opciones"
+            aria-haspopup="menu"
+            aria-expanded={showMenu}
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+          {showMenu && (
+            <SongMenu song={song} onClose={() => setShowMenu(false)} onNavigateArtist={onNavigateArtist} placement="down" />
+          )}
+        </div>
       </div>
     </div>
   );

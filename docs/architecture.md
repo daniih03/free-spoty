@@ -82,7 +82,7 @@ src/
 └── components/
     ├── Navigation/  SmartDock.tsx · MobileNav.tsx
     ├── Player/      FloatingPlayer.tsx · ZenSheet.tsx · Controls.tsx · LyricsView.tsx · QueueDrawer.tsx · EqualizerModal.tsx
-    ├── UI/          Primitives.tsx · SongCard.tsx · TrackRow.tsx · AmbientBackground.tsx · AuthModal.tsx · AddToPlaylistModal.tsx · CreatePlaylistSheet.tsx
+    ├── UI/          Primitives.tsx (Cover, Record, Sleeve, Sheet…) · SongCard.tsx · TrackRow.tsx · PlaylistSleeve.tsx · AmbientBackground.tsx · AuthModal.tsx · AddToPlaylistModal.tsx · CreatePlaylistSheet.tsx
     ├── Views/       HomeView · SearchView · PlaylistView · LibraryView · ArtistView · ImportExportModal
     └── TopNavbar.tsx
 ```

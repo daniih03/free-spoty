@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Mic2, ListMusic, ListPlus, Sliders, Maximize2, AlertCircle } from 'lucide-react';
+import { Mic2, ListMusic, ListPlus, SlidersHorizontal, AlertCircle } from 'lucide-react';
 import { usePlayer } from '../../state/player';
 import { ui, useUi } from '../../state/ui';
-import { Vinyl } from '../UI/Primitives';
+import { Sleeve } from '../UI/Primitives';
 import { TransportControls, Scrubber, VolumeControl, LikeButton, PlayPauseButton, ProgressLine } from './Controls';
 import ZenSheet from './ZenSheet';
 
@@ -11,8 +11,8 @@ interface FloatingPlayerProps {
 }
 
 /**
- * Cápsula de sonido flotante (escritorio) + mini-cápsula móvil.
- * El tiempo de reproducción solo re-renderiza el Scrubber interno.
+ * Cápsula flotante (escritorio) + mini-cápsula (móvil). La carátula es una
+ * funda de la que sale el vinilo mientras suena.
  */
 export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onNavigateArtist }) => {
   const currentSong = usePlayer((s) => s.currentSong);
@@ -25,123 +25,114 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({ onNavigateArtist
 
   if (!currentSong) return null;
 
-  const toolClass = (active: boolean) =>
-    `relative p-2.5 rounded-2xl transition-all ${
-      active
-        ? 'text-brand-coral bg-brand-red/20 border border-brand-red/30 shadow-sm'
-        : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
+  const tool = (active: boolean) =>
+    `relative p-2.5 rounded-full transition-colors ${
+      active ? 'text-brand-coral bg-brand-red/15' : 'text-mute hover:text-paper hover:bg-paper/[0.06]'
     }`;
 
   return (
     <>
       {/* ================================================================ */}
-      {/* 1. CÁPSULA FLOTANTE DE ESCRITORIO (md+)                          */}
+      {/* Escritorio                                                        */}
       {/* ================================================================ */}
-      <div className="hidden md:flex fixed bottom-5 left-1/2 -translate-x-1/2 w-[94%] max-w-5xl z-40 select-none">
-        <div className="animate-fadeIn relative w-full h-[88px] rounded-full bg-[#101119]/90 backdrop-blur-3xl border border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_40px_rgba(200,25,0,0.08)] hover:border-brand-red/30 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(200,25,0,0.16)] flex items-center justify-between px-6 transition-all duration-300">
-          {/* Izquierda: vinilo + datos */}
-          <div className="flex items-center gap-3.5 min-w-[220px] max-w-[320px]">
-            <Vinyl
+      <div className="hidden md:block fixed bottom-4 left-[92px] right-4 z-40 select-none pointer-events-none">
+        <div className="pointer-events-auto mx-auto max-w-[1100px] h-[84px] rounded-full bg-lacquer/90 backdrop-blur-2xl border border-line shadow-[0_24px_60px_-18px_rgba(0,0,0,0.95)] grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)] items-center gap-4 pl-3.5 pr-5 animate-rise">
+          {/* Canción */}
+          <div className="flex items-center min-w-0">
+            <Sleeve
               src={currentSong.coverUrl}
               size={120}
               isPlaying={isPlaying}
+              slide="62%"
               onClick={ui.openLyrics}
-              title="Abrir visor a pantalla completa (F)"
-              className="group/art w-14 h-14 shadow-xl border-2 border-white/20 ring-2 ring-black/70"
-            >
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 flex items-center justify-center transition-opacity z-20">
-                <Maximize2 className="w-4 h-4 text-white" />
-              </div>
-            </Vinyl>
-
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p
+              title="Abrir a pantalla completa (F)"
+              coverClassName="rounded-md"
+              className="w-14 h-14 mr-11"
+            />
+            <div className="min-w-0 flex-1">
+              <button
                 onClick={ui.openLyrics}
-                className="text-sm font-bold text-white tracking-tight truncate hover:text-brand-coral cursor-pointer transition-colors"
+                className="block max-w-full text-left text-[14px] font-semibold text-paper truncate hover:underline decoration-paper/40 underline-offset-2"
               >
                 {currentSong.title}
-              </p>
+              </button>
               {playbackError ? (
-                <p className="text-[11px] text-brand-rose truncate flex items-center gap-1" title={playbackError}>
+                <p className="text-[12px] text-brand-rose truncate flex items-center gap-1" title={playbackError}>
                   <AlertCircle className="w-3 h-3 shrink-0" /> {playbackError}
                 </p>
               ) : (
-                <p
+                <button
                   onClick={() => onNavigateArtist(currentSong.artist)}
-                  className="text-xs text-zinc-400 truncate hover:text-white hover:underline cursor-pointer transition-colors"
+                  className="block max-w-full text-left text-[13px] text-mute truncate hover:text-paper transition-colors"
                 >
                   {currentSong.artist}
-                </p>
+                </button>
               )}
             </div>
-
-            <LikeButton song={currentSong} className="p-2 rounded-full hover:scale-110" />
+            <LikeButton song={currentSong} className="p-2 rounded-full ml-1" />
             <button
               onClick={() => ui.openAddToPlaylist(currentSong)}
-              className="p-2 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition-transform"
-              title="Añadir a playlist..."
+              className="p-2 rounded-full text-mute hover:text-paper transition-colors"
+              title="Añadir a una playlist"
             >
-              <ListPlus className="w-4 h-4" />
+              <ListPlus className="w-[18px] h-[18px]" />
             </button>
           </div>
 
-          {/* Centro: consola de transporte + scrubber */}
-          <div className="flex-1 max-w-lg flex flex-col items-center justify-center gap-1.5 px-3">
-            <TransportControls />
-            <Scrubber />
+          {/* Transporte */}
+          <div className="flex flex-col items-center justify-center gap-1 min-w-0">
+            <TransportControls className="gap-4" />
+            <Scrubber className="max-w-[460px]" />
           </div>
 
-          {/* Derecha: herramientas + volumen */}
-          <div className="flex items-center justify-end gap-2 min-w-[220px]">
-            <button onClick={ui.toggleLyrics} className={toolClass(isLyricsOpen)} title="Letras en vivo (F)">
-              <Mic2 className="w-4 h-4" />
+          {/* Herramientas */}
+          <div className="flex items-center justify-end gap-1 min-w-0">
+            <button onClick={ui.toggleLyrics} className={tool(isLyricsOpen)} title="Letra (F)">
+              <Mic2 className="w-[18px] h-[18px]" />
             </button>
-            <button onClick={ui.openQueue} className={toolClass(isQueueOpen)} title="Cola e historial">
-              <ListMusic className="w-4 h-4" />
+            <button onClick={ui.openQueue} className={tool(isQueueOpen)} title="Cola">
+              <ListMusic className="w-[18px] h-[18px]" />
               {upcomingCount > 0 && (
-                <span className="absolute -top-1 -right-1 text-[9px] bg-gradient-to-r from-brand-crimson to-brand-red text-white font-extrabold px-1.5 rounded-full border border-[#101119] shadow-sm">
-                  {upcomingCount}
+                <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 text-[10px] leading-4 text-center rounded-full bg-brand-red text-paper font-semibold tabular">
+                  {upcomingCount > 99 ? '99+' : upcomingCount}
                 </span>
               )}
             </button>
-            <button onClick={ui.openEqualizer} className={toolClass(false)} title="Ecualizador, velocidad y temporizador">
-              <Sliders className="w-4 h-4" />
+            <button onClick={ui.openEqualizer} className={tool(false)} title="Sonido y ajustes">
+              <SlidersHorizontal className="w-[18px] h-[18px]" />
             </button>
-            <VolumeControl sliderClassName="w-18 lg:w-20" />
+            <VolumeControl className="ml-1" sliderClassName="w-20 lg:w-24" />
           </div>
         </div>
       </div>
 
       {/* ================================================================ */}
-      {/* 2. MINI-CÁPSULA MÓVIL (< md)                                     */}
+      {/* Móvil                                                             */}
       {/* ================================================================ */}
       <div className="md:hidden">
         <div
           onClick={() => setIsMobileExpanded(true)}
-          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom,0px)+10px)] inset-x-3.5 h-[64px] bg-[#101119]/95 backdrop-blur-2xl border border-white/[0.12] rounded-full z-40 flex items-center justify-between px-3.5 shadow-2xl cursor-pointer touch-manipulation active:scale-[0.99] transition-transform animate-fadeIn"
+          className="fixed bottom-[calc(64px+env(safe-area-inset-bottom,0px)+8px)] inset-x-2.5 h-[62px] rounded-2xl bg-raised/95 backdrop-blur-2xl border border-line z-40 flex items-center gap-3 pl-2 pr-2 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)] cursor-pointer touch-manipulation active:scale-[0.985] transition-transform overflow-hidden animate-rise"
         >
-          <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-            <Vinyl
-              src={currentSong.coverUrl}
-              size={96}
-              isPlaying={isPlaying}
-              holeClassName="w-2.5 h-2.5"
-              className="w-11 h-11 border border-white/20 shadow ring-1 ring-black/70"
-            />
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">{currentSong.title}</p>
-              <p className={`text-[11px] truncate ${playbackError ? 'text-brand-rose' : 'text-zinc-400'}`}>
-                {playbackError || currentSong.artist}
-              </p>
-            </div>
+          <Sleeve
+            src={currentSong.coverUrl}
+            size={96}
+            isPlaying={isPlaying}
+            slide="48%"
+            coverClassName="rounded-lg"
+            className="w-[46px] h-[46px] mr-5"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold text-paper truncate">{currentSong.title}</p>
+            <p className={`text-[12px] truncate ${playbackError ? 'text-brand-rose' : 'text-mute'}`}>
+              {playbackError || currentSong.artist}
+            </p>
           </div>
-
-          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <LikeButton song={currentSong} className="p-2.5 rounded-full" activeClassName="text-brand-coral" />
-            <PlayPauseButton size="sm" className="w-11 h-11" />
+          <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <LikeButton song={currentSong} className="p-2.5 rounded-full" />
+            <PlayPauseButton size="sm" />
           </div>
-
-          <ProgressLine className="absolute bottom-0 inset-x-6" />
+          <ProgressLine className="absolute bottom-0 inset-x-0" />
         </div>
 
         {isMobileExpanded && (

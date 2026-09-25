@@ -60,24 +60,24 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
 
   const tab = (active: boolean) =>
     `flex-1 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all ${
-      active ? 'bg-white/10 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+      active ? 'bg-paper/[0.08] text-paper shadow-md' : 'text-mute hover:text-paper'
     }`;
 
   return (
     <Sheet onClose={ui.closeAuth} zIndex="z-[999]">
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-crimson to-brand-coral text-white shadow-lg shadow-brand-red/30 mb-3">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-red text-paper mb-3">
           <UserIcon className="w-6 h-6" />
         </div>
-        <h3 className="text-2xl font-bold tracking-tight text-white">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-paper">
           {mode === 'login' ? 'Bienvenido a Free-Spoty' : 'Crea tu cuenta gratis'}
         </h3>
-        <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+        <p className="text-xs sm:text-sm text-mute mt-1">
           Guarda tus favoritas y playlists en la nube para escucharlas en cualquier lugar.
         </p>
       </div>
 
-      <div className="flex rounded-2xl bg-black/40 p-1 mb-6 border border-white/5">
+      <div className="flex rounded-2xl bg-ink/60 p-1 mb-6 border border-line">
         <button type="button" onClick={() => switchMode('login')} className={tab(mode === 'login')}>
           Iniciar sesión
         </button>
@@ -87,13 +87,13 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
       </div>
 
       {error && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-brand-red/15 border border-brand-red/30 text-red-100 text-xs flex items-center gap-2.5 animate-fadeIn" role="alert">
+        <div className="mb-4 p-3.5 rounded-2xl bg-brand-red/15 border border-brand-red/30 text-paper text-xs flex items-center gap-2.5 animate-fadeIn" role="alert">
           <AlertCircle className="w-4 h-4 text-brand-coral shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-white/5 border border-white/20 text-white text-xs flex items-center gap-2.5 animate-fadeIn">
+        <div className="mb-4 p-3.5 rounded-2xl bg-paper/[0.05] border border-paper/20 text-paper text-xs flex items-center gap-2.5 animate-fadeIn">
           <Check className="w-4 h-4 text-brand-coral shrink-0" />
           <span>{success}</span>
         </div>
@@ -102,7 +102,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === 'register' && (
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Nombre de usuario (opcional)</label>
+            <label className="block text-xs font-medium text-paper/80 mb-1.5">Nombre de usuario (opcional)</label>
             <input
               type="text"
               autoComplete="nickname"
@@ -114,7 +114,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
           </div>
         )}
         <div>
-          <label className="block text-xs font-medium text-zinc-300 mb-1.5">Correo electrónico</label>
+          <label className="block text-xs font-medium text-paper/80 mb-1.5">Correo electrónico</label>
           <input
             type="email"
             required
@@ -126,7 +126,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-zinc-300 mb-1.5">Contraseña</label>
+          <label className="block text-xs font-medium text-paper/80 mb-1.5">Contraseña</label>
           <input
             type="password"
             required
@@ -140,7 +140,7 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full mt-2 py-3.5 px-4 bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral hover:brightness-110 text-white font-semibold rounded-2xl text-sm shadow-lg shadow-brand-red/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full mt-2 py-3.5 px-4 bg-brand-red hover:bg-brand-lightred text-paper font-semibold rounded-2xl text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <Spinner className="w-4 h-4 border-2 border-white" />
@@ -152,12 +152,12 @@ export default function AuthModal({ initialMode }: { initialMode: 'login' | 'reg
         </button>
       </form>
 
-      <p className="mt-6 text-center text-[11px] text-zinc-500">
+      <p className="mt-6 text-center text-[11px] text-faint">
         {mode === 'login' ? '¿No tienes cuenta aún? ' : '¿Ya tienes una cuenta? '}
         <button
           type="button"
           onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-          className="text-zinc-300 hover:text-white underline font-medium"
+          className="text-paper/80 hover:text-paper underline font-medium"
         >
           {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
         </button>

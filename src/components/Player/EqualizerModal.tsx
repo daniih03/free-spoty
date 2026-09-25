@@ -97,7 +97,7 @@ export default function EqualizerModal() {
     return sleepEndsAt !== null && Math.abs((sleepEndsAt - Date.now()) / 60000 - value) < 1;
   };
 
-  const label = 'text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5';
+  const label = 'text-xs font-semibold text-mute flex items-center gap-1.5';
 
   return (
     <Sheet onClose={ui.closeEqualizer} title="Ajustes & Ecualizador" subtitle="Personaliza el sonido a tu gusto" icon={<Sliders className="w-5 h-5" />}>
@@ -115,8 +115,8 @@ export default function EqualizerModal() {
                 onClick={() => selectPreset(p.id)}
                 className={`px-3 py-2 rounded-xl text-xs font-medium text-left border transition-all ${
                   activePreset === p.id
-                    ? 'border-brand-red bg-brand-red/15 text-brand-coral font-semibold shadow-md shadow-brand-red/10'
-                    : 'border-white/5 bg-white/5 text-zinc-300 hover:bg-white/10 hover:border-white/10'
+                    ? 'border-brand-red bg-brand-red/15 text-brand-coral font-semibold'
+                    : 'border-line bg-paper/[0.05] text-paper/80 hover:bg-paper/[0.08] hover:border-line'
                 }`}
               >
                 {p.name}
@@ -124,7 +124,7 @@ export default function EqualizerModal() {
             ))}
           </div>
           {!hasBackend && activePreset !== 'flat' && (
-            <p className="text-[11px] text-zinc-500 flex gap-1.5">
+            <p className="text-[11px] text-faint flex gap-1.5">
               <Info className="w-3.5 h-3.5 shrink-0 text-brand-rose" />
               El ecualizador procesa el audio del servidor propio (0 anuncios). Con el reproductor de YouTube el audio
               no es accesible y el preset se aplicará al conectar un servidor.
@@ -138,15 +138,15 @@ export default function EqualizerModal() {
             <Gauge className="w-3.5 h-3.5 text-brand-rose" />
             Velocidad de reproducción ({playbackRate}x)
           </label>
-          <div className="flex items-center justify-between gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex items-center justify-between gap-1 p-1 rounded-xl bg-paper/[0.05] border border-line">
             {SPEED_OPTIONS.map((rate) => (
               <button
                 key={rate}
                 onClick={() => playerActions.setPlaybackRate(rate)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   playbackRate === rate
-                    ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white font-bold shadow-md shadow-brand-red/20'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-brand-red text-paper font-bold'
+                    : 'text-mute hover:text-paper'
                 }`}
               >
                 {rate}x
@@ -173,20 +173,20 @@ export default function EqualizerModal() {
                 className={`py-1.5 rounded-lg text-xs font-medium transition-all border ${
                   timerIsActive(opt.value)
                     ? 'bg-brand-red/20 border-brand-red/60 text-brand-coral font-bold'
-                    : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    : 'bg-paper/[0.05] border-line text-mute hover:text-paper hover:bg-paper/[0.08]'
                 }`}
               >
                 {opt.label}
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-zinc-500">
+          <p className="text-[11px] text-faint">
             Los últimos 10 segundos hacen un fundido suave de volumen para que no te despiertes de golpe.
           </p>
         </div>
 
         {/* 4. Servidor de audio: la única garantía de 0 anuncios */}
-        <div className="space-y-2.5 pt-2 border-t border-white/10">
+        <div className="space-y-2.5 pt-2 border-t border-line">
           <div className="flex items-center justify-between gap-2">
             <label className={label}>
               <Server className="w-3.5 h-3.5 text-brand-coral" />
@@ -198,11 +198,11 @@ export default function EqualizerModal() {
               </span>
             )}
             {health?.state === 'down' && (
-              <span className="flex items-center gap-1 text-[11px] text-zinc-400 font-medium">
+              <span className="flex items-center gap-1 text-[11px] text-mute font-medium">
                 <ShieldAlert className="w-3.5 h-3.5 text-brand-rose" /> Sin conexión
               </span>
             )}
-            {health?.state === 'checking' && <span className="text-[11px] text-zinc-500">Comprobando…</span>}
+            {health?.state === 'checking' && <span className="text-[11px] text-faint">Comprobando…</span>}
           </div>
           <div className="flex gap-2">
             <input
@@ -227,7 +227,7 @@ export default function EqualizerModal() {
           </div>
 
           {hasBackend ? (
-            <label className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 cursor-pointer">
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-paper/[0.04] border border-line cursor-pointer">
               <input
                 type="checkbox"
                 checked={fallback}
@@ -237,15 +237,15 @@ export default function EqualizerModal() {
                 }}
                 className="mt-0.5 accent-[#c81900] w-4 h-4 shrink-0"
               />
-              <span className="text-[11px] text-zinc-300 leading-relaxed">
-                <strong className="text-white">Usar YouTube si el servidor no responde.</strong> Con el servidor
+              <span className="text-[11px] text-paper/80 leading-relaxed">
+                <strong className="text-paper">Usar YouTube si el servidor no responde.</strong> Con el servidor
                 encendido la música nunca pasa por YouTube (0 anuncios). Si el PC está apagado, suena por YouTube (puede
                 haber anuncios) y vuelve al servidor en cuanto responda. Desactívalo para no oír nunca anuncios aunque la
                 música se pare.
               </span>
             </label>
           ) : (
-            <p className="text-[11px] text-zinc-400 leading-relaxed flex gap-1.5">
+            <p className="text-[11px] text-mute leading-relaxed flex gap-1.5">
               <Info className="w-3.5 h-3.5 shrink-0 text-brand-rose mt-0.5" />
               <span>
                 Sin servidor se usa el reproductor de YouTube, que puede mostrar anuncios en algunos vídeos. Para
@@ -258,7 +258,7 @@ export default function EqualizerModal() {
         </div>
 
         {/* 5. API Key */}
-        <div className="space-y-2 pt-2 border-t border-white/10">
+        <div className="space-y-2 pt-2 border-t border-line">
           <label className={label}>
             <Key className="w-3.5 h-3.5 text-brand-blush" />
             API Key de YouTube (opcional)
@@ -276,12 +276,12 @@ export default function EqualizerModal() {
                 setCustomApiKey(apiKeyInput);
                 flashSaved('key');
               }}
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-paper/[0.08] hover:bg-paper/[0.15] text-xs font-semibold flex items-center gap-1 transition-colors"
             >
               {saved === 'key' ? <Check className="w-3.5 h-3.5 text-brand-coral" /> : 'Guardar'}
             </button>
           </div>
-          <p className="text-[11px] text-zinc-500">
+          <p className="text-[11px] text-faint">
             No es obligatoria: por defecto Free-Spoty busca de forma libre e instantánea sin configuración.
           </p>
         </div>

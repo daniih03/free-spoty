@@ -5,7 +5,7 @@ import { usePlayer, playerActions } from '../../state/player';
 import { getArtistProfile, getAlbumTracks } from '../../services/artistService';
 import { toggleFollowArtist, useIsFollowing } from '../../services/storageService';
 import { TrackRow } from '../UI/TrackRow';
-import { Cover, Sheet, Spinner } from '../UI/Primitives';
+import { Cover, Sheet, Sleeve } from '../UI/Primitives';
 import { onImageError } from '../../lib/images';
 
 interface ArtistViewProps {
@@ -15,6 +15,25 @@ interface ArtistViewProps {
 }
 
 type Filter = 'all' | 'album' | 'single';
+
+const TYPE_LABEL: Record<Album['type'], string> = { album: 'Álbum', single: 'Sencillo', ep: 'EP' };
+
+function ArtistSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-[340px] md:h-[420px] bg-paper/[0.04]" />
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 mt-8 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-2">
+            <div className="w-6 h-4 rounded bg-paper/[0.06]" />
+            <div className="w-11 h-11 rounded-md bg-paper/[0.07]" />
+            <div className="h-3.5 w-1/3 rounded bg-paper/[0.07]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ArtistView({ artistName, onNavigateBack, onNavigateArtist }: ArtistViewProps) {
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
@@ -50,26 +69,16 @@ export default function ArtistView({ artistName, onNavigateBack, onNavigateArtis
     return profile.albums;
   }, [profile, filter]);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Spinner className="w-12 h-12 border-3 border-brand-red" />
-        <p className="text-sm font-medium text-zinc-400 animate-pulse">Cargando discografía de {artistName}...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <ArtistSkeleton />;
 
   if (!profile) {
     return (
-      <div className="p-8 text-center space-y-4">
-        <Disc3 className="w-16 h-16 text-zinc-600 mx-auto" />
-        <h2 className="text-2xl font-bold text-white">No pudimos encontrar a {artistName}</h2>
-        <p className="text-zinc-400 text-sm">Verifica el nombre o prueba buscando otra canción.</p>
-        <button
-          onClick={onNavigateBack}
-          className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm transition-all"
-        >
-          Volver atrás
+      <div className="py-24 text-center max-w-sm mx-auto px-6">
+        <Disc3 className="w-10 h-10 text-faint mx-auto" />
+        <h2 className="font-display text-2xl font-bold text-paper mt-4">No encontramos a {artistName}</h2>
+        <p className="text-[14px] text-mute mt-2">Prueba a buscarlo por una de sus canciones.</p>
+        <button onClick={onNavigateBack} className="mt-6 h-11 px-6 rounded-full bg-paper text-ink font-semibold text-[14px]">
+          Volver
         </button>
       </div>
     );
@@ -83,13 +92,11 @@ export default function ArtistView({ artistName, onNavigateBack, onNavigateArtis
     else playerActions.playSong(profile.topSongs[0], profile.topSongs);
   };
 
-  const pill = (value: Filter, label: string) => (
+  const chip = (value: Filter, label: string) => (
     <button
       onClick={() => setFilter(value)}
-      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-        filter === value
-          ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/20'
-          : 'text-zinc-400 hover:text-white'
+      className={`h-8 px-4 rounded-full text-[13px] font-medium transition-colors ${
+        filter === value ? 'bg-paper text-ink' : 'bg-paper/[0.07] text-paper hover:bg-paper/[0.12]'
       }`}
     >
       {label}
@@ -97,138 +104,110 @@ export default function ArtistView({ artistName, onNavigateBack, onNavigateArtis
   );
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-12 w-full min-w-0">
-      {/* 1. Hero */}
-      <div className="relative h-72 sm:h-96 md:h-[420px] overflow-hidden flex flex-col justify-end p-5 sm:p-6 md:p-10">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={profile.pictureUrl}
-            alt={profile.name}
-            decoding="async"
-            onError={onImageError}
-            className="w-full h-full object-cover object-center brightness-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090b10] via-[#090b10]/50 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-        </div>
-
-        <div className="relative z-10 space-y-2 md:space-y-3 min-w-0">
-          <div className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-white/90 drop-shadow-md">
-            <BadgeCheck className="w-5 h-5 text-brand-red fill-brand-red/20" />
-            <span>Artista verificado</span>
-          </div>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tight drop-shadow-xl truncate">
+    <div className="w-full min-w-0 pb-8">
+      {/* Cabecera a sangre */}
+      <header className="relative h-[360px] sm:h-[420px] md:h-[480px] -mt-[calc(60px+env(safe-area-inset-top,0px))] md:-mt-[72px] overflow-hidden flex items-end">
+        <img
+          src={profile.pictureUrl}
+          alt=""
+          decoding="async"
+          onError={onImageError}
+          className="absolute inset-0 w-full h-full object-cover object-[center_25%] scale-105 animate-fade-in"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-ink/10" />
+        <div className="relative w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 pb-8 stagger">
+          <p className="flex items-center gap-1.5 text-[14px] font-medium text-paper">
+            <BadgeCheck className="w-5 h-5 text-paper fill-brand-red" /> Artista verificado
+          </p>
+          <h1 className="font-display text-[clamp(3rem,9vw,7.5rem)] leading-[0.9] font-extrabold tracking-[-0.04em] text-paper mt-2 break-words">
             {profile.name}
           </h1>
-          <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-zinc-300 font-medium drop-shadow-md">
-            {(profile.listeners ?? 0) > 0 && (
-              <>
-                <span>
-                  <span className="text-white font-bold">{profile.listeners!.toLocaleString('es-ES')}</span> fans
-                </span>
-                <span>•</span>
-              </>
-            )}
-            <span className="bg-white/15 backdrop-blur-md px-2.5 py-0.5 rounded-full text-white/90 text-xs uppercase tracking-wider font-semibold">
-              {profile.genre || 'Música'}
-            </span>
-          </div>
+          {(profile.listeners ?? 0) > 0 && (
+            <p className="text-[15px] text-paper/80 mt-4 tabular">
+              {profile.listeners!.toLocaleString('es-ES')} seguidores en Deezer
+            </p>
+          )}
         </div>
-      </div>
+      </header>
 
-      <div className="px-3.5 sm:px-4 md:px-8 space-y-8 max-w-7xl mx-auto">
-        {/* 2. Acciones */}
-        <div className="flex items-center gap-5">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10">
+        <div className="flex items-center gap-4 py-6">
           <button
             onClick={handlePlayArtist}
             disabled={!profile.topSongs.length}
-            className="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-crimson via-brand-red to-brand-coral text-white flex items-center justify-center shadow-2xl shadow-brand-red/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-            title={isArtistPlaying ? 'Pausar' : `Reproducir populares de ${profile.name}`}
+            className="w-14 h-14 rounded-full bg-brand-red hover:bg-brand-lightred text-paper flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40"
+            title={isArtistPlaying ? 'Pausar' : `Reproducir ${profile.name}`}
           >
-            {isArtistPlaying ? <Pause className="w-6 h-6 fill-white" /> : <Play className="w-6 h-6 fill-white ml-0.5" />}
+            {isArtistPlaying ? (
+              <Pause className="w-6 h-6 fill-current" strokeWidth={0} />
+            ) : (
+              <Play className="w-6 h-6 fill-current translate-x-[1px]" strokeWidth={0} />
+            )}
           </button>
           <button
             onClick={() => toggleFollowArtist({ name: profile.name, pictureUrl: profile.pictureUrl })}
-            className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
-              isFollowing
-                ? 'border-brand-red text-brand-coral bg-brand-red/10 hover:bg-brand-red/20'
-                : 'border-white/30 hover:border-white text-white hover:scale-105'
+            className={`h-9 px-5 rounded-full text-[14px] font-semibold border transition-colors ${
+              isFollowing ? 'border-paper/60 text-paper' : 'border-paper/25 text-paper hover:border-paper'
             }`}
           >
             {isFollowing ? 'Siguiendo' : 'Seguir'}
           </button>
+          {profile.genre && <span className="text-[14px] text-mute ml-auto">{profile.genre}</span>}
         </div>
 
-        {/* 3. Populares */}
         {profile.topSongs.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Populares</h2>
-            <div className="space-y-1">
+          <section className="mt-2">
+            <h2 className="font-display text-display-md font-bold text-paper mb-4">Populares</h2>
+            <div className="-mx-2 md:-mx-3 max-w-4xl">
               {topSongs.map((song, index) => (
-                <TrackRow
-                  key={song.id}
-                  song={song}
-                  contextQueue={profile.topSongs}
-                  number={index + 1}
-                  variant="plain"
-                  subtitle="album"
-                />
+                <TrackRow key={song.id} song={song} contextQueue={profile.topSongs} number={index + 1} subtitle="album" />
               ))}
             </div>
             {profile.topSongs.length > 5 && (
               <button
                 onClick={() => setShowAllTop((v) => !v)}
-                className="text-xs font-bold text-zinc-400 hover:text-white uppercase tracking-wider py-2 transition-colors"
+                className="mt-3 text-[14px] font-semibold text-mute hover:text-paper transition-colors"
               >
-                {showAllTop ? 'Ver menos' : 'Ver más canciones'}
+                {showAllTop ? 'Mostrar menos' : 'Mostrar más'}
               </button>
             )}
           </section>
         )}
 
-        {/* 4. Discografía */}
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Discografía</h2>
-            <div className="flex items-center gap-1.5 p-1 rounded-full bg-white/5 border border-white/10">
-              {pill('all', 'Todos')}
-              {pill('album', 'Álbumes')}
-              {pill('single', 'Sencillos y EPs')}
+        <section className="mt-14">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h2 className="font-display text-display-md font-bold text-paper">Discografía</h2>
+            <div className="flex items-center gap-2">
+              {chip('all', 'Todo')}
+              {chip('album', 'Álbumes')}
+              {chip('single', 'Sencillos y EP')}
             </div>
           </div>
 
           {albums.length === 0 ? (
-            <p className="text-zinc-500 text-sm py-8 text-center">No hay discos en esta categoría.</p>
+            <p className="text-mute text-[14px] py-8">No hay lanzamientos en esta categoría.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-5 gap-y-8">
               {albums.map((album) => (
-                <div
-                  key={album.id}
-                  onClick={() => setSelectedAlbum(album)}
-                  className="group relative p-2.5 sm:p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-brand-red/30 transition-all duration-200 cursor-pointer shadow-lg hover:shadow-2xl hover:-translate-y-1 transform-gpu min-w-0"
-                >
-                  <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 bg-white/5 shadow-md">
-                    <Cover
-                      src={album.coverUrl}
-                      size={400}
-                      alt={album.title}
-                      className="w-full h-full transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute bottom-2 right-2 opacity-90 md:opacity-0 md:group-hover:opacity-100 md:translate-y-2 md:group-hover:translate-y-0 transition-all duration-200">
-                      <div className="w-10 h-10 rounded-full bg-brand-red hover:bg-brand-lightred text-white flex items-center justify-center shadow-xl">
-                        <Play className="w-4 h-4 fill-white ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-                  <h4 className="text-sm font-semibold text-white truncate mb-1 group-hover:text-brand-coral transition-colors">
+                <button key={album.id} onClick={() => setSelectedAlbum(album)} className="group sleeve-peek text-left min-w-0">
+                  <Sleeve
+                    src={album.coverUrl}
+                    size={400}
+                    isPlaying={false}
+                    slide="20%"
+                    coverClassName="rounded-lg"
+                    className="w-[84%] aspect-square"
+                    alt={album.title}
+                  />
+                  <p className="text-[14px] font-semibold text-paper truncate mt-3 pr-[16%] group-hover:underline decoration-paper/30 underline-offset-2">
                     {album.title}
-                  </h4>
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                    <span>{album.releaseYear || 'Álbum'}</span>
-                    <span>•</span>
-                    <span>{album.type === 'single' ? 'Sencillo' : album.type === 'ep' ? 'EP' : 'Álbum'}</span>
-                  </div>
-                </div>
+                  </p>
+                  <p className="text-[13px] text-mute">
+                    {album.releaseYear}
+                    {album.releaseYear && ', '}
+                    {TYPE_LABEL[album.type].toLowerCase()}
+                  </p>
+                </button>
               ))}
             </div>
           )}
@@ -261,38 +240,39 @@ function AlbumSheet({
     };
   }, [album]);
 
-  const typeLabel = album.type === 'single' ? 'Sencillo' : album.type === 'ep' ? 'EP' : 'Álbum oficial';
-
   return (
     <Sheet onClose={onClose} maxWidth="max-w-2xl">
-      <div className="flex items-center gap-4 min-w-0 mb-5 pr-10">
-        <Cover src={album.coverUrl} size={160} eager alt={album.title} className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl shadow-lg flex-shrink-0" />
+      <div className="flex items-end gap-5 min-w-0 mb-6 pr-10">
+        <Cover src={album.coverUrl} size={260} eager alt={album.title} className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)] flex-shrink-0" />
         <div className="min-w-0">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-brand-coral">{typeLabel}</span>
-          <h3 className="text-lg md:text-xl font-bold text-white truncate">{album.title}</h3>
-          <p className="text-xs text-zinc-400">
-            {album.artist} • {album.releaseYear} • {tracks?.length ?? album.trackCount} canciones
+          <p className="text-[13px] text-mute">{TYPE_LABEL[album.type]}</p>
+          <h3 className="font-display text-2xl md:text-3xl font-bold text-paper leading-tight mt-1">{album.title}</h3>
+          <p className="text-[13px] text-mute mt-2">
+            {album.artist}
+            {album.releaseYear && `, ${album.releaseYear}`}
+            {tracks && `, ${tracks.length} canciones`}
           </p>
         </div>
       </div>
 
       {tracks === null ? (
-        <div className="py-16 text-center space-y-3">
-          <Spinner className="w-8 h-8 border-2 border-brand-red" />
-          <p className="text-xs text-zinc-400">Cargando canciones del disco...</p>
+        <div className="space-y-3 animate-pulse">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-10 rounded-lg bg-paper/[0.05]" />
+          ))}
         </div>
       ) : tracks.length === 0 ? (
-        <p className="text-center text-zinc-500 py-12 text-sm">No se encontraron pistas para este disco.</p>
+        <p className="text-center text-mute py-12 text-[14px]">No se encontraron las canciones de este disco.</p>
       ) : (
         <>
           <button
             onClick={() => playerActions.playSong(tracks[0], tracks)}
-            className="mb-3 flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-bold text-xs uppercase tracking-wider hover:scale-105 transition-all shadow-lg shadow-brand-red/20"
+            className="mb-4 h-11 pl-4 pr-5 rounded-full bg-brand-red hover:bg-brand-lightred text-paper font-semibold text-[14px] flex items-center gap-2 transition-colors"
           >
-            <Play className="w-4 h-4 fill-white" />
-            Reproducir disco completo
+            <Play className="w-4 h-4 fill-current" strokeWidth={0} />
+            Reproducir disco
           </button>
-          <div className="space-y-1">
+          <div className="-mx-2">
             {tracks.map((track, idx) => (
               <TrackRow
                 key={track.id}
@@ -300,7 +280,6 @@ function AlbumSheet({
                 contextQueue={tracks}
                 number={idx + 1}
                 showCover={false}
-                variant="plain"
                 onNavigateArtist={(name) => {
                   onClose();
                   onNavigateArtist(name);

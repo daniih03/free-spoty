@@ -7,33 +7,27 @@ interface MobileNavProps {
   onNavigate: (view: ViewType) => void;
 }
 
-const TABS: { id: ViewType; label: string; icon: React.ReactNode; also?: ViewType[] }[] = [
-  { id: 'home', label: 'Inicio', icon: <Home className="w-5 h-5" /> },
-  { id: 'search', label: 'Buscar', icon: <Search className="w-5 h-5" />, also: ['artist'] },
-  { id: 'library', label: 'Tu biblioteca', icon: <Library className="w-5 h-5" />, also: ['liked', 'history', 'playlist'] },
+const TABS: { id: ViewType; label: string; icon: typeof Home; also?: ViewType[] }[] = [
+  { id: 'home', label: 'Inicio', icon: Home },
+  { id: 'search', label: 'Buscar', icon: Search, also: ['artist'] },
+  { id: 'library', label: 'Biblioteca', icon: Library, also: ['liked', 'history', 'playlist'] },
 ];
 
 export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate }) => (
-  <nav className="md:hidden fixed bottom-0 inset-x-0 h-[calc(60px+env(safe-area-inset-bottom,0px))] bg-[#0e0e11]/95 backdrop-blur-xl border-t border-white/10 z-30 flex items-center justify-around px-2 select-none pb-[env(safe-area-inset-bottom,0px)] touch-manipulation">
-    {TABS.map((tab) => {
-      const isActive = currentView === tab.id || !!tab.also?.includes(currentView);
+  <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 h-[calc(64px+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,0px)] bg-gradient-to-t from-ink via-ink/95 to-ink/80 backdrop-blur-xl flex items-stretch select-none touch-manipulation">
+    {TABS.map(({ id, label, icon: Icon, also }) => {
+      const active = currentView === id || !!also?.includes(currentView);
       return (
         <button
-          key={tab.id}
-          onClick={() => onNavigate(tab.id)}
-          aria-current={isActive ? 'page' : undefined}
-          className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors active:scale-95 ${
-            isActive ? 'text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
+          key={id}
+          onClick={() => onNavigate(id)}
+          aria-current={active ? 'page' : undefined}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors active:scale-95 ${
+            active ? 'text-paper' : 'text-faint'
           }`}
         >
-          <span
-            className={`transition-transform duration-200 ${
-              isActive ? 'scale-110 text-brand-coral drop-shadow-[0_0_8px_rgba(255,59,36,0.5)]' : ''
-            }`}
-          >
-            {tab.icon}
-          </span>
-          <span className={`text-[10px] mt-1 tracking-tight ${isActive ? 'text-brand-coral font-bold' : ''}`}>{tab.label}</span>
+          <Icon className="w-6 h-6" strokeWidth={active ? 2.4 : 1.8} />
+          <span className="text-[11px] font-medium">{label}</span>
         </button>
       );
     })}

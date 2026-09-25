@@ -30,8 +30,8 @@ import type { Song } from '../../types/music';
 
 const PLAY_SIZES = {
   sm: { box: 'w-10 h-10', icon: 'w-4 h-4', spin: 'w-4 h-4 border-2' },
-  md: { box: 'w-12 h-12', icon: 'w-5 h-5', spin: 'w-4 h-4 border-2' },
-  lg: { box: 'w-16 h-16', icon: 'w-7 h-7', spin: 'w-6 h-6 border-3' },
+  md: { box: 'w-11 h-11', icon: 'w-[18px] h-[18px]', spin: 'w-4 h-4 border-2' },
+  lg: { box: 'w-16 h-16', icon: 'w-7 h-7', spin: 'w-6 h-6 border-[3px]' },
 } as const;
 
 export const PlayPauseButton = memo(function PlayPauseButton({
@@ -51,84 +51,87 @@ export const PlayPauseButton = memo(function PlayPauseButton({
         e.stopPropagation();
         playerActions.togglePlay();
       }}
-      className={`${s.box} rounded-full bg-gradient-to-tr from-brand-crimson via-brand-red to-brand-coral text-white flex items-center justify-center shadow-[0_4px_20px_rgba(200,25,0,0.4)] hover:shadow-[0_6px_25px_rgba(200,25,0,0.6)] hover:scale-108 active:scale-95 transition-all touch-manipulation shrink-0 ${className}`}
+      className={`${s.box} rounded-full bg-brand-red text-paper flex items-center justify-center hover:bg-brand-lightred hover:scale-105 active:scale-95 transition-[transform,background-color] duration-200 ease-out touch-manipulation shrink-0 ${className}`}
       title={isPlaying ? 'Pausar (Espacio)' : 'Reproducir (Espacio)'}
       aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
     >
       {isLoading && isPlaying ? (
-        <Spinner className={`${s.spin} border-white`} />
+        <Spinner className={`${s.spin} border-paper`} />
       ) : isPlaying ? (
-        <Pause className={`${s.icon} fill-white`} />
+        <Pause className={`${s.icon} fill-current`} strokeWidth={0} />
       ) : (
-        <Play className={`${s.icon} fill-white ml-0.5`} />
+        <Play className={`${s.icon} fill-current translate-x-[1px]`} strokeWidth={0} />
       )}
     </button>
   );
 });
 
 // ---------------------------------------------------------------------------
-// Transporte: shuffle · anterior · play · siguiente · repetir
+// Transporte: aleatorio · anterior · play · siguiente · repetir
 // ---------------------------------------------------------------------------
+
+function ModeDot({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-coral transition-all duration-300 ${
+        on ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
+      }`}
+    />
+  );
+}
 
 export const TransportControls = memo(function TransportControls({
   size = 'md',
-  className = 'gap-4 sm:gap-6',
+  className = 'gap-5',
 }: {
   size?: 'md' | 'lg';
   className?: string;
 }) {
   const isShuffle = usePlayer((s) => s.isShuffle);
   const repeatMode = usePlayer((s) => s.repeatMode);
-  const icon = size === 'lg' ? 'w-6 h-6' : 'w-4 h-4';
-  const small = size === 'lg' ? 'w-5 h-5' : 'w-4 h-4';
+  const skip = size === 'lg' ? 'w-7 h-7' : 'w-5 h-5';
+  const mode = size === 'lg' ? 'w-5 h-5' : 'w-[18px] h-[18px]';
+  const iconBtn = 'relative p-1.5 transition-colors touch-manipulation';
 
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <button
         onClick={playerActions.toggleShuffle}
-        className={`relative p-2 rounded-full transition-colors touch-manipulation ${
-          isShuffle ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
-        }`}
-        title={isShuffle ? 'True Shuffle activado: aleatoriedad real sin sesgos' : 'Activar True Shuffle'}
+        className={`${iconBtn} ${isShuffle ? 'text-brand-coral' : 'text-mute hover:text-paper'}`}
+        title={isShuffle ? 'Aleatorio real activado' : 'Activar aleatorio real'}
         aria-pressed={isShuffle}
       >
-        <Shuffle className={small} />
-        {isShuffle && (
-          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full shadow-[0_0_8px_#ff3b24]" />
-        )}
+        <Shuffle className={mode} />
+        <ModeDot on={isShuffle} />
       </button>
 
       <button
         onClick={playerActions.prevTrack}
-        className="p-2 text-zinc-300 hover:text-white hover:scale-110 active:scale-95 transition-all touch-manipulation"
+        className={`${iconBtn} text-paper/85 hover:text-paper active:scale-90`}
         title="Anterior (←)"
         aria-label="Anterior"
       >
-        <SkipBack className={`${icon} fill-current`} />
+        <SkipBack className={`${skip} fill-current`} strokeWidth={1.5} />
       </button>
 
       <PlayPauseButton size={size} />
 
       <button
         onClick={playerActions.nextTrack}
-        className="p-2 text-zinc-300 hover:text-white hover:scale-110 active:scale-95 transition-all touch-manipulation"
+        className={`${iconBtn} text-paper/85 hover:text-paper active:scale-90`}
         title="Siguiente (→)"
         aria-label="Siguiente"
       >
-        <SkipForward className={`${icon} fill-current`} />
+        <SkipForward className={`${skip} fill-current`} strokeWidth={1.5} />
       </button>
 
       <button
         onClick={playerActions.cycleRepeatMode}
-        className={`relative p-2 rounded-full transition-colors touch-manipulation ${
-          repeatMode !== 'off' ? 'text-brand-coral' : 'text-zinc-400 hover:text-white'
-        }`}
-        title={`Repetición: ${repeatMode === 'off' ? 'desactivada' : repeatMode === 'all' ? 'toda la lista' : 'canción actual'}`}
+        className={`${iconBtn} ${repeatMode !== 'off' ? 'text-brand-coral' : 'text-mute hover:text-paper'}`}
+        title={`Repetir: ${repeatMode === 'off' ? 'no' : repeatMode === 'all' ? 'toda la lista' : 'esta canción'}`}
       >
-        {repeatMode === 'one' ? <Repeat1 className={small} /> : <Repeat className={small} />}
-        {repeatMode !== 'off' && (
-          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-coral rounded-full" />
-        )}
+        {repeatMode === 'one' ? <Repeat1 className={mode} /> : <Repeat className={mode} />}
+        <ModeDot on={repeatMode !== 'off'} />
       </button>
     </div>
   );
@@ -140,17 +143,20 @@ export const TransportControls = memo(function TransportControls({
 
 export function Scrubber({
   className = '',
-  trackClassName = 'h-1.5 hover:h-2',
+  thick = false,
   showTimes = true,
-  timeClassName = 'text-[10px]',
+  timeClassName = 'text-[11px]',
   stacked = false,
 }: {
   className?: string;
-  trackClassName?: string;
+  /** Pista más gruesa (visor a pantalla completa y móvil). */
+  thick?: boolean;
   showTimes?: boolean;
   timeClassName?: string;
   /** Tiempos debajo de la barra (móvil) en lugar de a los lados. */
   stacked?: boolean;
+  /** @deprecated se mantiene por compatibilidad */
+  trackClassName?: string;
 }) {
   const currentTime = useCurrentTime();
   const duration = usePlayer((s) => s.duration);
@@ -167,10 +173,20 @@ export function Scrubber({
   };
 
   const track = (
-    <div className={`group/track relative flex-1 bg-white/10 rounded-full cursor-pointer transition-all ${trackClassName}`}>
+    <div className="group/track relative flex-1 flex items-center h-4 cursor-pointer">
+      <div className={`relative w-full rounded-full bg-paper/15 overflow-hidden transition-[height] duration-200 ${thick ? 'h-1.5' : 'h-1 group-hover/track:h-1.5'}`}>
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-colors ${
+            dragValue !== null ? 'bg-brand-coral' : 'bg-paper group-hover/track:bg-brand-coral'
+          }`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
       <div
-        className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral rounded-full"
-        style={{ width: `${percent}%` }}
+        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-paper shadow-md pointer-events-none transition-opacity ${
+          dragValue !== null ? 'opacity-100' : 'opacity-0 group-hover/track:opacity-100'
+        }`}
+        style={{ left: `${percent}%` }}
       />
       <input
         type="range"
@@ -189,7 +205,7 @@ export function Scrubber({
         onPointerCancel={commit}
         onTouchEnd={commit}
         onClick={(e) => e.stopPropagation()}
-        className="absolute -inset-y-2 inset-x-0 w-full opacity-0 cursor-pointer touch-none"
+        className="absolute inset-0 w-full opacity-0 cursor-pointer touch-none"
       />
     </div>
   );
@@ -198,9 +214,9 @@ export function Scrubber({
 
   if (stacked) {
     return (
-      <div className={`space-y-1.5 ${className}`}>
-        <div className="flex items-center py-2">{track}</div>
-        <div className={`flex justify-between text-zinc-400 font-mono tabular-nums ${timeClassName}`}>
+      <div className={className}>
+        {track}
+        <div className={`flex justify-between text-mute tabular mt-1 ${timeClassName}`}>
           <span>{formatTime(shown)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -209,23 +225,23 @@ export function Scrubber({
   }
 
   return (
-    <div className={`w-full flex items-center gap-2.5 font-mono tabular-nums select-none ${timeClassName} ${className}`}>
-      <span className="w-9 text-right text-zinc-400">{formatTime(shown)}</span>
+    <div className={`w-full flex items-center gap-3 tabular select-none ${timeClassName} ${className}`}>
+      <span className="w-9 text-right text-mute">{formatTime(shown)}</span>
       {track}
-      <span className="w-9 text-left text-zinc-500">{formatTime(duration)}</span>
+      <span className="w-9 text-left text-faint">{formatTime(duration)}</span>
     </div>
   );
 }
 
-/** Barra fina de progreso sin interacción (mini-reproductor móvil). */
+/** Línea fina de progreso sin interacción (mini-reproductor móvil). */
 export function ProgressLine({ className = '' }: { className?: string }) {
   const currentTime = useCurrentTime();
   const duration = usePlayer((s) => s.duration);
   const percent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   return (
-    <div className={`h-[2px] bg-white/10 rounded-full overflow-hidden ${className}`}>
+    <div className={`h-[2px] bg-paper/10 overflow-hidden ${className}`}>
       <div
-        className="h-full bg-gradient-to-r from-brand-crimson via-brand-red to-brand-coral origin-left"
+        className="h-full w-full bg-brand-coral origin-left transition-transform duration-300 ease-linear"
         style={{ transform: `scaleX(${percent / 100})` }}
       />
     </div>
@@ -238,7 +254,7 @@ export function ProgressLine({ className = '' }: { className?: string }) {
 
 export const VolumeControl = memo(function VolumeControl({
   className = '',
-  sliderClassName = 'w-20',
+  sliderClassName = 'w-24',
 }: {
   className?: string;
   sliderClassName?: string;
@@ -249,28 +265,28 @@ export const VolumeControl = memo(function VolumeControl({
   const Icon = shown === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
 
   return (
-    <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all ${className}`}
-    >
+    <div className={`group/vol flex items-center gap-2 ${className}`}>
       <button
         onClick={playerActions.toggleMute}
-        className="text-zinc-400 hover:text-white transition-colors"
+        className="p-1.5 text-mute hover:text-paper transition-colors"
         title={isMuted ? 'Activar sonido (M)' : 'Silenciar (M)'}
       >
-        <Icon className={`w-4 h-4 ${shown === 0 ? 'text-brand-coral' : ''}`} />
+        <Icon className="w-[18px] h-[18px]" />
       </button>
-      <div className={`relative h-1 hover:h-1.5 bg-white/20 rounded-full cursor-pointer transition-all ${sliderClassName}`}>
-        <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand-red to-brand-coral rounded-full"
-          style={{ width: `${shown}%` }}
-        />
+      <div className={`relative flex items-center h-4 cursor-pointer ${sliderClassName}`}>
+        <div className="relative w-full h-1 rounded-full bg-paper/15 overflow-hidden">
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-paper group-hover/vol:bg-brand-coral transition-colors"
+            style={{ width: `${shown}%` }}
+          />
+        </div>
         <input
           type="range"
           min={0}
           max={100}
           value={shown}
           onChange={(e) => playerActions.setVolume(parseInt(e.target.value, 10))}
-          className="absolute -inset-y-2 inset-x-0 w-full opacity-0 cursor-pointer"
+          className="absolute inset-0 w-full opacity-0 cursor-pointer"
           aria-label="Volumen"
           title={`Volumen: ${shown}%`}
         />
@@ -286,9 +302,9 @@ export const VolumeControl = memo(function VolumeControl({
 export const LikeButton = memo(function LikeButton({
   song,
   className = 'p-2 rounded-full',
-  iconClassName = 'w-4 h-4',
-  activeClassName = 'text-brand-coral drop-shadow-[0_0_8px_rgba(255,59,36,0.5)]',
-  inactiveClassName = 'text-zinc-400 hover:text-white',
+  iconClassName = 'w-[18px] h-[18px]',
+  activeClassName = 'text-brand-coral',
+  inactiveClassName = 'text-mute hover:text-paper',
 }: {
   song: Song;
   className?: string;
@@ -297,17 +313,25 @@ export const LikeButton = memo(function LikeButton({
   inactiveClassName?: string;
 }) {
   const liked = useIsLiked(song.id);
+  const [pop, setPop] = useState(false);
   return (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        toggleLikeSong(song);
+        if (toggleLikeSong(song)) {
+          setPop(true);
+          setTimeout(() => setPop(false), 400);
+        }
       }}
-      className={`transition-all active:scale-90 touch-manipulation ${className} ${liked ? activeClassName : inactiveClassName}`}
-      title={liked ? 'Quitar de Me Gusta' : 'Añadir a Me Gusta'}
+      className={`transition-colors touch-manipulation ${className} ${liked ? activeClassName : inactiveClassName}`}
+      title={liked ? 'Quitar de Me gusta' : 'Añadir a Me gusta'}
       aria-pressed={liked}
     >
-      <Heart className={`${iconClassName} ${liked ? 'fill-current' : ''}`} />
+      <Heart
+        className={`${iconClassName} transition-transform duration-300 ease-spring ${liked ? 'fill-current' : ''} ${
+          pop ? 'scale-125' : 'scale-100'
+        }`}
+      />
     </button>
   );
 });

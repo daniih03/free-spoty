@@ -89,7 +89,8 @@ export const getArtistProfile = dedupe(
       const albums: Album[] = [];
       for (const item of albumsData.results || []) {
         if (item.wrapperType !== 'collection' || !item.collectionName) continue;
-        const title: string = item.collectionName;
+        // "Nombre - Single" / "- EP": el tipo ya se muestra aparte
+        const title: string = String(item.collectionName).replace(/\s+-\s+(Single|EP)$/i, '');
         if (seenAlbums.has(title.toLowerCase())) continue;
         seenAlbums.add(title.toLowerCase());
         const trackCount = item.trackCount || 1;

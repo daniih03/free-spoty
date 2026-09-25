@@ -114,7 +114,7 @@ export default function ImportExportModal() {
 
   const tab = (active: boolean) =>
     `flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-      active ? 'bg-gradient-to-r from-brand-crimson to-brand-red text-white shadow-md shadow-brand-red/20' : 'text-zinc-400 hover:text-white'
+      active ? 'bg-brand-red text-paper' : 'text-mute hover:text-paper'
     }`;
 
   return (
@@ -126,7 +126,7 @@ export default function ImportExportModal() {
       subtitle="Migra tus canciones favoritas libremente"
     >
       <div className="space-y-5">
-        <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
+        <div className="flex gap-2 p-1 bg-paper/[0.05] rounded-xl border border-line">
           <button onClick={() => setActiveTab('spotify')} className={tab(activeTab === 'spotify')}>
             Importar desde Spotify / lista
           </button>
@@ -138,11 +138,11 @@ export default function ImportExportModal() {
         {activeTab === 'spotify' ? (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-zinc-300 block mb-1">Nombre de la nueva playlist</label>
+              <label className="text-xs font-medium text-paper/80 block mb-1">Nombre de la nueva playlist</label>
               <input value={playlistName} onChange={(e) => setPlaylistName(e.target.value)} className={`${inputClass} text-xs`} />
             </div>
             <div>
-              <label className="text-xs font-medium text-zinc-300 block mb-1">
+              <label className="text-xs font-medium text-paper/80 block mb-1">
                 Pega tu lista (una canción por línea, ej: "Artista - Canción"):
               </label>
               <textarea
@@ -155,9 +155,9 @@ export default function ImportExportModal() {
             </div>
 
             {progress && (
-              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-paper/[0.08] overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-brand-crimson to-brand-coral transition-all"
+                  className="h-full bg-brand-red transition-all"
                   style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }}
                 />
               </div>
@@ -167,7 +167,7 @@ export default function ImportExportModal() {
             <button
               onClick={handleImport}
               disabled={isImporting || !tracklist.trim()}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-crimson to-brand-red hover:from-brand-red hover:to-brand-coral text-white font-semibold text-xs active:scale-95 transition-all shadow-lg shadow-brand-red/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-brand-red hover:bg-brand-lightred text-paper font-semibold text-xs active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isImporting ? (
                 <>
@@ -181,22 +181,22 @@ export default function ImportExportModal() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
-              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <div className="p-3 rounded-xl bg-paper/[0.05] border border-line space-y-2">
+              <h4 className="text-xs font-bold text-paper flex items-center gap-1.5">
                 <Download className="w-3.5 h-3.5 text-brand-coral" />
                 Exportar mis datos
               </h4>
-              <p className="text-[11px] text-zinc-400">Copia completa de tus listas, favoritos, historial y ajustes.</p>
+              <p className="text-[11px] text-mute">Copia completa de tus listas, favoritos, historial y ajustes.</p>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={handleDownload}
-                  className="flex-1 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  className="flex-1 py-1.5 rounded-lg bg-paper/[0.08] hover:bg-paper/[0.12] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Download className="w-3 h-3" /> Descargar .json
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-paper/[0.08] hover:bg-paper/[0.12] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {copied ? <Check className="w-3 h-3 text-brand-coral" /> : <Copy className="w-3 h-3" />}
                   {copied ? 'Copiado' : 'Copiar'}
@@ -204,14 +204,14 @@ export default function ImportExportModal() {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
-              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <div className="p-3 rounded-xl bg-paper/[0.05] border border-line space-y-2">
+              <h4 className="text-xs font-bold text-paper flex items-center gap-1.5">
                 <Upload className="w-3.5 h-3.5 text-brand-rose" />
                 Restaurar copia de seguridad
               </h4>
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full py-2 rounded-lg border border-dashed border-white/20 hover:border-brand-coral/60 text-xs text-zinc-300 hover:text-white flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2 rounded-lg border border-dashed border-paper/20 hover:border-brand-coral/60 text-xs text-paper/80 hover:text-paper flex items-center justify-center gap-2 transition-colors"
               >
                 <FileJson className="w-3.5 h-3.5" /> Elegir archivo .json
               </button>
